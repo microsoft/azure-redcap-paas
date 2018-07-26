@@ -1,0 +1,338 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "siteName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of azure web app"
+      }
+    },
+    "skuName": {
+      "type": "string",
+      "defaultValue": "S1",
+      "allowedValues": [
+        "F1",
+        "D1",
+        "B1",
+        "B2",
+        "B3",
+        "S1",
+        "S2",
+        "S3",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "metadata": {
+        "description": "Describes plan's pricing tier and capacity - this can be changed after deployment. Check details at https://azure.microsoft.com/en-us/pricing/details/app-service/"
+      }
+    },
+    "skuCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "metadata": {
+        "description": "Describes plan's instance count (how many distinct web servers will be deployed in the farm) - this can be changed after deployment"
+      }
+    },
+    "administratorLogin": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "redcap_app",
+      "metadata": {
+        "description": "Database administrator login name"
+      }
+    },
+    "administratorLoginPassword": {
+      "type": "securestring",
+      "minLength": 8,
+      "metadata": {
+        "description": "Database administrator password"
+      }
+    },
+    "databaseDTU": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "Azure database for MySQL pricing tier"
+      }
+    },
+    "databaseSkuName": {
+      "type": "string",
+      "defaultValue": "GP_Gen4_2",
+      "metadata": {
+        "description": "Azure database for MySQL sku name "
+      }
+    },
+    "databaseSkuSizeMB": {
+      "type": "int",
+      "defaultValue": 5120,
+      "metadata": {
+        "description": "Azure database for MySQL sku Size "
+      }
+    },
+    "databaseSkuTier": {
+      "type": "string",
+      "defaultValue": "GeneralPurpose",
+      "metadata": {
+        "description": "Azure database for MySQL pricing tier"
+      }
+    },
+    "mysqlVersion": {
+      "type": "string",
+      "allowedValues": [
+        "5.6",
+        "5.7"
+      ],
+      "defaultValue": "5.7",
+      "metadata": {
+        "description": "MySQL version"
+      }
+    },
+    "storageType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Premium_LRS"
+      ]
+    },
+    "storageContainerName": {
+      "type": "string",
+      "defaultValue": "redcap",
+      "metadata": {
+        "description": "Name of the container used to store backing files in the new storage account. This container will need to be created after this script is executed successfully."
+      }
+    },
+    "redCAPAppZip": {
+      "type": "string",
+      "metadata": {
+        "description": "A publicly accessible path to your copy of the RedCAP zip file."
+      }
+    },
+    "repoURL": {
+      "type": "string",
+      "defaultValue": "https://github.com/microsoft/Azure-RedCAP-PaaS.git",
+      "metadata": {
+        "description": "The path to the deployment source files on GitHub"
+      }
+    },
+    "branch": {
+      "type": "string",
+      "defaultValue": "master",
+      "metadata": {
+        "description": "The main branch of the application repo"
+      }
+    }
+  },
+  "variables": {
+    "databaseName": "[concat(parameters('siteName'), '_db')]",
+    "serverName": "[concat(parameters('siteName'), uniqueString(resourceGroup().id))]",
+    "hostingPlanName": "[concat(parameters('siteName'), 'serviceplan')]",
+    "webSiteName": "[concat(parameters('siteName'), uniqueString(resourceGroup().id))]",
+    "storageName": "[concat('storage', uniqueString(resourceGroup().id))]",
+    "storageAccountId": "[concat(resourceGroup().id,'/providers/Microsoft.Storage/storageAccounts/', variables('storageName'))]"
+  },
+  "resources": [
+    {
+      "name": "[variables('storageName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-01-01",
+      "sku": {
+        "name": "[parameters('storageType')]"
+      },
+      "dependsOn": [],
+      "tags": {
+        "displayName": "BackingStorage"
+      },
+      "kind": "Storage"
+    },
+    {
+      "apiVersion": "2016-09-01",
+      "name": "[variables('hostingPlanName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "displayName": "HostingPlan"
+      },
+      "sku": {
+        "name": "[parameters('skuName')]",
+        "capacity": "[parameters('skuCapacity')]"
+      },
+      "properties": {
+        "name": "[variables('hostingPlanName')]"
+      }
+    },
+    {
+      "apiVersion": "2016-08-01",
+      "name": "[variables('webSiteName')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[variables('hostingPlanName')]",
+        "[variables('storageName')]"
+      ],
+      "tags": {
+        "displayName": "WebApp"
+      },
+      "properties": {
+        "name": "[variables('webSiteName')]",
+        "serverFarmId": "[variables('hostingPlanName')]",
+        "siteConfig": {
+          "phpVersion": "7.0",
+          "connectionStrings": [
+            {
+              "name": "defaultConnection",
+              "ConnectionString": "[concat('Database=', variables('databaseName'), ';Data Source=', variables('serverName'),'.mysql.database.azure.com;User Id=',parameters('administratorLogin'),'@',variables('serverName'),';Password=',parameters('administratorLoginPassword'))]",
+              "type": "MySql"
+            }
+          ],
+          "appSettings": [
+            {
+              "Name": "StorageContainerName",
+              "Value": "[parameters('storageContainerName')]"
+            },
+            {
+              "Name": "StorageAccount",
+              "Value": "[variables('storageName')]"
+            },
+            {
+              "Name": "StorageKey",
+              "value": "[concat(listKeys(variables('storageAccountId'),'2015-05-01-preview').key1)]"
+            },
+            {
+              "Name": "redCAPAppZip",
+              "value": "[parameters('redCAPAppZip')]"
+            },
+            {
+              "Name": "DBHostName",
+              "value": "[concat(variables('serverName') ,'.mysql.database.azure.com')]"
+            },
+            {
+              "Name": "DBName",
+              "value": "[variables('databaseName')]"
+            },
+            {
+              "Name": "DBUserName",
+              "value": "[concat(parameters('administratorLogin'),'@',variables('serverName'))]"
+            },
+            {
+              "Name": "DBPassword",
+              "value": "[parameters('administratorLoginPassword')]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "name": "web",
+          "type": "sourcecontrols",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/sites', variables('webSiteName'))]",
+            "[concat('Microsoft.DBforMySQL/servers/', variables('serverName'))]"
+          ],
+          "tags": {
+            "displayName": "CodeDeploy"
+          },
+          "properties": {
+            "RepoUrl": "[parameters('repoUrl')]",
+            "branch": "[parameters('branch')]",
+            "IsManualIntegration": true
+          }
+        }
+      ]
+    },
+    {
+      "apiVersion": "2017-12-01-preview",
+      "location": "[resourceGroup().location]",
+      "name": "[variables('serverName')]",
+      "tags": {
+        "displayName": "MySQLAzure"
+      },
+      "properties": {
+        "version": "[parameters('mysqlVersion')]",
+        "administratorLogin": "[parameters('administratorLogin')]",
+        "administratorLoginPassword": "[parameters('administratorLoginPassword')]",
+        "storageProfile": {
+          "storageMB": "[parameters('databaseSkuSizeMB')]",
+          "backupRetentionDays": "7",
+          "geoRedundantBackup": "Disabled"
+        },
+        "sslEnforcement": "Disabled"
+      },
+      "sku": {
+        "name": "[parameters('databaseSkuName')]",
+        "tier": "[parameters('databaseSkuTier')]",
+        "capacity": "[parameters('databaseDTU')]",
+        "size": "[parameters('databaseSkuSizeMB')]",
+        "family": "Gen4"
+      },
+      "type": "Microsoft.DBforMySQL/servers",
+      "resources": [
+        {
+          "type": "firewallrules",
+          "apiVersion": "2017-12-01-preview",
+          "dependsOn": [
+            "[concat('Microsoft.DBforMySQL/servers/', variables('serverName'),'/databases/' , variables('databaseName'))]",
+            "[concat('Microsoft.DBforMySQL/servers/', variables('serverName'))]"
+          ],
+          "location": "[resourceGroup().location]",
+          "name": "AllowAzureIPs",
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "0.0.0.0"
+          }
+        },
+        {
+          "name": "[variables('databaseName')]",
+          "type": "databases",
+          "apiVersion": "2017-12-01-preview",
+          "tags": {
+            "displayName": "DB"
+          },
+          "properties": {
+            "charset": "utf8",
+            "collation": "utf8_general_ci"
+          },
+          "dependsOn": [
+            "[concat('Microsoft.DBforMySQL/servers/', variables('serverName'))]"
+          ]
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "MySQLHostName": {
+      "type": "string",
+      "value": "[concat(variables('serverName'),'.mysql.database.azure.com')]"
+    },
+    "MySqlUserName": {
+      "type": "string",
+      "value": "[concat(parameters('administratorLogin'),'@',variables('serverName'))]"
+    },
+    "webSiteFQDN": {
+      "type": "string",
+      "value": "[concat(variables('webSiteName'),'.azurewebsites.net')]"
+    },
+    "storageAccountKey": {
+      "type": "string",
+      "value": "[concat(listKeys(variables('storageAccountId'),'2015-05-01-preview').key1)]"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "value": "[variables('storageName')]"
+    },
+    "storageContainerName": {
+      "type": "string",
+      "value": "[parameters('storageContainerName')]"
+    }
+  }
+}

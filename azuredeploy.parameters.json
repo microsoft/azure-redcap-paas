@@ -1,0 +1,57 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "siteName": {
+      "value": null
+    },
+    "administratorLogin": {
+      "value": null
+    },
+    "administratorLoginPassword": {
+      "value": null
+    },
+    "redCAPAppZip": {
+      "value": null
+    },
+    "skuName": {
+      "value": "S1"
+    },
+    "skuCapacity": {
+      "value": 1
+    },
+    "databaseDTU": {
+      "value": 2
+    },
+    "databaseSkuName": {
+      "value": "GP_Gen4_2"
+    },
+    "databaseSkuSizeMB": {
+      "value": 5120
+    },
+    "databaseSkuTier": {
+      "value": "GeneralPurpose"
+    },
+    "mysqlVersion": {
+      "value": "5.7"
+    },
+    "storageType": {
+      "value": "Standard_LRS"
+    },
+    "storageContainerName": {
+      "value": "redcap"
+    },
+    "clientId": {
+      "value": "N/A"
+    },
+    "tenantDomainName": {
+      "value": "N/A"
+    },
+    "repoURL": {
+      "value": "https://github.com/microsoft/Azure-RedCAP-PaaS.git"
+    },
+    "branch": {
+      "value": "master"
+    }
+  }
+}
