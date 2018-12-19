@@ -56,9 +56,13 @@ function Main {
 
 			#Apply schema
 			ApplySchema
+			
+			Log("Updating configuration in redcap_config")
 
 			#Update app config
 			UpdateConfig
+
+			Log("Deployment complete")
 
         } else {
             Write-Output "File $filename already present"
@@ -81,6 +85,8 @@ function ApplySchema {
 
 	#Get schema
 	$sql = GetSQLSchema
+	Log("Schema retrieved from site, applying...")
+
 	CallSql -Query $sql
 
 	Log("Completed applying schema")
