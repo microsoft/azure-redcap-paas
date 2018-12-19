@@ -52,20 +52,6 @@
         "description": "Database administrator password"
       }
     },
-    "databaseDTU": {
-      "type": "int",
-      "defaultValue": 2,
-      "metadata": {
-        "description": "Azure database for MySQL pricing tier"
-      }
-    },
-    "databaseSkuName": {
-      "type": "string",
-      "defaultValue": "GP_Gen4_2",
-      "metadata": {
-        "description": "Azure database for MySQL sku name "
-      }
-    },
     "databaseSkuSizeMB": {
       "type": "int",
       "defaultValue": 5120,
@@ -73,12 +59,44 @@
         "description": "Azure database for MySQL sku Size "
       }
     },
-    "databaseSkuTier": {
+
+    "databaseForMySqlTier": {
       "type": "string",
-      "defaultValue": "GeneralPurpose",
+      "defaultValue": "Basic",
       "metadata": {
-        "description": "Azure database for MySQL pricing tier"
-      }
+        "description": "Select MySql server performance tier. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
+      },
+      "allowedValues": [
+        "Basic",
+        "GeneralPurpose",
+        "MemoryOptimized"
+      ]
+    },
+    "databaseForMySqlFamily": {
+      "type": "string",
+      "defaultValue": "Gen4",
+      "metadata": {
+        "description": "Select MySql compute generation. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
+      },
+      "allowedValues": [
+        "Gen4",
+        "Gen5"
+      ]
+    },
+    "databaseForMySqlCores": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Select MySql vCore count. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
+      },
+      "allowedValues": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32
+      ]
     },
     "mysqlVersion": {
       "type": "string",
@@ -135,6 +153,12 @@
     "serverName": "[concat(parameters('siteName'), uniqueString(resourceGroup().id))]",
     "hostingPlanName": "[concat(parameters('siteName'), 'serviceplan')]",
     "webSiteName": "[concat(parameters('siteName'), uniqueString(resourceGroup().id))]",
+    "tierSymbol": {
+      "Basic": "B",
+      "GeneralPurpose": "GP",
+      "MemoryOptimized": "MO"
+    },
+    "databaseForMySqlSku": "[concat(variables('tierSymbol')[parameters('databaseForMySqlTier')], '_', parameters('databaseForMySqlFamily'), '_', parameters('databaseForMySqlCores'))]",
     "storageName": "[concat('storage', uniqueString(resourceGroup().id))]",
     "storageAccountId": "[concat(resourceGroup().id,'/providers/Microsoft.Storage/storageAccounts/', variables('storageName'))]"
   },
@@ -269,11 +293,7 @@
         "sslEnforcement": "Disabled"
       },
       "sku": {
-        "name": "[parameters('databaseSkuName')]",
-        "tier": "[parameters('databaseSkuTier')]",
-        "capacity": "[parameters('databaseDTU')]",
-        "size": "[parameters('databaseSkuSizeMB')]",
-        "family": "Gen4"
+        "name": "[variables('databaseForMySqlSku')]"
       },
       "type": "Microsoft.DBforMySQL/servers",
       "resources": [
@@ -294,7 +314,7 @@
         {
           "name": "[variables('databaseName')]",
           "type": "databases",
-          "apiVersion": "2017-12-01-preview",
+          "apiVersion": "2017-12-01",
           "tags": {
             "displayName": "DB"
           },

@@ -66,6 +66,8 @@ $deployment = New-AzureRmResourceGroupDeployment -ResourceGroupName $RGName -Tem
 if ($deployment.ProvisioningState -eq "Succeeded") {
     $siteName = $deployment.Outputs.webSiteFQDN.Value
     start "https://$($siteName)/AzDeployStatus.php"
+    Write-Host "---------"
+    $deployment.Outputs | ConvertTo-Json
 
 } else {
     $deperr = Get-AzureRmResourceGroupDeploymentOperation -DeploymentName "RedCAPDeploy$version" -ResourceGroupName $RGName
