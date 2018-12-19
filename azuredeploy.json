@@ -62,7 +62,7 @@
 
     "databaseForMySqlTier": {
       "type": "string",
-      "defaultValue": "Basic",
+      "defaultValue": "GeneralPurpose",
       "metadata": {
         "description": "Select MySql server performance tier. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
       },
@@ -85,7 +85,7 @@
     },
     "databaseForMySqlCores": {
       "type": "int",
-      "defaultValue": 1,
+      "defaultValue": 2,
       "metadata": {
         "description": "Select MySql vCore count. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
       },
