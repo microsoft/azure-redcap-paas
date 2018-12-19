@@ -8,6 +8,7 @@ $webRoot = "$($env:HOME)\site\wwwroot"
 $bytes = [System.IO.File]::ReadAllBytes("$path\mysql\MySql.Data.dll")
 [System.Reflection.Assembly]::Load($bytes)
 
+$dbver=""
 $zipUri = "$env:APPSETTING_redCAPAppZip"
 $stamp=(Get-Date).toString("yyyy-MM-dd-HH-mm-ss")
 $logFile = "$path\log-$stamp.txt"
@@ -21,6 +22,7 @@ function Main {
         $filename = $res.Headers[$header]
         $filePath = "$path\$filename"
         $version = $filename.Replace(".zip","")
+		$dbver = $version.Replace("redcap","")
 
         Log("Processing $version")
 
@@ -150,7 +152,7 @@ function UpdateDBConnection {
 
 function GetSQLSchema {
 	$body = @{
-		"version" = "8.7.0"
+		"version" = $dbver
 	}
 	$res = Invoke-WebRequest `
 		-UseBasicParsing `
