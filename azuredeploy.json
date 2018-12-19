@@ -74,7 +74,7 @@
     },
     "databaseForMySqlFamily": {
       "type": "string",
-      "defaultValue": "Gen4",
+      "defaultValue": "Gen5",
       "metadata": {
         "description": "Select MySql compute generation. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
       },
