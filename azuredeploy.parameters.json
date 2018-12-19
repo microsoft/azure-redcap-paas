@@ -14,23 +14,17 @@
     "redCAPAppZip": {
       "value": null
     },
-    "skuName": {
-      "value": "S1"
-    },
-    "skuCapacity": {
-      "value": 1
-    },
-    "databaseDTU": {
-      "value": 2
-    },
-    "databaseSkuName": {
-      "value": "GP_Gen4_2"
-    },
     "databaseSkuSizeMB": {
       "value": 5120
     },
-    "databaseSkuTier": {
+    "databaseForMySqlTier": {
       "value": "GeneralPurpose"
+    },
+    "databaseForMySqlFamily": {
+      "value": "Gen5"
+    },
+    "databaseForMySqlCores": {
+      "value": 2
     },
     "mysqlVersion": {
       "value": "5.7"

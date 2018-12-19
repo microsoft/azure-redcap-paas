@@ -59,7 +59,6 @@
         "description": "Azure database for MySQL sku Size "
       }
     },
-
     "databaseForMySqlTier": {
       "type": "string",
       "defaultValue": "GeneralPurpose",

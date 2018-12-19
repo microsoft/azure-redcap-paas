@@ -22,12 +22,12 @@ $parms = @{
     #MySQL
     "administratorLogin"          = "<MySQL admin account name>";
     "administratorLoginPassword"  = "<MySQL admin login password>";
-    "mysqlVersion"                = "5.7";
-    "databaseSkuName"             = "GP_Gen4_2";
-    "skuCapacity"                 = 1;
-    "databaseDTU"                 = 2;
+
     "databaseSkuSizeMB"           = 5120;
-    "databaseSkuTier"             = "GeneralPurpose";
+    "databaseForMySqlTier"        = "GeneralPurpose";
+    "databaseForMySqlFamily"      = "Gen5";
+    "databaseForMySqlCores"       = 2;
+    "mysqlVersion"                = "5.7";
     
     #Azure Storage
     "storageType"                 = "Standard_LRS";
@@ -40,7 +40,7 @@ $parms = @{
 #END DEPLOYMENT OPTIONS
 
 #Dot-sourced variable override (optional, comment out if not using)
-$dotsourceSettings="C:\Users\brhacke\OneDrive\Dev\MSFT\A_CustomDeploySettings\redcap-azure.ps1"
+$dotsourceSettings = "$($env:PSH_Settings_Files)redcap-azure.ps1"
 if (Test-Path $dotsourceSettings) {
     . $dotsourceSettings
 }
@@ -49,7 +49,6 @@ if (Test-Path $dotsourceSettings) {
 Get-AzureRmContext -ErrorAction Stop
 
 #deploy
-
 $TemplateFile = "$($AssetLocation)?x=$version"
 
 try {

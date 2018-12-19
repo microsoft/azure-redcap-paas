@@ -164,7 +164,11 @@ function GetSQLSchema {
 	$start = $str.IndexOf("<textarea ")
 	$end = $str.IndexOf("</textarea>")
 	$new = $str.substring($start, ($end - $start))
-	return $new -replace("<textarea[^>]*>","")
+	$sql = $new -replace("<textarea[^>]*>","")
+
+	#save the schema for posterity
+	$sql | Out-File schema.sql
+	return $sql
 }
 
 function MoveFiles {
