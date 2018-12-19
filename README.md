@@ -27,6 +27,8 @@ __Setup__
 
 This template will automatically deploy the resources necessary to run RedCAP in Azure using PaaS (Platform as a Service) features. After the template is deployed, deployment automation will download the RedCAP ZIP file you specify, and install it in your web app. It will then automatically update the database connection information in the app. It will then update a few settings in the database, and configure Azure file storage if you have that version of RedCAP. It will also create the initial storage container.
 
+With the download and unzipping, the entire operation will take between 12-16 minutes.
+
 If you need to connect to the MySQL database using the MySQL client, you will need to open the firewall to your managed MySQL instance and allow connections from the location where you will run the client. Here are the instructions:
 https://docs.microsoft.com/en-us/azure/mysql/quickstart-create-mysql-server-database-using-azure-portal#configure-a-server-level-firewall-rule
 
