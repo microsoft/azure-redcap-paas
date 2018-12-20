@@ -25,7 +25,7 @@ Review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers for d
 
 __Setup__
 
-This template will automatically deploy the resources necessary to run RedCAP in Azure using PaaS (Platform as a Service) features. **IMPORTANT**: *The "Hosting Plan Name" you choose will be re-used as part of the storage, website, and MySql database name. Make sure you don't use characters that will be rejected by MySql.* After the template is deployed, deployment automation will download the RedCAP ZIP file you specify, and install it in your web app. It will then automatically update the database connection information in the app. It will then update a few settings in the database, and configure Azure file storage if you have that version of RedCAP. It will also create the initial storage container.
+This template will automatically deploy the resources necessary to run RedCAP in Azure using PaaS (Platform as a Service) features. **IMPORTANT**: *The "Site Name" you choose will be re-used as part of the storage, website, and MySql database name. Make sure you don't use characters that will be rejected by MySql.* After the template is deployed, deployment automation will download the RedCAP ZIP file you specify, and install it in your web app. It will then automatically update the database connection information in the app. It will then update a few settings in the database, and configure Azure file storage if you have that version of RedCAP. It will also create the initial storage container.
 
 With the download and unzipping, the entire operation will take between 12-16 minutes.
 
