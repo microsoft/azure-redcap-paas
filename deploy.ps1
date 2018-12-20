@@ -9,7 +9,7 @@ $bytes = [System.IO.File]::ReadAllBytes("$path\mysql\MySql.Data.dll")
 [System.Reflection.Assembly]::Load($bytes)
 
 $dbver=""
-$zipUri = "$env:APPSETTING_redCAPAppZip"
+$zipUri = "$env:APPSETTING_redcapAppZip"
 $stamp=(Get-Date).toString("yyyy-MM-dd-HH-mm-ss")
 $logFile = "$path\log-$stamp.txt"
 Set-Content "$($env:HOME)\site\repository\currlogname.txt" -Value $logFile -NoNewline

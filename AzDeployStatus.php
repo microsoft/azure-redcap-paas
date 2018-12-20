@@ -10,7 +10,7 @@
 
 <html>
 <head>
-    <title>RedCAP Deployment Status</title>
+    <title>REDCap Deployment Status</title>
     <style type="text/css">
         #main {
             width: 70%;
@@ -38,7 +38,7 @@
 </head>
 <body>
     <div id="main">
-        <h3>RedCAP Setup Log</h3>
+        <h3>REDCap Setup Log</h3>
 		<div class="scroll">
 			<div class="main">
 				<?php
@@ -54,7 +54,7 @@
 		</p>
 		<p>
 			<a href="/">Home</a> | 
-			<a href="/install.php">Review RedCAP Installation (/install.php)</a>
+			<a href="/install.php">Review REDCap Installation (/install.php)</a>
 		</p>
     </div>
 </body>

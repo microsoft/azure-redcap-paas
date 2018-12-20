@@ -126,15 +126,15 @@
         "description": "Name of the container used to store backing files in the new storage account. This container will need to be created after this script is executed successfully."
       }
     },
-    "redCAPAppZip": {
+    "redcapAppZip": {
       "type": "string",
       "metadata": {
-        "description": "A publicly accessible path to your copy of the RedCAP zip file."
+        "description": "A publicly accessible path to your copy of the REDCap zip file."
       }
     },
     "repoURL": {
       "type": "string",
-      "defaultValue": "https://github.com/microsoft/Azure-RedCAP-PaaS.git",
+      "defaultValue": "https://github.com/microsoft/Azure-REDCap-PaaS.git",
       "metadata": {
         "description": "The path to the deployment source files on GitHub"
       }
@@ -230,8 +230,8 @@
               "value": "[concat(listKeys(variables('storageAccountId'),'2015-05-01-preview').key1)]"
             },
             {
-              "Name": "redCAPAppZip",
-              "value": "[parameters('redCAPAppZip')]"
+              "Name": "redcapAppZip",
+              "value": "[parameters('redcapAppZip')]"
             },
             {
               "Name": "DBHostName",

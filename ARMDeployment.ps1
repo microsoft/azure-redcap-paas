@@ -8,12 +8,12 @@ $version = 0;
 #Please review the azuredeploy.json file for available options
 $RGName        = "<YOUR RESOURCE GROUP>"
 $DeployRegion  = "<SELECT AZURE REGION>"
-$AssetLocation = "https://github.com/Microsoft/Azure-RedCAP-PaaS/blob/master/azuredeploy.json"
+$AssetLocation = "https://github.com/Microsoft/Azure-REDCap-PaaS/blob/master/azuredeploy.json"
 
 $parms = @{
 
     #Make your ZIP file temporarily accessible via a public file share
-    "redCAPAppZip"                = "<path to your copy of the RedCAP distribution ZIP file>";
+    "redcapAppZip"                = "<path to your copy of the REDCap distribution ZIP file>";
 
     #Azure Web App
     "siteName"                    = "<WEB SITE NAME, like 'redcap'>";
@@ -34,7 +34,7 @@ $parms = @{
     "storageContainerName"        = "redcap";
 
     #GitHub
-    "repoURL"                     = "https://github.com/Microsoft/Azure-RedCAP-PaaS.git";
+    "repoURL"                     = "https://github.com/Microsoft/Azure-REDCap-PaaS.git";
     "branch"                      = "master";
 }
 #END DEPLOYMENT OPTIONS
