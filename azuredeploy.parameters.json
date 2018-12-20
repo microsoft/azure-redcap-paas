@@ -11,7 +11,7 @@
     "administratorLoginPassword": {
       "value": null
     },
-    "redCAPAppZip": {
+    "redcapAppZip": {
       "value": null
     },
     "databaseSkuSizeMB": {
@@ -42,7 +42,7 @@
       "value": "N/A"
     },
     "repoURL": {
-      "value": "https://github.com/microsoft/Azure-RedCAP-PaaS.git"
+      "value": "https://github.com/microsoft/Azure-REDCap-PaaS.git"
     },
     "branch": {
       "value": "master"
