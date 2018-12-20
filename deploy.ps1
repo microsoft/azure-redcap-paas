@@ -2,6 +2,8 @@
 $AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
 [System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
 
+Add-Type -AssemblyName System.Net.Http
+
 $path = "$($env:HOME)\site\repository"
 $webRoot = "$($env:HOME)\site\wwwroot"
 
@@ -73,7 +75,7 @@ function Main {
     catch {
 		Log("An error occured and deployment may not have completed successfully. Try loading the home page to see if the database is connected. The detailed error message is below:<br>")
         Log($_.Exception)
-        Exit 0
+        Exit 1
     }
 }
 
