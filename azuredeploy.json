@@ -52,6 +52,31 @@
         "description": "Database administrator password"
       }
     },
+    "smptFQDN": {
+      "type": "string",
+      "metadata": {
+        "description": "Fully-qualified domain name of your SMTP relay endpoint"
+      }
+    },
+    "smtpPort": {
+      "type": "int",
+      "defaultValue": 587,
+      "metadata": {
+        "description": "Port for your SMTP relay"
+      }
+    },
+    "smtpUser": {
+      "type": "string",
+      "metadata": {
+        "description": "Login name for your SMTP relay"
+      }
+    },
+    "smtpPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Login password for your SMTP relay"
+      }
+    },
     "databaseSkuSizeMB": {
       "type": "int",
       "defaultValue": 5120,
@@ -248,6 +273,22 @@
             {
               "Name": "DBPassword",
               "value": "[parameters('administratorLoginPassword')]"
+            },
+            {
+              "Name": "smtp_fqdn_name",
+              "value": "[parameters('smptFQDN')]"
+            },
+            {
+              "Name": "smtp_port",
+              "value": "[parameters('smtpPort')]"
+            },
+            {
+              "Name": "smtp_user_name",
+              "value": "[parameters('smtpUser')]"
+            },
+            {
+              "Name": "smtp_password",
+              "value": "[parameters('smtpPassword')]"
             }
           ]
         }

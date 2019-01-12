@@ -18,7 +18,7 @@ Set-Content "$($env:HOME)\site\repository\currlogname.txt" -Value $logFile -NoNe
 
 function Main {
     try {
-		copy AzDeployStatus.php ..\wwwRoot\AzDeployStatus.php
+		Copy-Item AzDeployStatus.php ..\wwwRoot\AzDeployStatus.php
 		Log("Checking ZIP file name and version")
 
 		$filename = GetFileName($zipUri)
@@ -31,39 +31,46 @@ function Main {
         if (-Not (Test-Path "$filePath")) {
             Log("Downloading $filename")
     
-            #Download the ZIP file
+            # Download the ZIP file
             Invoke-WebRequest $zipUri -OutFile $filePath
 
             Log("Unzipping file")
-            md "$path\target" -ErrorAction SilentlyContinue
+            mkdir "$path\target" -ErrorAction SilentlyContinue
             Expand-Archive $filePath -DestinationPath "$path\target\$version" -Force
 
-            #reset RO attributes on some files
+            # reset RO attributes on some files
             Log("Resetting file attributes")
             attrib -r "$path\target\$version\redcap\webtools2\pdf\font\unifont\*.*" /S
 
-            #clean up www
+            # clean up www
             Log("Cleaning up existing web root")
             Get-ChildItem -Path  $webRoot -Recurse -Exclude "AzDeployStatus.php" |
-                Select -ExpandProperty FullName |
-                sort length -Descending |
+                Select-Object -ExpandProperty FullName |
+                Sort-Object length -Descending |
                 Remove-Item -force 
 
-            #copy app files to wwwroot
+            # copy app files to wwwroot
 			MoveFiles
 
-		    #Add container to new storage account
+			# add web.config to clean up MIME types in IIS
+			Copy-Item "web.config" "..\wwwRoot\web.config"
+
+			# initialize PHP_INI_SYSTEM settings
+			# https://docs.microsoft.com/en-us/azure/app-service/web-sites-php-configure#changing-phpinisystem-configuration-settings
+			UpdatePHPSettings
+
+		    # Add container to new storage account
 			CreateContainer
 
-            #Update database config
+            # Update database config
             UpdateDBConnection
 
-			#Apply schema
+			# Apply schema
 			ApplySchema
 			
 			Log("Updating configuration in redcap_config")
 
-			#Update app config
+			# Update app config
 			UpdateConfig
 
 			Log("Deployment complete")
@@ -138,6 +145,18 @@ function CallSql {
 	$cn.Dispose()
 }
 
+function UpdatePHPSettings {
+	mkdir "..\ini"
+    $settingsFileName = "settings.ini"
+    Log("Updating $settingsFileName with assigned variables")
+    $settingsFile = [System.Io.File]::ReadAllText($settingsFileName)
+    $settingsFile = $settingsFile.Replace('smtp_fqdn_name',"$env:APPSETTING_smtp_fqdn_name").Replace('smtp_port', "$env:APPSETTING_smtp_port").Replace('sendmail_from', "$env:APPSETTING_sendmail_from").Replace('smpt_user', "$env:APPSETTING_smpt_user").Replace('smpt_password', "$env:APPSETTING_smpt_password");
+    
+    $settingsFile | Set-Content $settingsFileName
+
+	Copy-Item $settingsFileName "..\ini\$settingsFileName"
+}
+
 function UpdateDBConnection {
     $dbFilename = "$webRoot\database.php"
     Log("Updating $dbFilename with assigned variables")
@@ -190,13 +209,13 @@ function GetFileName($Url) {
 	$res = Invoke-WebRequest -Method Head -Uri $Url -UseBasicParsing
 
 	$header = $res.Headers["content-disposition"]
-	if ($header -ne $null) {
+	if ($null -ne $header) {
 		$filename = [System.Net.Http.Headers.ContentDispositionHeaderValue]::Parse($header).Filename
 		if ($filename.IndexOf('"') -gt -1) {
 			$filename = ConvertFrom-Json $filename
 		}
 	} else {
-		$header = $res.Headers.Keys | where { if($_.contains("filename")){$_}}
+		$header = $res.Headers.Keys | Where-Object { if($_.contains("filename")){$_}}
 		$filename = $res.Headers[$header]
 	}
 	return $filename
@@ -229,4 +248,5 @@ $rcOutput=@{
     8 = "Several files did not copy.";
 }
 
+# Start running deployment
 Main
