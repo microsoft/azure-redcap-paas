@@ -18,7 +18,7 @@ Set-Content "$($env:HOME)\site\repository\currlogname.txt" -Value $logFile -NoNe
 
 function Main {
     try {
-		Copy-Item AzDeployStatus.php ..\wwwRoot\AzDeployStatus.php
+		Copy-Item "AzDeployStatus.php" "..\wwwRoot\AzDeployStatus.php"
 		Log("Checking ZIP file name and version")
 
 		$filename = GetFileName($zipUri)
@@ -55,6 +55,9 @@ function Main {
 			# add web.config to clean up MIME types in IIS
 			Copy-Item "web.config" "..\wwwRoot\web.config"
 
+			# Setup Web Job
+			SetupWebJob
+
 			# initialize PHP_INI_SYSTEM settings
 			# https://docs.microsoft.com/en-us/azure/app-service/web-sites-php-configure#changing-phpinisystem-configuration-settings
 			UpdatePHPSettings
@@ -84,6 +87,12 @@ function Main {
         Log($_.Exception)
         Exit 1
     }
+}
+
+function SetupWebJob {
+	$webJobDir = "$($webRoot)\App_Data\jobs\triggered\CronWebJob";
+	mkdir $webJobDir;
+	Copy-Item "$path\WebJob\*.*" $webJobDir
 }
 
 function CreateContainer {
