@@ -237,7 +237,7 @@ function GetFileName($Url) {
 function Log($entry) {
     $msg = "$((Get-Date).ToString("yyyy/MM/dd HH:mm:ss")) $entry"
     Add-Content $logFile -Value $msg | Out-Null
-    Write-Ouptput $msg
+    Write-Output $msg
 }
 
 function Resolve-Error ($ErrorRecord=$Error[0])
