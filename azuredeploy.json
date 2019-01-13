@@ -234,6 +234,7 @@
         "serverFarmId": "[variables('hostingPlanName')]",
         "siteConfig": {
           "phpVersion": "7.0",
+          "alwaysOn": true,
           "connectionStrings": [
             {
               "name": "defaultConnection",
