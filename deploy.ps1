@@ -20,7 +20,7 @@ Write-Output "loading functions"
 function Main {
     Write-Output "Test"
     try {
-		Copy-Item "$path\Files\AzDeployStatus.php" "$webRoot\AzDeployStatus.php"
+		Copy-Item -Path "$path\Files\AzDeployStatus.php" -Destination "$webRoot\AzDeployStatus.php"
 		Log("Checking ZIP file name and version")
 
 		$filename = GetFileName($zipUri)
@@ -57,7 +57,7 @@ function Main {
 
 			# add web.config to clean up MIME types in IIS
 			Log("Copying web.config")
-			Copy-Item "$path\Files\web.config" "$webRoot\web.config"
+			Copy-Item -Path "$path\Files\web.config" -Destination "$webRoot\web.config"
 
 			# Setup Web Job
 			Log("Setting up web job")
@@ -100,8 +100,8 @@ function Main {
 function SetupWebJob {
 	$webJobDir = "$webRoot\App_Data\jobs\triggered\CronWebJob";
 	mkdir $webJobDir;
-	Copy-Item "$path\Files\WebJob\cronWebJob.ps1" $webJobDir
-	Copy-Item "$path\Files\WebJob\settings.job" $webJobDir
+	Copy-Item -Path "$path\Files\WebJob\cronWebJob.ps1" -Destination $webJobDir
+	Copy-Item -Path "$path\Files\WebJob\settings.job" -Destination $webJobDir
 }
 
 function CreateContainer {
@@ -162,7 +162,8 @@ function CallSql {
 }
 
 function UpdatePHPSettings {
-	mkdir "$($env:HOME)\site\ini"
+    $iniFolder = "$($env:HOME)\site\ini"
+	mkdir $iniFolder
     $settingsFileName = "$path\Files\settings.ini"
     Log("Updating $settingsFileName with assigned variables")
     $settingsFile = [System.Io.File]::ReadAllText($settingsFileName)
@@ -170,7 +171,7 @@ function UpdatePHPSettings {
     
     $settingsFile | Set-Content $settingsFileName
 
-	Copy-Item $settingsFileName "..\ini\$settingsFileName"
+	Copy-Item $settingsFileName "$iniFolder\settings.ini"
 }
 
 function UpdateDBConnection {
