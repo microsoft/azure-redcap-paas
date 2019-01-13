@@ -1,7 +1,0 @@
-﻿{
-  "$schema": "http://schemastore.org/schemas/json/webjob-publish-settings.json",
-  "webJobName": "RedCAPCronJob",
-  "jobRecurrenceFrequency": "Minute",
-  "interval": 1,
-  "runMode": "Scheduled"
-}
