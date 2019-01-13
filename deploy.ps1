@@ -7,7 +7,7 @@ Add-Type -AssemblyName System.Net.Http
 $path = "$($env:HOME)\site\repository"
 $webRoot = "$($env:HOME)\site\wwwroot"
 
-$bytes = [System.IO.File]::ReadAllBytes("$path\mysql\MySql.Data.dll")
+$bytes = [System.IO.File]::ReadAllBytes("$path\Files\mysql\MySql.Data.dll")
 [System.Reflection.Assembly]::Load($bytes)
 
 $dbver=""
@@ -18,7 +18,7 @@ Set-Content "$($env:HOME)\site\repository\currlogname.txt" -Value $logFile -NoNe
 
 function Main {
     try {
-		Copy-Item "AzDeployStatus.php" "..\wwwRoot\AzDeployStatus.php"
+		Copy-Item "$($path)\Files\AzDeployStatus.php" "$($webRoot)\AzDeployStatus.php"
 		Log("Checking ZIP file name and version")
 
 		$filename = GetFileName($zipUri)
@@ -53,7 +53,7 @@ function Main {
 			MoveFiles
 
 			# add web.config to clean up MIME types in IIS
-			Copy-Item "web.config" "..\wwwRoot\web.config"
+			Copy-Item "$($path)\Files\web.config" "$($webRoot)\web.config"
 
 			# Setup Web Job
 			SetupWebJob
@@ -92,7 +92,8 @@ function Main {
 function SetupWebJob {
 	$webJobDir = "$($webRoot)\App_Data\jobs\triggered\CronWebJob";
 	mkdir $webJobDir;
-	Copy-Item "$path\WebJob\*.*" $webJobDir
+	Copy-Item "$($path)\Files\WebJob\cronWebJob.ps1" $webJobDir
+	Copy-Item "$($path)\Files\WebJob\settings.job" $webJobDir
 }
 
 function CreateContainer {
@@ -155,8 +156,8 @@ function CallSql {
 }
 
 function UpdatePHPSettings {
-	mkdir "..\ini"
-    $settingsFileName = "settings.ini"
+	mkdir "$($env:HOME)\site\ini"
+    $settingsFileName = "$($path)\Files\settings.ini"
     Log("Updating $settingsFileName with assigned variables")
     $settingsFile = [System.Io.File]::ReadAllText($settingsFileName)
     $settingsFile = $settingsFile.Replace('smtp_fqdn_name',"$env:APPSETTING_smtp_fqdn_name").Replace('smtp_port', "$env:APPSETTING_smtp_port").Replace('sendmail_from', "$env:APPSETTING_sendmail_from").Replace('smpt_user', "$env:APPSETTING_smpt_user").Replace('smpt_password', "$env:APPSETTING_smpt_password");
@@ -204,8 +205,8 @@ function GetSQLSchema {
 function MoveFiles {
     Log("Moving files to web root")
 
-    $source="$path\target\$version\redcap"
-    $dest=$webRoot
+    $source = "$path\target\$version\redcap"
+    $dest = $webRoot
     $what = @("*.*","/E","/MOVE","/NFL","/NDL","NJH","NP","/LOG+:`"$logFile`"")
 
     $cmdArgs = @("$source","$dest",$what)
