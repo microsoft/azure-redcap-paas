@@ -275,6 +275,10 @@
               "value": "[parameters('administratorLoginPassword')]"
             },
             {
+              "Name": "PHP_INI_SCAN_DIR",
+              "value": "d:\\home\\site\\ini"
+            },
+            {
               "Name": "smtp_fqdn_name",
               "value": "[parameters('smptFQDN')]"
             },

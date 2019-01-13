@@ -7,8 +7,7 @@ Add-Type -AssemblyName System.Net.Http
 $path = "$($env:HOME)\site\repository"
 $webRoot = "$($env:HOME)\site\wwwroot"
 
-$bytes = [System.IO.File]::ReadAllBytes("$path\Files\mysql\MySql.Data.dll")
-[System.Reflection.Assembly]::Load($bytes)
+[System.Reflection.Assembly]::LoadFrom("$path\Files\mysql\MySql.Data.dll") | Out-Null
 
 $dbver=""
 $zipUri = "$env:APPSETTING_redcapAppZip"
@@ -16,7 +15,10 @@ $stamp=(Get-Date).toString("yyyy-MM-dd-HH-mm-ss")
 $logFile = "$path\log-$stamp.txt"
 Set-Content "$($env:HOME)\site\repository\currlogname.txt" -Value $logFile -NoNewline
 
+Write-Output "loading functions"
+
 function Main {
+    Write-Output "Test"
     try {
 		Copy-Item "$($path)\Files\AzDeployStatus.php" "$($webRoot)\AzDeployStatus.php"
 		Log("Checking ZIP file name and version")
@@ -50,30 +52,36 @@ function Main {
                 Remove-Item -force 
 
             # copy app files to wwwroot
+            Log("Moving files to web root")
 			MoveFiles
 
 			# add web.config to clean up MIME types in IIS
+			Log("Copying web.config")
 			Copy-Item "$($path)\Files\web.config" "$($webRoot)\web.config"
 
 			# Setup Web Job
+			Log("Setting up web job")
 			SetupWebJob
 
 			# initialize PHP_INI_SYSTEM settings
 			# https://docs.microsoft.com/en-us/azure/app-service/web-sites-php-configure#changing-phpinisystem-configuration-settings
+			Log("Updating PHP settings")
 			UpdatePHPSettings
 
 		    # Add container to new storage account
+		    Log("Creating storage container")
 			CreateContainer
 
             # Update database config
+            Log("Updating $dbFilename with assigned variables")
             UpdateDBConnection
 
 			# Apply schema
+        	Log("Applying schema to new database (this could take several minutes)")
 			ApplySchema
 			
-			Log("Updating configuration in redcap_config")
-
 			# Update app config
+			Log("Updating configuration in redcap_config")
 			UpdateConfig
 
 			Log("Deployment complete")
@@ -102,8 +110,6 @@ function CreateContainer {
 }
 
 function ApplySchema {
-	Log("Applying schema to new database (this could take several minutes)")
-
 	#Get schema
 	$sql = GetSQLSchema
 	Log("Schema retrieved from site, applying...")
@@ -157,10 +163,10 @@ function CallSql {
 
 function UpdatePHPSettings {
 	mkdir "$($env:HOME)\site\ini"
-    $settingsFileName = "$($path)\Files\settings.ini"
+    $settingsFileName = "$path\Files\settings.ini"
     Log("Updating $settingsFileName with assigned variables")
     $settingsFile = [System.Io.File]::ReadAllText($settingsFileName)
-    $settingsFile = $settingsFile.Replace('smtp_fqdn_name',"$env:APPSETTING_smtp_fqdn_name").Replace('smtp_port', "$env:APPSETTING_smtp_port").Replace('sendmail_from', "$env:APPSETTING_sendmail_from").Replace('smpt_user', "$env:APPSETTING_smpt_user").Replace('smpt_password', "$env:APPSETTING_smpt_password");
+    $settingsFile = $settingsFile.Replace('smtp_fqdn_name_setting',"$env:APPSETTING_smtp_fqdn_name").Replace('smtp_port_setting', "$env:APPSETTING_smtp_port").Replace('sendmail_from_setting', "$env:APPSETTING_sendmail_from").Replace('smpt_user_setting', "$env:APPSETTING_smpt_user").Replace('smpt_password_setting', "$env:APPSETTING_smpt_password");
     
     $settingsFile | Set-Content $settingsFileName
 
@@ -169,7 +175,6 @@ function UpdatePHPSettings {
 
 function UpdateDBConnection {
     $dbFilename = "$webRoot\database.php"
-    Log("Updating $dbFilename with assigned variables")
 	$bytes = New-Object Byte[] 8
 	$rand = [System.Security.Cryptography.RandomNumberGenerator]::Create()
 	$rand.GetBytes($bytes)
@@ -203,8 +208,6 @@ function GetSQLSchema {
 }
 
 function MoveFiles {
-    Log("Moving files to web root")
-
     $source = "$path\target\$version\redcap"
     $dest = $webRoot
     $what = @("*.*","/E","/MOVE","/NFL","/NDL","NJH","NP","/LOG+:`"$logFile`"")
@@ -232,7 +235,9 @@ function GetFileName($Url) {
 }
 
 function Log($entry) {
-    Add-Content $logFile -Value "$((Get-Date).ToString("yyyy/MM/dd HH:mm:ss")) $entry" | Out-Null
+    $msg = "$((Get-Date).ToString("yyyy/MM/dd HH:mm:ss")) $entry"
+    Add-Content $logFile -Value $msg | Out-Null
+    Write-Ouptput $msg
 }
 
 function Resolve-Error ($ErrorRecord=$Error[0])
