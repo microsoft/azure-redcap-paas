@@ -20,7 +20,7 @@ Write-Output "loading functions"
 function Main {
     Write-Output "Test"
     try {
-		Copy-Item "$($path)\Files\AzDeployStatus.php" "$($webRoot)\AzDeployStatus.php"
+		Copy-Item "$path\Files\AzDeployStatus.php" "$webRoot\AzDeployStatus.php"
 		Log("Checking ZIP file name and version")
 
 		$filename = GetFileName($zipUri)
@@ -57,7 +57,7 @@ function Main {
 
 			# add web.config to clean up MIME types in IIS
 			Log("Copying web.config")
-			Copy-Item "$($path)\Files\web.config" "$($webRoot)\web.config"
+			Copy-Item "$path\Files\web.config" "$webRoot\web.config"
 
 			# Setup Web Job
 			Log("Setting up web job")
@@ -98,10 +98,10 @@ function Main {
 }
 
 function SetupWebJob {
-	$webJobDir = "$($webRoot)\App_Data\jobs\triggered\CronWebJob";
+	$webJobDir = "$webRoot\App_Data\jobs\triggered\CronWebJob";
 	mkdir $webJobDir;
-	Copy-Item "$($path)\Files\WebJob\cronWebJob.ps1" $webJobDir
-	Copy-Item "$($path)\Files\WebJob\settings.job" $webJobDir
+	Copy-Item "$path\Files\WebJob\cronWebJob.ps1" $webJobDir
+	Copy-Item "$path\Files\WebJob\settings.job" $webJobDir
 }
 
 function CreateContainer {
