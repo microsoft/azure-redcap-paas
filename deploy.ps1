@@ -55,10 +55,6 @@ function Main {
             Log("Moving files to web root")
 			MoveFiles
 
-			# add web.config to clean up MIME types in IIS
-			Log("Copying web.config")
-			Copy-Item -Path "$path\Files\web.config" -Destination "$webRoot\web.config"
-
 			# initialize PHP_INI_SYSTEM settings
 			# https://docs.microsoft.com/en-us/azure/app-service/web-sites-php-configure#changing-phpinisystem-configuration-settings
 			Log("Updating PHP and sendmail settings")
@@ -83,6 +79,14 @@ function Main {
 			# Setup Web Job
 			Log("Setting up web job")
 			SetupWebJob
+
+			# add web.config to clean up MIME types in IIS
+			Log("Copying web.config")
+			touch "$webRoot\web.config"
+			Copy-Item -Path "$path\Files\web.config" -Destination "$webRoot\web.config"
+
+			Log("Stopping W3WP process to force reload of PHP settings (process will restart automatically)")
+			Stop-Process -Name w3wp
 
 			Log("Deployment complete")
 
