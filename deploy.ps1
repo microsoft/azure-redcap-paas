@@ -135,6 +135,7 @@ function UpdateConfig {
 		"UPDATE $($env:APPSETTING_DBName).redcap_config SET value ='$env:APPSETTING_StorageKey' WHERE field_name = 'azure_app_secret';",
 		"UPDATE $($env:APPSETTING_DBName).redcap_config SET value ='$env:APPSETTING_StorageContainerName' WHERE field_name = 'azure_container';"
 		"UPDATE $($env:APPSETTING_DBName).redcap_config SET value ='4' WHERE field_name = 'edoc_storage_option';"
+		"REPLACE INTO $($env:APPSETTING_DBName).redcap_config (field_name, value) VALUES ('azure_quickstart', '1');"
 	)
 	$sqlStr = $sqlList -join "`r`n" | Out-String
 	#SilentlyContinue should accomodate earlier versions that don't have direct support for Azure storage
