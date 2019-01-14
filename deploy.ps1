@@ -59,10 +59,6 @@ function Main {
 			Log("Copying web.config")
 			Copy-Item -Path "$path\Files\web.config" -Destination "$webRoot\web.config"
 
-			# Setup Web Job
-			Log("Setting up web job")
-			SetupWebJob
-
 			# initialize PHP_INI_SYSTEM settings
 			# https://docs.microsoft.com/en-us/azure/app-service/web-sites-php-configure#changing-phpinisystem-configuration-settings
 			Log("Updating PHP and sendmail settings")
@@ -73,7 +69,7 @@ function Main {
 			CreateContainer
 
             # Update database config
-            Log("Updating $dbFilename with assigned variables")
+            Log("Updating DB settings")
             UpdateDBConnection
 
 			# Apply schema
@@ -83,6 +79,10 @@ function Main {
 			# Update app config
 			Log("Updating configuration in redcap_config")
 			UpdateConfig
+
+			# Setup Web Job
+			Log("Setting up web job")
+			SetupWebJob
 
 			Log("Deployment complete")
 
@@ -162,25 +162,25 @@ function CallSql {
 }
 
 function UpdatePHPSettings {
-	Log("Updating sendmail")
     $sendmailiniFileName = "$path\Files\sendmail\sendmail.ini"
+    Log("Updating $sendmailiniFileName with assigned variables")
     $sendmailiniFile = [System.Io.File]::ReadAllText($sendmailiniFileName)
-    $sendmailiniFile = $sendmailiniFile.Replace('replace_smtp_server_name',"$env:APPSETTING_smtp_fqdn_name").Replace('replace_smtp_port', "$env:APPSETTING_smtp_port").Replace('replace_smtp_force_sender', "$env:APPSETTING_sendmail_from").Replace('replace_smtp_username', "$env:APPSETTING_smpt_user").Replace('replace_smtp_password', "$env:APPSETTING_smpt_password");
-    $settingsFile | Set-Content $settingsFileName
-	Copy-Item $settingsFileName "$iniFolder\settings.ini"
+    $sendmailiniFile = $sendmailiniFile.Replace('replace_smtp_server_name',"$env:APPSETTING_smtp_fqdn_name").Replace('replace_smtp_port', "$env:APPSETTING_smtp_port").Replace('replace_smtp_force_sender', "$env:APPSETTING_from_email_address").Replace('replace_smtp_username', "$env:APPSETTING_smpt_user").Replace('replace_smtp_password', "$env:APPSETTING_smpt_password");
+    $sendmailiniFile | Set-Content $sendmailiniFileName
 
     $iniFolder = "$($env:HOME)\site\ini"
 	mkdir $iniFolder
     $settingsFileName = "$path\Files\settings.ini"
     Log("Updating $settingsFileName with assigned variables")
     $settingsFile = [System.Io.File]::ReadAllText($settingsFileName)
-    $settingsFile = $settingsFile.Replace('replace_smtp_server_name',"$env:APPSETTING_smtp_fqdn_name").Replace('replace_smtp_port', "$env:APPSETTING_smtp_port").Replace('replace_sendmail_from', "$env:APPSETTING_sendmail_from").Replace('replace_sendmail_path', "$path\Files\sendmail\sendmail.exe -t -i");
+    $settingsFile = $settingsFile.Replace('replace_smtp_server_name',"$env:APPSETTING_smtp_fqdn_name").Replace('replace_smtp_port', "$env:APPSETTING_smtp_port").Replace('replace_sendmail_from', "$env:APPSETTING_from_email_address").Replace('replace_sendmail_path', "$path\Files\sendmail\sendmail.exe -t -i");
     $settingsFile | Set-Content $settingsFileName
 	Copy-Item $settingsFileName "$iniFolder\settings.ini"
 }
 
 function UpdateDBConnection {
     $dbFilename = "$webRoot\database.php"
+    Log("Updating $dbFilename with assigned variables")
 	$bytes = New-Object Byte[] 8
 	$rand = [System.Security.Cryptography.RandomNumberGenerator]::Create()
 	$rand.GetBytes($bytes)

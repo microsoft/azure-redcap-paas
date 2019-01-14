@@ -8,6 +8,50 @@
         "description": "Name of azure web app"
       }
     },
+    "redcapAppZip": {
+      "type": "string",
+      "metadata": {
+        "description": "A publicly accessible path to your copy of the REDCap zip file."
+      }
+    },
+    "administratorLoginPassword": {
+      "type": "securestring",
+      "minLength": 8,
+      "metadata": {
+        "description": "Database administrator password"
+      }
+    },
+    "fromEmailAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "Email address configured as the sending address in RedCAP"
+      }
+    },
+    "smptFQDN": {
+      "type": "string",
+      "metadata": {
+        "description": "Fully-qualified domain name of your SMTP relay endpoint"
+      }
+    },
+    "smtpPort": {
+      "type": "int",
+      "defaultValue": 587,
+      "metadata": {
+        "description": "Port for your SMTP relay"
+      }
+    },
+    "smtpUser": {
+      "type": "string",
+      "metadata": {
+        "description": "Login name for your SMTP relay"
+      }
+    },
+    "smtpPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Login password for your SMTP relay"
+      }
+    },
     "skuName": {
       "type": "string",
       "defaultValue": "S1",
@@ -43,38 +87,6 @@
       "defaultValue": "redcap_app",
       "metadata": {
         "description": "Database administrator login name"
-      }
-    },
-    "administratorLoginPassword": {
-      "type": "securestring",
-      "minLength": 8,
-      "metadata": {
-        "description": "Database administrator password"
-      }
-    },
-    "smptFQDN": {
-      "type": "string",
-      "metadata": {
-        "description": "Fully-qualified domain name of your SMTP relay endpoint"
-      }
-    },
-    "smtpPort": {
-      "type": "int",
-      "defaultValue": 587,
-      "metadata": {
-        "description": "Port for your SMTP relay"
-      }
-    },
-    "smtpUser": {
-      "type": "string",
-      "metadata": {
-        "description": "Login name for your SMTP relay"
-      }
-    },
-    "smtpPassword": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Login password for your SMTP relay"
       }
     },
     "databaseSkuSizeMB": {
@@ -149,12 +161,6 @@
       "defaultValue": "redcap",
       "metadata": {
         "description": "Name of the container used to store backing files in the new storage account. This container will need to be created after this script is executed successfully."
-      }
-    },
-    "redcapAppZip": {
-      "type": "string",
-      "metadata": {
-        "description": "A publicly accessible path to your copy of the REDCap zip file."
       }
     },
     "repoURL": {
@@ -278,6 +284,10 @@
             {
               "Name": "PHP_INI_SCAN_DIR",
               "value": "d:\\home\\site\\ini"
+            },
+            {
+              "Name": "from_email_address",
+              "value": "[parameters('fromEmailAddress')]"
             },
             {
               "Name": "smtp_fqdn_name",
