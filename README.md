@@ -55,6 +55,33 @@ __Post-Setup__
 
 After the deployment and installation of REDCap has completed, everything should be green on the REDCap Configuration Check page. If anything displays on that page in red or yellow, it is recommended that you perform a "Restart" of the Azure "App Service". This needs to be done due to the fact that some necessary server environment settings get changed after the initial deployment, but restarting the App Service will load the service with the intended settings. Everything should be fine after that initial restart though.
 
+### Resources
+
+ * App Services overview
+https://docs.microsoft.com/en-us/azure/app-service/overview
+ * Application Settings
+https://docs.microsoft.com/en-us/azure/app-service/web-sites-configure
+ * Web Jobs (background tasks) overview
+https://docs.microsoft.com/en-us/azure/app-service/webjobs-create
+ * Project Kudu (App Service back end management and deployment engine)
+https://github.com/projectkudu/kudu/wiki
+ * Explanation of how isolation occurs in Azure Web Apps
+https://github.com/projectkudu/kudu/wiki/Azure-Web-App-sandbox
+ * Adding custom domain names
+https://docs.microsoft.com/en-us/azure/app-service/manage-custom-dns-migrate-domain
+ * SSL Certificates
+https://docs.microsoft.com/en-us/azure/app-service/web-sites-purchase-ssl-web-site
+ * Updating PHP configurations
+https://docs.microsoft.com/en-us/azure/app-service/web-sites-php-configure#how-to-change-the-built-in-php-configurations
+ * Managed MySQL overview
+https://docs.microsoft.com/en-us/azure/mysql/overview
+ * Sendgrid overview
+https://docs.microsoft.com/en-us/azure/store-sendgrid-php-how-to-send-email
+ * Blob storage overview
+https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction
+ * Azure Resource Manager (ARM) overview
+https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview
+
 ### Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
@@ -68,6 +95,5 @@ provided by the bot. You will only need to do this once across all repos using o
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
 
 [MySql]: ./images/mysql.png
