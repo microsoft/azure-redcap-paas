@@ -18,7 +18,7 @@
     "fromEmailAddress": {
       "type": "string",
       "metadata": {
-        "description": "Email address configured as the sending address in RedCAP"
+        "description": "Email address configured as the sending address in REDCap"
       }
     },
     "redcapAppZip": {
