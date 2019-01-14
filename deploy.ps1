@@ -18,7 +18,6 @@ Set-Content "$($env:HOME)\site\repository\currlogname.txt" -Value $logFile -NoNe
 Write-Output "loading functions"
 
 function Main {
-    Write-Output "Test"
     try {
 		Copy-Item -Path "$path\Files\AzDeployStatus.php" -Destination "$webRoot\AzDeployStatus.php"
 		Log("Checking ZIP file name and version")
@@ -61,11 +60,11 @@ function Main {
 			UpdatePHPSettings
 
 		    # Add container to new storage account
-		    Log("Creating storage container")
+		    Log("Creating Azure Blob Storage container")
 			CreateContainer
 
             # Update database config
-            Log("Updating DB settings")
+            Log("Updating MySql DB connection settings")
             UpdateDBConnection
 
 			# Apply schema
@@ -85,10 +84,11 @@ function Main {
 			touch "$webRoot\web.config"
 			Copy-Item -Path "$path\Files\web.config" -Destination "$webRoot\web.config"
 
-			Log("Stopping W3WP process to force reload of PHP settings (process will restart automatically)")
-			Stop-Process -Name w3wp
-
 			Log("Deployment complete")
+
+			Log("Stopping W3WP process to force reload of PHP settings (process will restart automatically)")
+			$global:ProgressPreference = "Ignore"
+			Stop-Process -Name w3wp -ErrorAction Ignore
 
         } else {
             Write-Output "File $filename already present"
