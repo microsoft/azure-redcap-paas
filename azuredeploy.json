@@ -8,12 +8,6 @@
         "description": "Name of azure web app"
       }
     },
-    "redcapAppZip": {
-      "type": "string",
-      "metadata": {
-        "description": "A publicly accessible path to your copy of the REDCap zip file."
-      }
-    },
     "administratorLoginPassword": {
       "type": "securestring",
       "minLength": 8,
@@ -33,13 +27,6 @@
         "description": "Fully-qualified domain name of your SMTP relay endpoint"
       }
     },
-    "smtpPort": {
-      "type": "int",
-      "defaultValue": 587,
-      "metadata": {
-        "description": "Port for your SMTP relay"
-      }
-    },
     "smtpUser": {
       "type": "string",
       "metadata": {
@@ -50,6 +37,19 @@
       "type": "securestring",
       "metadata": {
         "description": "Login password for your SMTP relay"
+      }
+    },
+    "redcapAppZip": {
+      "type": "string",
+      "metadata": {
+        "description": "A publicly accessible path to your copy of the REDCap zip file."
+      }
+    },
+    "smtpPort": {
+      "type": "int",
+      "defaultValue": 587,
+      "metadata": {
+        "description": "Port for your SMTP relay"
       }
     },
     "skuName": {
@@ -191,7 +191,7 @@
       "MemoryOptimized": "MO"
     },
     "databaseForMySqlSku": "[concat(variables('tierSymbol')[parameters('databaseForMySqlTier')], '_', parameters('databaseForMySqlFamily'), '_', parameters('databaseForMySqlCores'))]",
-    "storageName": "[concat('storage_', uniqueString(resourceGroup().id))]",
+    "storageName": "[concat('storage', uniqueString(resourceGroup().id))]",
     "storageAccountId": "[concat(resourceGroup().id,'/providers/Microsoft.Storage/storageAccounts/', variables('storageName'))]"
   },
   "resources": [
