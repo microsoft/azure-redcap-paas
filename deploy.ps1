@@ -81,7 +81,6 @@ function Main {
 
 			# add web.config to clean up MIME types in IIS
 			Log("Copying web.config")
-			touch "$webRoot\web.config"
 			Copy-Item -Path "$path\Files\web.config" -Destination "$webRoot\web.config"
 
 			Log("Deployment complete")
