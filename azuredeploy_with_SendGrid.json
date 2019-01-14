@@ -154,18 +154,19 @@
     }
   },
   "variables": {
-    "databaseName": "[concat(parameters('siteName'), '_db')]",
-    "serverName": "[concat(parameters('siteName'), uniqueString(resourceGroup().id))]",
-    "hostingPlanName": "[concat(parameters('siteName'), 'serviceplan')]",
-    "sendgridAccountName": "[concat(parameters('siteName'), '_sendgrid')]",
-    "webSiteName": "[concat(parameters('siteName'), uniqueString(resourceGroup().id))]",
+    "siteName": "[replace(parameters('siteName'), ' ', '')]",
+    "databaseName": "[concat(variables('siteName'), '_db')]",
+    "serverName": "[concat(variables('siteName'), uniqueString(resourceGroup().id))]",
+    "hostingPlanName": "[concat(variables('siteName'), '_serviceplan')]",
+    "sendgridAccountName": "[concat(variables('siteName'), '_sendgrid')]",
+    "webSiteName": "[concat(variables('siteName'), uniqueString(resourceGroup().id))]",
     "tierSymbol": {
       "Basic": "B",
       "GeneralPurpose": "GP",
       "MemoryOptimized": "MO"
     },
     "databaseForMySqlSku": "[concat(variables('tierSymbol')[parameters('databaseForMySqlTier')], '_', parameters('databaseForMySqlFamily'), '_', parameters('databaseForMySqlCores'))]",
-    "storageName": "[concat('storage', uniqueString(resourceGroup().id))]",
+    "storageName": "[concat('storage_', uniqueString(resourceGroup().id))]",
     "storageAccountId": "[concat(resourceGroup().id,'/providers/Microsoft.Storage/storageAccounts/', variables('storageName'))]"
   },
   "resources": [
