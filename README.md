@@ -51,6 +51,10 @@ Once you've opened the firewall, you will need your database name. The credentia
 Please also review:
 https://docs.microsoft.com/en-us/azure/mysql/concepts-ssl-connection-security
 
+__Post-Setup__
+
+After the deployment and installation of REDCap has completed, everything should be green on the REDCap Configuration Check page. If anything displays on that page in red or yellow, it is recommended that you perform a "Restart" of the Azure "App Service". This needs to be done due to the fact that some necessary server environment settings get changed after the initial deployment, but restarting the App Service will load the service with the intended settings. Everything should be fine after that initial restart though.
+
 ### Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
