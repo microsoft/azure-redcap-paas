@@ -1,4 +1,4 @@
-# ARM Template for REDCap automated deployment
+# ARM Template for REDCap automated deployment in Azure
 
 
 ## Quick Start
