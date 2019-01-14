@@ -87,9 +87,10 @@ function Main {
 			Log("Deployment complete")
 
 			Log("Stopping W3WP process to force reload of PHP settings (process will restart automatically)")
-			$global:ProgressPreference = "Ignore"
-			Stop-Process -Name w3wp -ErrorAction Ignore
-
+			Start-Job -ScriptBlock { 
+				Start-Sleep -Seconds 2; 
+				Stop-Process -Name w3wp -ErrorAction Ignore
+			}
         } else {
             Write-Output "File $filename already present"
         }
