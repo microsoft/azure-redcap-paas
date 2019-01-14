@@ -129,13 +129,16 @@
         "Standard_GRS",
         "Standard_RAGRS",
         "Premium_LRS"
-      ]
+      ],
+      "metadata": {
+        "description": "The default selected is 'Locally Redundant Storage' (3 copies in one region). See https://docs.microsoft.com/en-us/azure/storage/common/storage-redundancy for more information."
+      }
     },
     "storageContainerName": {
       "type": "string",
       "defaultValue": "redcap",
       "metadata": {
-        "description": "Name of the container used to store backing files in the new storage account. This container will need to be created after this script is executed successfully."
+        "description": "Name of the container used to store backing files in the new storage account. This container is created automatically during deployment."
       }
     },
     "repoURL": {
