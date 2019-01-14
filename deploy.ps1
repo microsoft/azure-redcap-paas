@@ -165,7 +165,7 @@ function UpdatePHPSettings {
     $sendmailiniFileName = "$path\Files\sendmail\sendmail.ini"
     Log("Updating $sendmailiniFileName with assigned variables")
     $sendmailiniFile = [System.Io.File]::ReadAllText($sendmailiniFileName)
-    $sendmailiniFile = $sendmailiniFile.Replace('replace_smtp_server_name',"$env:APPSETTING_smtp_fqdn_name").Replace('replace_smtp_port', "$env:APPSETTING_smtp_port").Replace('replace_smtp_force_sender', "$env:APPSETTING_from_email_address").Replace('replace_smtp_username', "$env:APPSETTING_smpt_user").Replace('replace_smtp_password', "$env:APPSETTING_smpt_password");
+    $sendmailiniFile = $sendmailiniFile.Replace('replace_smtp_server_name',"$env:APPSETTING_smtp_fqdn_name").Replace('replace_smtp_port', "$env:APPSETTING_smtp_port").Replace('replace_smtp_force_sender', "$env:APPSETTING_from_email_address").Replace('replace_smtp_username', "$env:APPSETTING_smtp_user_name").Replace('replace_smtp_password', "$env:APPSETTING_smtp_password");
     $sendmailiniFile | Set-Content $sendmailiniFileName
 
     $iniFolder = "$($env:HOME)\site\ini"
