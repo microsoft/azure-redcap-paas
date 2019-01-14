@@ -49,32 +49,7 @@
       "type": "securestring",
       "minLength": 8,
       "metadata": {
-        "description": "Database administrator password"
-      }
-    },
-    "smptFQDN": {
-      "type": "string",
-      "metadata": {
-        "description": "Fully-qualified domain name of your SMTP relay endpoint"
-      }
-    },
-    "smtpPort": {
-      "type": "int",
-      "defaultValue": 587,
-      "metadata": {
-        "description": "Port for your SMTP relay"
-      }
-    },
-    "smtpUser": {
-      "type": "string",
-      "metadata": {
-        "description": "Login name for your SMTP relay"
-      }
-    },
-    "smtpPassword": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Login password for your SMTP relay"
+        "description": "Password used for database administration and SendGrid email access"
       }
     },
     "databaseSkuSizeMB": {
@@ -176,6 +151,7 @@
     "databaseName": "[concat(parameters('siteName'), '_db')]",
     "serverName": "[concat(parameters('siteName'), uniqueString(resourceGroup().id))]",
     "hostingPlanName": "[concat(parameters('siteName'), 'serviceplan')]",
+    "sendgridAccountName":  "[concat(parameters('siteName'), '_sendgrid')]",
     "webSiteName": "[concat(parameters('siteName'), uniqueString(resourceGroup().id))]",
     "tierSymbol": {
       "Basic": "B",
@@ -187,6 +163,26 @@
     "storageAccountId": "[concat(resourceGroup().id,'/providers/Microsoft.Storage/storageAccounts/', variables('storageName'))]"
   },
   "resources": [
+    {
+      "name": "[variables('sendgridAccountName')]",
+      "type": "Sendgrid.Email/accounts",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-01-01",
+      "tags": {
+        "displayName": "SendGrid"
+      },
+      "plan": {
+        "name": "free",
+        "publisher": "Sendgrid",
+        "product": "sendgrid_azure",
+        "promotionCode": ""
+      },
+      "properties": {
+        "password": "[parameters('administratorLoginPassword')]",
+        "acceptMarketingEmails": "0",
+        "email": ""
+      }
+    },
     {
       "name": "[variables('storageName')]",
       "type": "Microsoft.Storage/storageAccounts",
@@ -224,7 +220,8 @@
       "location": "[resourceGroup().location]",
       "dependsOn": [
         "[variables('hostingPlanName')]",
-        "[variables('storageName')]"
+        "[variables('storageName')]",
+        "[variables('sendgridAccountName')]"
       ],
       "tags": {
         "displayName": "WebApp"
@@ -281,19 +278,19 @@
             },
             {
               "Name": "smtp_fqdn_name",
-              "value": "[parameters('smptFQDN')]"
+              "value": "[reference(resourceId('Sendgrid.Email/accounts', variables('sendgridAccountName'))).smtpServer]"
             },
             {
               "Name": "smtp_port",
-              "value": "[parameters('smtpPort')]"
+              "value": "587"
             },
             {
               "Name": "smtp_user_name",
-              "value": "[parameters('smtpUser')]"
+              "value": "[reference(resourceId('Sendgrid.Email/accounts', variables('sendgridAccountName'))).username]"
             },
             {
               "Name": "smtp_password",
-              "value": "[parameters('smtpPassword')]"
+              "value": "[parameters('administratorLoginPassword')]"
             }
           ]
         }
@@ -398,6 +395,10 @@
     "storageContainerName": {
       "type": "string",
       "value": "[parameters('storageContainerName')]"
+    },
+    "SendGrid": {
+      "type": "object",
+      "value": "[reference(resourceId('Sendgrid.Email/accounts', variables('sendgridAccountName')))]"
     }
   }
 }

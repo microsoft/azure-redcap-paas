@@ -12,22 +12,25 @@ This template automates the deployment of the RedCAP solution into Azure using m
   * https://azuremarketplace.microsoft.com/en-us/marketplace/apps/softnas.softnas-cloud
   * https://azure.microsoft.com/en-us/resources/templates/nfs-ha-cluster-ubuntu/
 
-You will need to specify a location for the deployment automation to pull your copy of the RedCAP source. This ZIP file will need to be publicly accessible via a direct URI while the deployment is running.
+You will need to specify a location for the deployment automation to pull your copy of the RedCAP source. This ZIP file will need a __*publicly accessible url*__ while the deployment is running. OneDrive, Azure Blob Storage, DropBox, etc., are all suitable temporary storage locations for deployment.
 
 https://projectredcap.org/wp-content/resources/REDCapTechnicalOverview.pdf
 
 * ARM template deploys the following:
   * Azure Web App
-  * Azure DB for MySQL
+  * Azure DB for MySQL (1)
   * Azure Storage Account
+  * SendGrid 3rd Party Email service (2)
 
-Review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers for details on available features, regions, and pricing models for Azure DB for MySQL.
+(1) Review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers for details on available features, regions, and pricing models for Azure DB for MySQL.
+
+(2) SendGrid is a paid service with a free tier offering 25k messages per month, with additional paid tiers offering more volume, whitelisting, custom domains, etc. There is a limit of two instances per subscription using the free tier. For more information see https://docs.microsoft.com/en-us/azure/store-sendgrid-php-how-to-send-email#create-a-sendgrid-account. The service will be accessed initially using the password you enter in the deployment template. You can click "Manage" on the SendGrid service after deployment to administrate the service in their portal, including options to create an API key that can be used for access instead of the password.
+
+  If after deployment, you would instead like to use a different SMTP relay, edit the values "smtp_fqdn_name", "smtp_port", "smtp_user_name", and "smtp_password" to point to your preferred endpoint. You can then delete the SendGrid service from this resource group.
 
 __Setup__
 
 This template will automatically deploy the resources necessary to run RedCAP in Azure using PaaS (Platform as a Service) features. **IMPORTANT**: *The "Site Name" you choose will be re-used as part of the storage, website, and MySql database name. Make sure you don't use characters that will be rejected by MySql.* 
-
-RedCAP uses SMTP to send messages. The deployment template will ask you for information necessary to configure an authenticated SMTP relay for use in mail sending. If you don't have a suitable server for this, consider using SendGrid (https://docs.microsoft.com/en-us/azure/sendgrid-dotnet-how-to-send-email). Azure users are eligible for up to 25,000 free emails per month.
 
 After the template is deployed, deployment automation will download the RedCAP ZIP file you specify, and install it in your web app. It will then automatically update the database connection information in the app. It will then update a few settings in the database, and configure Azure file storage if you have that version of RedCAP. It will also create the initial storage container.
 

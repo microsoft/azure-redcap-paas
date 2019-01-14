@@ -65,7 +65,7 @@ function Main {
 
 			# initialize PHP_INI_SYSTEM settings
 			# https://docs.microsoft.com/en-us/azure/app-service/web-sites-php-configure#changing-phpinisystem-configuration-settings
-			Log("Updating PHP settings")
+			Log("Updating PHP and sendmail settings")
 			UpdatePHPSettings
 
 		    # Add container to new storage account
@@ -162,15 +162,20 @@ function CallSql {
 }
 
 function UpdatePHPSettings {
+	Log("Updating sendmail")
+    $sendmailiniFileName = "$path\Files\sendmail\sendmail.ini"
+    $sendmailiniFile = [System.Io.File]::ReadAllText($sendmailiniFileName)
+    $sendmailiniFile = $sendmailiniFile.Replace('replace_smtp_server_name',"$env:APPSETTING_smtp_fqdn_name").Replace('replace_smtp_port', "$env:APPSETTING_smtp_port").Replace('replace_smtp_force_sender', "$env:APPSETTING_sendmail_from").Replace('replace_smtp_username', "$env:APPSETTING_smpt_user").Replace('replace_smtp_password', "$env:APPSETTING_smpt_password");
+    $settingsFile | Set-Content $settingsFileName
+	Copy-Item $settingsFileName "$iniFolder\settings.ini"
+
     $iniFolder = "$($env:HOME)\site\ini"
 	mkdir $iniFolder
     $settingsFileName = "$path\Files\settings.ini"
     Log("Updating $settingsFileName with assigned variables")
     $settingsFile = [System.Io.File]::ReadAllText($settingsFileName)
-    $settingsFile = $settingsFile.Replace('smtp_fqdn_name_setting',"$env:APPSETTING_smtp_fqdn_name").Replace('smtp_port_setting', "$env:APPSETTING_smtp_port").Replace('sendmail_from_setting', "$env:APPSETTING_sendmail_from").Replace('smpt_user_setting', "$env:APPSETTING_smpt_user").Replace('smpt_password_setting', "$env:APPSETTING_smpt_password");
-    
+    $settingsFile = $settingsFile.Replace('replace_smtp_server_name',"$env:APPSETTING_smtp_fqdn_name").Replace('replace_smtp_port', "$env:APPSETTING_smtp_port").Replace('replace_sendmail_from', "$env:APPSETTING_sendmail_from").Replace('replace_sendmail_path', "$path\Files\sendmail\sendmail.exe -t -i");
     $settingsFile | Set-Content $settingsFileName
-
 	Copy-Item $settingsFileName "$iniFolder\settings.ini"
 }
 
