@@ -18,7 +18,7 @@
     "fromEmailAddress": {
       "type": "string",
       "metadata": {
-        "description": "Email address configured as the sending address in RedCAP"
+        "description": "Email address configured as the sending address in REDCap"
       }
     },
     "smptFQDN": {
@@ -168,7 +168,7 @@
     },
     "repoURL": {
       "type": "string",
-      "defaultValue": "https://github.com/microsoft/Azure-REDCap-PaaS.git",
+      "defaultValue": "https://github.com/vanderbilt-redcap/redcap-azure.git",
       "metadata": {
         "description": "The path to the deployment source files on GitHub"
       }
