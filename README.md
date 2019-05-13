@@ -31,6 +31,8 @@ https://projectredcap.org/wp-content/resources/REDCapTechnicalOverview.pdf
 
   If after deployment, you would instead like to use a different SMTP relay, edit the values "smtp_fqdn_name", "smtp_port", "smtp_user_name", and "smtp_password" to point to your preferred endpoint. You can then delete the SendGrid service from this resource group.
 
+  If you use Exchange Online (part of the Microsoft 365 Suite), you can follow these steps to set it up and use it as an SMTP relay for this service: https://docs.microsoft.com/en-us/exchange/mail-flow-best-practices/how-to-set-up-a-multifunction-device-or-application-to-send-email-using-office-3
+  
 __Setup__
 
 This template will automatically deploy the resources necessary to run RedCAP in Azure using PaaS (Platform as a Service) features. **IMPORTANT**: *The "Site Name" you choose will be re-used as part of the storage, website, and MySql database name. Make sure you don't use characters that will be rejected by MySql.* 
@@ -50,6 +52,44 @@ Once you've opened the firewall, you will need your database name. The credentia
 
 Please also review:
 https://docs.microsoft.com/en-us/azure/mysql/concepts-ssl-connection-security
+
+__Post-Setup__
+
+After the deployment and installation of REDCap has completed, everything should be green on the REDCap Configuration Check page. If anything displays on that page in red or yellow, it is recommended that you perform a "Restart" of the Azure "App Service". This needs to be done due to the fact that some necessary server environment settings get changed after the initial deployment, but restarting the App Service will load the service with the intended settings. Everything should be fine after that initial restart though.
+
+__Note about REDCap "Easy Upgade"__
+
+The "Easy Upgrade" feature in REDCap 8.11.0 and later is currently *not* supported when deploying a REDCap instance on Azure. Support for "Easy Upgrade" on Azure is expected to come at a later time in a future REDCap release.
+
+### Resources
+
+ * App Services overview
+https://docs.microsoft.com/en-us/azure/app-service/overview
+ * Application Settings
+https://docs.microsoft.com/en-us/azure/app-service/web-sites-configure
+ * Web Jobs (background tasks) overview
+https://docs.microsoft.com/en-us/azure/app-service/webjobs-create
+ * Project Kudu (App Service back end management and deployment engine)
+https://github.com/projectkudu/kudu/wiki
+ * Explanation of how isolation occurs in Azure Web Apps
+https://github.com/projectkudu/kudu/wiki/Azure-Web-App-sandbox
+ * Adding custom domain names
+https://docs.microsoft.com/en-us/azure/app-service/manage-custom-dns-migrate-domain
+ * SSL Certificates
+https://docs.microsoft.com/en-us/azure/app-service/web-sites-purchase-ssl-web-site
+ * Updating PHP configurations
+https://docs.microsoft.com/en-us/azure/app-service/web-sites-php-configure#how-to-change-the-built-in-php-configurations
+ * Managed MySQL overview
+https://docs.microsoft.com/en-us/azure/mysql/overview
+ * Sendgrid overview
+https://docs.microsoft.com/en-us/azure/store-sendgrid-php-how-to-send-email
+ * Blob storage overview
+https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction
+ * Azure Resource Manager (ARM) overview
+https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview
+ * Exchange Online SMTP Relay Configuration
+https://docs.microsoft.com/en-us/exchange/mail-flow-best-practices/how-to-set-up-a-multifunction-device-or-application-to-send-email-using-office-3
+
 
 ### Contributing
 
