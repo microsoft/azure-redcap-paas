@@ -244,7 +244,7 @@
         "name": "[variables('webSiteName')]",
         "serverFarmId": "[variables('hostingPlanName')]",
         "siteConfig": {
-          "phpVersion": "7.0",
+          "phpVersion": "7.3",
           "alwaysOn": true,
           "connectionStrings": [
             {
