@@ -57,7 +57,7 @@
       "value": "redcap"
     },
     "repoURL": {
-      "value": "https://github.com/microsoft/Azure-REDCap-PaaS.git"
+      "value": "https://github.com/vanderbilt-redcap/redcap-azure.git"
     },
     "branch": {
       "value": "master"
