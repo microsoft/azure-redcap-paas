@@ -8,6 +8,14 @@
         "description": "Name of azure web app"
       }
     },
+    "administratorLogin": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "redcap_app",
+      "metadata": {
+        "description": "Database administrator login name"
+      }
+    },
     "administratorLoginPassword": {
       "type": "securestring",
       "minLength": 8,
@@ -15,16 +23,16 @@
         "description": "Password used for database administration and SendGrid email access"
       }
     },
-    "fromEmailAddress": {
-      "type": "string",
-      "metadata": {
-        "description": "Email address configured as the sending address in RedCAP"
-      }
-    },
     "redcapAppZip": {
       "type": "string",
       "metadata": {
         "description": "A publicly accessible path to your copy of the REDCap zip file."
+      }
+    },
+    "fromEmailAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "Email address configured as the sending address in RedCAP"
       }
     },
     "skuName": {
@@ -54,14 +62,6 @@
       "minValue": 1,
       "metadata": {
         "description": "Describes plan's instance count (how many distinct web servers will be deployed in the farm) - this can be changed after deployment"
-      }
-    },
-    "administratorLogin": {
-      "type": "string",
-      "minLength": 1,
-      "defaultValue": "redcap_app",
-      "metadata": {
-        "description": "Database administrator login name"
       }
     },
     "databaseSkuSizeMB": {
@@ -317,7 +317,7 @@
           "apiVersion": "2015-08-01",
           "dependsOn": [
             "[resourceId('Microsoft.Web/sites', variables('webSiteName'))]",
-            "[concat('Microsoft.DBforMySQL/servers/', variables('serverName'))]"
+            "[concat('Microsoft.DBforMySQL/servers/', variables('serverName'), '/AllowAzureIPs')]"
           ],
           "tags": {
             "displayName": "CodeDeploy"

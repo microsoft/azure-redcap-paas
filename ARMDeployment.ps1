@@ -15,18 +15,25 @@ $parms = @{
     #Make your ZIP file temporarily accessible via a public file share
     "redcapAppZip"                = "<path to your copy of the REDCap distribution ZIP file>";
 
+    #Mail settings
+    "fromEmailAddress"            = "<email address listed as sender for outbound emails>";
+    "smtpFQDN"                    = "<what it says>"
+    "smtpUser"                    = "<login name for smtp auth>"
+    "smtpPassword"                = "<password for smtp auth>"
+
     #Azure Web App
     "siteName"                    = "<WEB SITE NAME, like 'redcap'>";
     "skuName"                     = "S1";
+    "skuCapacity"                 = 1;
 
     #MySQL
     "administratorLogin"          = "<MySQL admin account name>";
     "administratorLoginPassword"  = "<MySQL admin login password>";
 
+    "databaseForMySqlCores"       = 2;
+    "databaseForMySqlFamily"      = "Gen5";
     "databaseSkuSizeMB"           = 5120;
     "databaseForMySqlTier"        = "GeneralPurpose";
-    "databaseForMySqlFamily"      = "Gen5";
-    "databaseForMySqlCores"       = 2;
     "mysqlVersion"                = "5.7";
     
     #Azure Storage

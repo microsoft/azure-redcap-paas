@@ -229,19 +229,32 @@ function MoveFiles {
 }
 
 function GetFileName($Url) {
-	$res = Invoke-WebRequest -Method Head -Uri $Url -UseBasicParsing
+    # (HT to https://github.com/SelectDBA for the Split-Path suggestion)
+    $res = Invoke-WebRequest -Method Head -Uri $Url -UseBasicParsing
 
-	$header = $res.Headers["content-disposition"]
-	if ($null -ne $header) {
-		$filename = [System.Net.Http.Headers.ContentDispositionHeaderValue]::Parse($header).Filename
-		if ($filename.IndexOf('"') -gt -1) {
-			$filename = ConvertFrom-Json $filename
-		}
-	} else {
-		$header = $res.Headers.Keys | Where-Object { if($_.contains("filename")){$_}}
-		$filename = $res.Headers[$header]
+    $header = $res.Headers["content-disposition"]
+    if ($null -ne $header) {
+    	$filename = [System.Net.Http.Headers.ContentDispositionHeaderValue]::Parse($header).Filename
+    	if ($filename.IndexOf('"') -gt -1) {
+	    $filename = ConvertFrom-Json $filename
 	}
-	return $filename
+    } else {
+	    $header = $res.Headers.Keys | Where-Object { if($_.contains("filename")){$_}}
+        if ($null -ne $header) {
+        	$filename = $res.Headers[$header]
+        } else {
+            #no content disposition, no filename...try the URL?
+            $lp = $res.BaseResponse.ResponseUri.LocalPath
+            $filename = Split-Path $lp -leaf
+            if ($null -eq $filename) {
+                #can't really punt at this point, if we don't have the file name we don't have the version
+                #and can't initialize the database
+                throw "Unable to determine the downloaded file name, so can't verify the version number. Please try an alternate method to host your ZIP file."
+            }
+        }
+    }
+
+    return $filename
 }
 
 function Log($entry) {

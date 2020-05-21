@@ -14,6 +14,27 @@
     "redcapAppZip": {
       "value": null
     },
+    "fromEmailAddress": {
+      "value": null
+    },
+    "smtpFQDN": {
+      "value": null
+    },
+    "smtpUser": {
+      "value": null
+    },
+    "smtpPassword": {
+      "value": null
+    },
+    "smtpPort": {
+      "value": 587
+    },
+    "skuName": {
+      "value": "S1"
+    },
+    "skuCapacity": {
+      "value": 1
+    },
     "databaseSkuSizeMB": {
       "value": 5120
     },
@@ -34,12 +55,6 @@
     },
     "storageContainerName": {
       "value": "redcap"
-    },
-    "clientId": {
-      "value": "N/A"
-    },
-    "tenantDomainName": {
-      "value": "N/A"
     },
     "repoURL": {
       "value": "https://github.com/microsoft/Azure-REDCap-PaaS.git"
