@@ -1,21 +1,21 @@
-# ARM Template for RedCAP automated deployment
+# ARM Template for REDCap automated deployment in Azure
 
 
 ## Quick Start
 
 Description | Link
 --- | ---
-Deploy with your SMTP Relay | <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FMicrosoft%2Fazure-redcap-paas%2Fmaster%2Fazuredeploy.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
-Deploy using SendGrid | <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FMicrosoft%2Fazure-redcap-paas%2Fmaster%2Fazuredeploy_with_SendGrid.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+Deploy with your SMTP Relay | <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fvanderbilt-redcap%2Fredcap-azure%2Fmaster%2Fazuredeploy.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+Deploy using SendGrid | <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fvanderbilt-redcap%2Fredcap-azure%2Fmaster%2Fazuredeploy_with_SendGrid.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
 __Details__
 
-This template automates the deployment of the RedCAP solution into Azure using managed PaaS resources. The template assumes you are deploying a version of RedCAP that supports direct connection to Azure Blob Storage. If you deploy an older version, deployment will succeed but you will need to manually provision NFS storage in Azure, and delete the new storage account. For NFS, consider:
+This template automates the deployment of the REDCap solution into Azure using managed PaaS resources. The template assumes you are deploying a version of REDCap that supports direct connection to Azure Blob Storage. If you deploy an older version, deployment will succeed but you will need to manually provision NFS storage in Azure, and delete the new storage account. For NFS, consider:
   * https://docs.microsoft.com/en-us/azure/azure-netapp-files/
   * https://azuremarketplace.microsoft.com/en-us/marketplace/apps/softnas.softnas-cloud
   * https://azure.microsoft.com/en-us/resources/templates/nfs-ha-cluster-ubuntu/
 
-You will need to specify a location for the deployment automation to pull your copy of the RedCAP source. This ZIP file will need a __*publicly accessible url*__ while the deployment is running. OneDrive, Azure Blob Storage, DropBox, etc., are all suitable temporary storage locations for deployment.
+You will need to specify a location for the deployment automation to pull your copy of the REDCap source. This ZIP file will need a __*publicly accessible url*__ while the deployment is running. OneDrive, Azure Blob Storage, DropBox, etc., are all suitable temporary storage locations for deployment.
 
 https://projectredcap.org/wp-content/resources/REDCapTechnicalOverview.pdf
 
@@ -35,9 +35,9 @@ https://projectredcap.org/wp-content/resources/REDCapTechnicalOverview.pdf
   
 __Setup__
 
-This template will automatically deploy the resources necessary to run RedCAP in Azure using PaaS (Platform as a Service) features. **IMPORTANT**: *The "Site Name" you choose will be re-used as part of the storage, website, and MySql database name. Make sure you don't use characters that will be rejected by MySql.* 
+This template will automatically deploy the resources necessary to run REDCap in Azure using PaaS (Platform as a Service) features. **IMPORTANT**: *The "Site Name" you choose will be re-used as part of the storage, website, and MySql database name. Make sure you don't use characters that will be rejected by MySql.* 
 
-After the template is deployed, deployment automation will download the RedCAP ZIP file you specify, and install it in your web app. It will then automatically update the database connection information in the app. It will then update a few settings in the database, and configure Azure file storage if you have that version of RedCAP. It will also create the initial storage container.
+After the template is deployed, deployment automation will download the REDCap ZIP file you specify, and install it in your web app. It will then automatically update the database connection information in the app. It will then update a few settings in the database, and configure Azure file storage if you have that version of REDCap. It will also create the initial storage container.
 
 With the download and unzipping, the entire operation will take between 12-16 minutes.
 
@@ -104,6 +104,5 @@ provided by the bot. You will only need to do this once across all repos using o
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
 
 [MySql]: ./images/mysql.png

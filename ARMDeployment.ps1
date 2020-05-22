@@ -8,7 +8,7 @@ $version = 0;
 #Please review the azuredeploy.json file for available options
 $RGName        = "<YOUR RESOURCE GROUP>"
 $DeployRegion  = "<SELECT AZURE REGION>"
-$AssetLocation = "https://github.com/Microsoft/Azure-REDCap-PaaS/blob/master/azuredeploy.json"
+$AssetLocation = "https://github.com/vanderbilt-redcap/redcap-azure/blob/master/azuredeploy.json"
 
 $parms = @{
 
@@ -41,7 +41,7 @@ $parms = @{
     "storageContainerName"        = "redcap";
 
     #GitHub
-    "repoURL"                     = "https://github.com/Microsoft/Azure-REDCap-PaaS.git";
+    "repoURL"                     = "https://github.com/vanderbilt-redcap/redcap-azure.git";
     "branch"                      = "master";
 }
 #END DEPLOYMENT OPTIONS
