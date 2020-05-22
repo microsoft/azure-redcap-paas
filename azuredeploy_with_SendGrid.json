@@ -317,7 +317,7 @@
           "apiVersion": "2015-08-01",
           "dependsOn": [
             "[resourceId('Microsoft.Web/sites', variables('webSiteName'))]",
-            "[concat('Microsoft.DBforMySQL/servers/', variables('serverName'), '/AllowAzureIPs')]"
+            "[concat('Microsoft.DBforMySQL/servers/', variables('serverName'))]"
           ],
           "tags": {
             "displayName": "CodeDeploy"
