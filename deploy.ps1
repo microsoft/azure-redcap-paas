@@ -18,40 +18,41 @@ Set-Content "$($env:HOME)\site\repository\currlogname.txt" -Value $logFile -NoNe
 Write-Output "loading functions"
 
 function Main {
-    try {
+	try {
 		Copy-Item -Path "$path\Files\AzDeployStatus.php" -Destination "$webRoot\AzDeployStatus.php"
 		Log("Checking ZIP file name and version")
 
-		$filename = GetFileName($zipUri)
+		#$filename = GetFileName($zipUri)
+        $filename = "redcap8.8.2.zip"
 		$filePath = "$path\$filename"
-        $version = $filename.Replace(".zip","")
+		$version = $filename.Replace(".zip","")
 		$dbver = $version.Replace("redcap","")
 
-        Log("Processing $version")
+		Log("Processing $version")
 
-        if (-Not (Test-Path "$filePath")) {
-            Log("Downloading $filename")
-    
-            # Download the ZIP file
-            Invoke-WebRequest $zipUri -OutFile $filePath
+		if (-Not (Test-Path "$filePath")) {
+			Log("Downloading $filename")
 
-            Log("Unzipping file")
-            mkdir "$path\target" -ErrorAction SilentlyContinue
-            Expand-Archive $filePath -DestinationPath "$path\target\$version" -Force
+			# Download the ZIP file
+			Invoke-WebRequest $zipUri -OutFile $filePath
 
-            # reset RO attributes on some files
-            Log("Resetting file attributes")
-            attrib -r "$path\target\$version\redcap\webtools2\pdf\font\unifont\*.*" /S
+			Log("Unzipping file")
+			mkdir "$path\target" -ErrorAction SilentlyContinue
+			Expand-Archive $filePath -DestinationPath "$path\target\$version" -Force
 
-            # clean up www
-            Log("Cleaning up existing web root")
-            Get-ChildItem -Path  $webRoot -Recurse -Exclude "AzDeployStatus.php" |
-                Select-Object -ExpandProperty FullName |
-                Sort-Object length -Descending |
-                Remove-Item -force 
+			# reset RO attributes on some files
+			Log("Resetting file attributes")
+			attrib -r "$path\target\$version\redcap\webtools2\pdf\font\unifont\*.*" /S
 
-            # copy app files to wwwroot
-            Log("Moving files to web root")
+			# clean up www
+			Log("Cleaning up existing web root")
+			Get-ChildItem -Path  $webRoot -Recurse -Exclude "AzDeployStatus.php" |
+				Select-Object -ExpandProperty FullName |
+				Sort-Object length -Descending |
+				Remove-Item -force 
+
+			# copy app files to wwwroot
+			Log("Moving files to web root")
 			MoveFiles
 
 			# initialize PHP_INI_SYSTEM settings
@@ -59,16 +60,16 @@ function Main {
 			Log("Updating PHP and sendmail settings")
 			UpdatePHPSettings
 
-		    # Add container to new storage account
-		    Log("Creating Azure Blob Storage container")
+			# Add container to new storage account
+			Log("Creating Azure Blob Storage container")
 			CreateContainer
 
-            # Update database config
-            Log("Updating MySql DB connection settings")
-            UpdateDBConnection
+			# Update database config
+			Log("Updating MySql DB connection settings")
+			UpdateDBConnection
 
 			# Apply schema
-        	Log("Applying schema to new database (this could take several minutes)")
+			Log("Applying schema to new database (this could take several minutes)")
 			ApplySchema
 			
 			# Update app config
@@ -90,15 +91,15 @@ function Main {
 				Start-Sleep -Seconds 2; 
 				Stop-Process -Name w3wp -ErrorAction Ignore
 			}
-        } else {
-            Write-Output "File $filename already present"
-        }
-    }
-    catch {
-		Log("An error occured and deployment may not have completed successfully. Try loading the home page to see if the database is connected. The detailed error message is below:<br>")
-        Log($_.Exception)
-        Exit 1
-    }
+		} else {
+			Write-Output "File $filename already present"
+		}
+	}
+	catch {
+	Log("An error occured and deployment may not have completed successfully. Try loading the home page to see if the database is connected. The detailed error message is below:<br>")
+		Log($_.Exception)
+		Exit 1
+	}
 }
 
 function SetupWebJob {
