@@ -234,20 +234,20 @@ function GetFileName($Url) {
     $res = Invoke-WebRequest -Method Head -Uri $Url -UseBasicParsing
 
     $header = $res.Headers["content-disposition"]
-    if ($null -ne $header) {
+    if ($null -ne $header -and $header.length > 0) {
     	$filename = [System.Net.Http.Headers.ContentDispositionHeaderValue]::Parse($header).Filename
     	if ($filename.IndexOf('"') -gt -1) {
 	    $filename = ConvertFrom-Json $filename
 	}
     } else {
 	    $header = $res.Headers.Keys | Where-Object { if($_.contains("filename")){$_}}
-        if ($null -ne $header) {
+        if ($null -ne $header -and $header.length > 0) {
         	$filename = $res.Headers[$header]
         } else {
             #no content disposition, no filename...try the URL?
             $lp = $res.BaseResponse.ResponseUri.LocalPath
             $filename = Split-Path $lp -leaf
-            if ($null -eq $filename) {
+            if ($null -eq $filename -and $filename.length > 0) {
                 #can't really punt at this point, if we don't have the file name we don't have the version
                 #and can't initialize the database
                 throw "Unable to determine the downloaded file name, so can't verify the version number. Please try an alternate method to host your ZIP file."
