@@ -18,41 +18,40 @@ Set-Content "$($env:HOME)\site\repository\currlogname.txt" -Value $logFile -NoNe
 Write-Output "loading functions"
 
 function Main {
-	try {
+    try {
 		Copy-Item -Path "$path\Files\AzDeployStatus.php" -Destination "$webRoot\AzDeployStatus.php"
 		Log("Checking ZIP file name and version")
 
-		#$filename = GetFileName($zipUri)
-        $filename = "redcap8.8.2.zip"
+		$filename = GetFileName($zipUri)
 		$filePath = "$path\$filename"
-		$version = $filename.Replace(".zip","")
+        $version = $filename.Replace(".zip","")
 		$dbver = $version.Replace("redcap","")
 
-		Log("Processing $version")
+        Log("Processing $version")
 
-		if (-Not (Test-Path "$filePath")) {
-			Log("Downloading $filename")
+        if (-Not (Test-Path "$filePath")) {
+            Log("Downloading $filename")
+    
+            # Download the ZIP file
+            Invoke-WebRequest $zipUri -OutFile $filePath
 
-			# Download the ZIP file
-			Invoke-WebRequest $zipUri -OutFile $filePath
+            Log("Unzipping file")
+            mkdir "$path\target" -ErrorAction SilentlyContinue
+            Expand-Archive $filePath -DestinationPath "$path\target\$version" -Force
 
-			Log("Unzipping file")
-			mkdir "$path\target" -ErrorAction SilentlyContinue
-			Expand-Archive $filePath -DestinationPath "$path\target\$version" -Force
+            # reset RO attributes on some files
+            Log("Resetting file attributes")
+            attrib -r "$path\target\$version\redcap\webtools2\pdf\font\unifont\*.*" /S
 
-			# reset RO attributes on some files
-			Log("Resetting file attributes")
-			attrib -r "$path\target\$version\redcap\webtools2\pdf\font\unifont\*.*" /S
+            # clean up www
+            Log("Cleaning up existing web root")
+            Get-ChildItem -Path  $webRoot -Recurse -Exclude "AzDeployStatus.php" |
+                Select-Object -ExpandProperty FullName |
+                Sort-Object length -Descending |
+                Remove-Item -force 
 
-			# clean up www
-			Log("Cleaning up existing web root")
-			Get-ChildItem -Path  $webRoot -Recurse -Exclude "AzDeployStatus.php" |
-				Select-Object -ExpandProperty FullName |
-				Sort-Object length -Descending |
-				Remove-Item -force 
-
-			# copy app files to wwwroot
-			Log("Moving files to web root")
+            # copy app files to wwwroot
+            Log("Moving files to web root")
 			MoveFiles
 
 			# initialize PHP_INI_SYSTEM settings
@@ -60,16 +59,16 @@ function Main {
 			Log("Updating PHP and sendmail settings")
 			UpdatePHPSettings
 
-			# Add container to new storage account
-			Log("Creating Azure Blob Storage container")
+		    # Add container to new storage account
+		    Log("Creating Azure Blob Storage container")
 			CreateContainer
 
-			# Update database config
-			Log("Updating MySql DB connection settings")
-			UpdateDBConnection
+            # Update database config
+            Log("Updating MySql DB connection settings")
+            UpdateDBConnection
 
 			# Apply schema
-			Log("Applying schema to new database (this could take several minutes)")
+        	Log("Applying schema to new database (this could take several minutes)")
 			ApplySchema
 			
 			# Update app config
@@ -91,15 +90,15 @@ function Main {
 				Start-Sleep -Seconds 2; 
 				Stop-Process -Name w3wp -ErrorAction Ignore
 			}
-		} else {
-			Write-Output "File $filename already present"
-		}
-	}
-	catch {
-	Log("An error occured and deployment may not have completed successfully. Try loading the home page to see if the database is connected. The detailed error message is below:<br>")
-		Log($_.Exception)
-		Exit 1
-	}
+        } else {
+            Write-Output "File $filename already present"
+        }
+    }
+    catch {
+		Log("An error occured and deployment may not have completed successfully. Try loading the home page to see if the database is connected. The detailed error message is below:<br>")
+        Log($_.Exception)
+        Exit 1
+    }
 }
 
 function SetupWebJob {
@@ -235,20 +234,20 @@ function GetFileName($Url) {
     $res = Invoke-WebRequest -Method Head -Uri $Url -UseBasicParsing
 
     $header = $res.Headers["content-disposition"]
-    if ($null -ne $header) {
+    if ($null -ne $header -and $header.length > 0) {
     	$filename = [System.Net.Http.Headers.ContentDispositionHeaderValue]::Parse($header).Filename
     	if ($filename.IndexOf('"') -gt -1) {
 	    $filename = ConvertFrom-Json $filename
 	}
     } else {
 	    $header = $res.Headers.Keys | Where-Object { if($_.contains("filename")){$_}}
-        if ($null -ne $header) {
+        if ($null -ne $header -and $header.length > 0) {
         	$filename = $res.Headers[$header]
         } else {
             #no content disposition, no filename...try the URL?
             $lp = $res.BaseResponse.ResponseUri.LocalPath
             $filename = Split-Path $lp -leaf
-            if ($null -eq $filename) {
+            if ($null -eq $filename -and $filename.length > 0) {
                 #can't really punt at this point, if we don't have the file name we don't have the version
                 #and can't initialize the database
                 throw "Unable to determine the downloaded file name, so can't verify the version number. Please try an alternate method to host your ZIP file."
