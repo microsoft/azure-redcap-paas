@@ -268,7 +268,13 @@ function DownloadFile($filePath) {
 		}
 
 		$zipRequestContentType = 'application/x-www-form-urlencoded'
-		Invoke-WebRequest -Method POST -Uri https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php -body $zipRequestBody -ContentType $zipRequestContentType -OutFile $filePath
+		$zipResponse = Invoke-WebRequest -Method POST -Uri https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php -body $zipRequestBody -ContentType $zipRequestContentType -UseBasicParsing
+		if ($zipResponse.Content.Contains("ERROR")) {
+			throw $zipResponse.Content
+		}
+		else {
+			Invoke-WebRequest -Method POST -Uri https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php -body $zipRequestBody -ContentType $zipRequestContentType -OutFile $filePath
+		}
 	}
 }
 
@@ -300,18 +306,15 @@ function GetFileName {
 		}
 	} elseif (-Not [string]::IsNullOrEmpty($zipVersion)) {
 		if ($zipVersion -eq "latest") {
-			$versionsResp = Invoke-WebRequest -Uri https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php
+			$versionsResp = Invoke-WebRequest -Uri https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php -UseBasicParsing
 			$content = ConvertFrom-Json $versionsResp.content
-			$version = $content.latest_version      
-			
-			Write-Host "zipVersion is set to $zipVersion which is currently at $version"
-
+			$version = $content.latest_version
 			$filename = "redcap$version.zip"
-		  } else {
+		} else {
 			$filename = "redcap$zipVersion.zip"
-		  }
+		}
 	} else {
-		throw "Unable to determine the downloaded file name, so can't verify the version number. Please try an alternate method to host your ZIP file."
+		throw "Unable to downloaded file, so can't verify the version number. Please try an alternate method to host your ZIP file."
 	}
 
     return $filename
