@@ -15,7 +15,10 @@ This template automates the deployment of the REDCap solution into Azure using m
   * https://azuremarketplace.microsoft.com/en-us/marketplace/apps/softnas.softnas-cloud
   * https://azure.microsoft.com/en-us/resources/templates/nfs-ha-cluster-ubuntu/
 
-You will need to specify a location for the deployment automation to pull your copy of the REDCap source. This ZIP file will need a __*publicly accessible url*__ while the deployment is running. OneDrive, Azure Blob Storage, DropBox, etc., are all suitable temporary storage locations for deployment.
+You will have two options to deploy REDCap source to Azure App Service:
+
+1. You can specify a location for the deployment automation to pull your copy of the REDCap source. This ZIP file will need a __*publicly accessible url*__ while the deployment is running. OneDrive, Azure Blob Storage, DropBox, etc., are all suitable temporary storage locations for deployment.
+1. You can specify your REDCap Community credentials for the deployment automation to pull your copy of the REDCap source directly from the community site.
 
 https://projectredcap.org/wp-content/resources/REDCapTechnicalOverview.pdf
 
