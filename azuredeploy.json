@@ -33,25 +33,33 @@
       "type": "string",
       "metadata": {
         "description": "REDCap Community site username for downloading the REDCap zip file."
-      }
+      },
+      "defaultValue": ""
     },
     "redcapAppZipPassword": {
       "type": "string",
       "metadata": {
         "description": "REDCap Community site password for downloading the REDCap zip file."
-      }
+      },
+      "defaultValue": ""
     },
     "redcapAppZipVersion": {
       "type": "string",
       "metadata": {
         "description": "REDCap zip file version to be downloaded from the REDCap Community site."
-      }
+      },
+      "defaultValue": "latest"
     },
     "redcapAppZipInstall": {
       "type": "string",
       "metadata": {
         "description": "REDCap zip file type (Use '1' for Install and omit parameter altogether for Update)."
-      }
+      },
+      "defaultValue": "",
+      "allowedValues": [
+        "",
+        "1"
+      ]
     },
     "fromEmailAddress": {
       "type": "string",
