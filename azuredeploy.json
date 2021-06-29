@@ -56,7 +56,7 @@
       "metadata": {
         "description": "REDCap zip file type (Use '1' for Install and omit parameter altogether for Update)."
       },
-      "defaultValue": "",
+      "defaultValue": "1",
       "allowedValues": [
         "",
         "1"
