@@ -15,6 +15,12 @@ $parms = @{
     #Make your ZIP file temporarily accessible via a public file share
     "redcapAppZip"                = "<path to your copy of the REDCap distribution ZIP file>";
 
+    #Alternative to the zip file above, you can use REDCap Community credentials to download the zip file.
+    "redcapAppZipUsername"        = "<REDCap Community site username>";
+    "redcapAppZipPassword"        = "<REDCap Community site password>";
+    "redcapAppZipVersion"         = "<REDCap version";
+    "redcapAppZipInstall"         = "<REDCap zip file type. Use 1 for Install and omit this parameter for Upgrade.";
+
     #Mail settings
     "fromEmailAddress"            = "<email address listed as sender for outbound emails>";
     "smtpFQDN"                    = "<what it says>"

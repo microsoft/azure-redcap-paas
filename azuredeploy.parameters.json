@@ -14,6 +14,18 @@
     "redcapAppZip": {
       "value": null
     },
+    "redcapAppZipUsername": {
+      "value": null
+    },
+    "redcapAppZipPassword": {
+      "value": null
+    },
+    "redcapAppZipVersion": {
+      "value": null
+    },
+    "redcapAppZipInstall": {
+      "value": "1"
+    },
     "fromEmailAddress": {
       "value": null
     },

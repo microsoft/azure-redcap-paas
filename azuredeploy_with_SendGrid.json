@@ -29,6 +29,30 @@
         "description": "A publicly accessible path to your copy of the REDCap zip file."
       }
     },
+    "redcapAppZipUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "REDCap Community site username for downloading the REDCap zip file."
+      }
+    },
+    "redcapAppZipPassword": {
+      "type": "string",
+      "metadata": {
+        "description": "REDCap Community site password for downloading the REDCap zip file."
+      }
+    },
+    "redcapAppZipVersion": {
+      "type": "string",
+      "metadata": {
+        "description": "REDCap zip file version to be downloaded from the REDCap Community site."
+      }
+    },
+    "redcapAppZipInstall": {
+      "type": "string",
+      "metadata": {
+        "description": "REDCap zip file type (Use '1' for Install and omit parameter altogether for Update)."
+      }
+    },
     "fromEmailAddress": {
       "type": "string",
       "metadata": {
@@ -265,6 +289,22 @@
             {
               "Name": "redcapAppZip",
               "value": "[parameters('redcapAppZip')]"
+            },
+            {
+              "Name": "redcapAppZipUsername",
+              "value": "[parameters('redcapAppZipUsername')]"
+            },
+            {
+              "Name": "redcapAppZipPassword",
+              "value": "[parameters('redcapAppZipPassword')]"
+            },
+            {
+              "Name": "redcapAppZipVersion",
+              "value": "[parameters('redcapAppZipVersion')]"
+            },
+            {
+              "Name": "redcapAppZipInstall",
+              "value": "[parameters('redcapAppZipInstall')]"
             },
             {
               "Name": "DBHostName",

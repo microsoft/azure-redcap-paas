@@ -11,6 +11,10 @@ $webRoot = "$($env:HOME)\site\wwwroot"
 
 $dbver=""
 $zipUri = "$env:APPSETTING_redcapAppZip"
+$zipUsername = "$env:APPSETTING_redcapAppZipUsername"
+$zipPassword = "$env:APPSETTING_redcapAppZipPassword"
+$zipVersion = "$env:APPSETTING_redcapAppZipVersion"
+$zipInstall = "$env:APPSETTING_redcapAppZipInstall"
 $stamp=(Get-Date).toString("yyyy-MM-dd-HH-mm-ss")
 $logFile = "$path\log-$stamp.txt"
 Set-Content "$($env:HOME)\site\repository\currlogname.txt" -Value $logFile -NoNewline
@@ -22,7 +26,7 @@ function Main {
 		Copy-Item -Path "$path\Files\AzDeployStatus.php" -Destination "$webRoot\AzDeployStatus.php"
 		Log("Checking ZIP file name and version")
 
-		$filename = GetFileName($zipUri)
+		$filename = GetFileName
 		$filePath = "$path\$filename"
         $version = $filename.Replace(".zip","")
 		$dbver = $version.Replace("redcap","")
@@ -33,7 +37,7 @@ function Main {
             Log("Downloading $filename")
     
             # Download the ZIP file
-            Invoke-WebRequest $zipUri -OutFile $filePath
+            DownloadFile($filePath)
 
             Log("Unzipping file")
             mkdir "$path\target" -ErrorAction SilentlyContinue
@@ -229,31 +233,86 @@ function MoveFiles {
     Log("RoboCopy output: $($rcOutput[$LASTEXITCODE])")
 }
 
-function GetFileName($Url) {
-    # (HT to https://github.com/SelectDBA for the Split-Path suggestion)
-    $res = Invoke-WebRequest -Method Head -Uri $Url -UseBasicParsing
+function DownloadFile($filePath) {
+	#if the zip file is not null or empty 
+	#then download zip from location
+	#else attempt to download zip file from redcap community site
 
-    $header = $res.Headers["content-disposition"]
-    if ($null -ne $header -and $header.length > 0) {
-    	$filename = [System.Net.Http.Headers.ContentDispositionHeaderValue]::Parse($header).Filename
-    	if ($filename.IndexOf('"') -gt -1) {
-	    $filename = ConvertFrom-Json $filename
+	if (-Not [string]::IsNullOrEmpty($zipUri)) {
+		Invoke-WebRequest $zipUri -OutFile $filePath
+	} else {
+		if ([string]::IsNullOrEmpty($zipUsername)) {
+			throw "Missing REDCap Community site username. Please try an alternate method to host your ZIP file."
+		} 
+	
+		if ([string]::IsNullOrEmpty($zipPassword)) {
+			throw "Missing REDCap Community site password. Please try an alternate method to host your ZIP file."
+		}
+
+		if ([string]::IsNullOrEmpty($zipVersion)) { 
+			Write-Host "zipVersion is null or empty. Setting to latest"
+			$zipVersion = "latest"
+		}
+		
+		if ([string]::IsNullOrEmpty($zipInstall)) {
+			$zipRequestBody = @{
+				username=$zipUsername
+				password=$zipPassword
+				version=$zipVersion}
+		} else {
+			$zipRequestBody = @{
+				username=$zipUsername
+				password=$zipPassword
+				version=$zipVersion
+				install='1'}
+		}
+
+		$zipRequestContentType = 'application/x-www-form-urlencoded'
+		Invoke-WebRequest -Method POST -Uri https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php -body $zipRequestBody -ContentType $zipRequestContentType -OutFile $filePath
 	}
-    } else {
-	    $header = $res.Headers.Keys | Where-Object { if($_.contains("filename")){$_}}
-        if ($null -ne $header -and $header.length > 0) {
-        	$filename = $res.Headers[$header]
-        } else {
-            #no content disposition, no filename...try the URL?
-            $lp = $res.BaseResponse.ResponseUri.LocalPath
-            $filename = Split-Path $lp -leaf
-            if ($null -eq $filename -and $filename.length > 0) {
-                #can't really punt at this point, if we don't have the file name we don't have the version
-                #and can't initialize the database
-                throw "Unable to determine the downloaded file name, so can't verify the version number. Please try an alternate method to host your ZIP file."
-            }
-        }
-    }
+}
+
+function GetFileName {
+	if (-Not [string]::IsNullOrEmpty($zipUri)) {
+		# (HT to https://github.com/SelectDBA for the Split-Path suggestion)
+		$res = Invoke-WebRequest -Method Head -Uri $Url -UseBasicParsing
+
+		$header = $res.Headers["content-disposition"]
+		if ($null -ne $header -and $header.length > 0) {
+			$filename = [System.Net.Http.Headers.ContentDispositionHeaderValue]::Parse($header).Filename
+			if ($filename.IndexOf('"') -gt -1) {
+			$filename = ConvertFrom-Json $filename
+		}
+		} else {
+			$header = $res.Headers.Keys | Where-Object { if($_.contains("filename")){$_}}
+			if ($null -ne $header -and $header.length > 0) {
+				$filename = $res.Headers[$header]
+			} else {
+				#no content disposition, no filename...try the URL?
+				$lp = $res.BaseResponse.ResponseUri.LocalPath
+				$filename = Split-Path $lp -leaf
+				if ($null -eq $filename -and $filename.length > 0) {
+					#can't really punt at this point, if we don't have the file name we don't have the version
+					#and can't initialize the database
+					throw "Unable to determine the downloaded file name, so can't verify the version number. Please try an alternate method to host your ZIP file."
+				}
+			}
+		}
+	} elseif (-Not [string]::IsNullOrEmpty($zipVersion)) {
+		if ($zipVersion -eq "latest") {
+			$versionsResp = Invoke-WebRequest -Uri https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php
+			$content = ConvertFrom-Json $versionsResp.content
+			$version = $content.latest_version      
+			
+			Write-Host "zipVersion is set to $zipVersion which is currently at $version"
+
+			$filename = "redcap$version.zip"
+		  } else {
+			$filename = "redcap$zipVersion.zip"
+		  }
+	} else {
+		throw "Unable to determine the downloaded file name, so can't verify the version number. Please try an alternate method to host your ZIP file."
+	}
 
     return $filename
 }
