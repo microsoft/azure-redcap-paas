@@ -21,7 +21,7 @@
       "value": null
     },
     "redcapAppZipVersion": {
-      "value": null
+      "value": "latest"
     },
     "redcapAppZipInstall": {
       "value": "1"
