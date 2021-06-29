@@ -27,7 +27,8 @@
       "type": "string",
       "metadata": {
         "description": "A publicly accessible path to your copy of the REDCap zip file."
-      }
+      },
+      "defaultValue": ""
     },
     "redcapAppZipUsername": {
       "type": "string",
@@ -37,7 +38,7 @@
       "defaultValue": ""
     },
     "redcapAppZipPassword": {
-      "type": "string",
+      "type": "securestring",
       "metadata": {
         "description": "REDCap Community site password for downloading the REDCap zip file."
       },
