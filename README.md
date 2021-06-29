@@ -20,6 +20,10 @@ You will have two options to deploy REDCap source to Azure App Service:
 1. You can specify a location for the deployment automation to pull your copy of the REDCap source. This ZIP file will need a __*publicly accessible url*__ while the deployment is running. OneDrive, Azure Blob Storage, DropBox, etc., are all suitable temporary storage locations for deployment.
 1. You can specify your REDCap Community credentials for the deployment automation to pull your copy of the REDCap source directly from the community site.
 
+> IMPORTANT NOTE: Either option  you choose, these values will be stored within the Azure App Service as configuration settings. Once your deployment has succeeded, you should navigate to your Azure App Service resource and delete or empty out the values so that they aren't stored here.
+
+  ![Azure App Service](/images/app-settings.png)
+
 https://projectredcap.org/wp-content/resources/REDCapTechnicalOverview.pdf
 
 * ARM template deploys the following:
