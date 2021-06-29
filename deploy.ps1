@@ -253,7 +253,7 @@ function DownloadFile($filePath) {
 			Write-Host "zipVersion is null or empty. Setting to latest"
 			$zipVersion = "latest"
 		}
-		
+
 		if ([string]::IsNullOrEmpty($zipInstall)) {
 			$zipRequestBody = @{
 				username=$zipUsername
@@ -275,7 +275,7 @@ function DownloadFile($filePath) {
 function GetFileName {
 	if (-Not [string]::IsNullOrEmpty($zipUri)) {
 		# (HT to https://github.com/SelectDBA for the Split-Path suggestion)
-		$res = Invoke-WebRequest -Method Head -Uri $Url -UseBasicParsing
+		$res = Invoke-WebRequest -Method Head -Uri $zipUri -UseBasicParsing
 
 		$header = $res.Headers["content-disposition"]
 		if ($null -ne $header -and $header.length > 0) {
