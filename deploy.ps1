@@ -242,11 +242,11 @@ function DownloadFile($filePath) {
 		Invoke-WebRequest $zipUri -OutFile $filePath
 	} else {
 		if ([string]::IsNullOrEmpty($zipUsername)) {
-			throw "Missing REDCap Community site username. Please try an alternate method to host your ZIP file."
+			throw "Missing REDCap Community site username."
 		} 
 	
 		if ([string]::IsNullOrEmpty($zipPassword)) {
-			throw "Missing REDCap Community site password. Please try an alternate method to host your ZIP file."
+			throw "Missing REDCap Community site password."
 		}
 
 		if ([string]::IsNullOrEmpty($zipVersion)) { 
