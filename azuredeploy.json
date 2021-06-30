@@ -23,26 +23,17 @@
         "description": "Database administrator password"
       }
     },
-    "redcapAppZip": {
-      "type": "string",
-      "metadata": {
-        "description": "A publicly accessible path to your copy of the REDCap zip file."
-      },
-      "defaultValue": ""
-    },
     "redcapAppZipUsername": {
       "type": "string",
       "metadata": {
         "description": "REDCap Community site username for downloading the REDCap zip file."
       },
-      "defaultValue": ""
     },
     "redcapAppZipPassword": {
       "type": "securestring",
       "metadata": {
         "description": "REDCap Community site password for downloading the REDCap zip file."
       },
-      "defaultValue": ""
     },
     "redcapAppZipVersion": {
       "type": "string",
@@ -301,7 +292,7 @@
             },
             {
               "Name": "redcapAppZip",
-              "value": "[parameters('redcapAppZip')]"
+              "value": "NOT_USED"
             },
             {
               "Name": "redcapAppZipUsername",
