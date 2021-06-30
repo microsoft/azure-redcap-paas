@@ -23,11 +23,35 @@
         "description": "Password used for database administration and SendGrid email access"
       }
     },
-    "redcapAppZip": {
+    "redcapAppZipUsername": {
       "type": "string",
       "metadata": {
-        "description": "A publicly accessible path to your copy of the REDCap zip file."
+        "description": "REDCap Community site username for downloading the REDCap zip file."
       }
+    },
+    "redcapAppZipPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "REDCap Community site password for downloading the REDCap zip file."
+      }
+    },
+    "redcapAppZipVersion": {
+      "type": "string",
+      "metadata": {
+        "description": "REDCap zip file version to be downloaded from the REDCap Community site."
+      },
+      "defaultValue": "latest"
+    },
+    "redcapAppZipInstall": {
+      "type": "string",
+      "metadata": {
+        "description": "REDCap zip file type (Use '1' for Install and omit parameter altogether for Update)."
+      },
+      "defaultValue": "1",
+      "allowedValues": [
+        "1",
+        ""
+      ]
     },
     "fromEmailAddress": {
       "type": "string",
@@ -264,7 +288,23 @@
             },
             {
               "Name": "redcapAppZip",
-              "value": "[parameters('redcapAppZip')]"
+              "value": ""
+            },
+            {
+              "Name": "redcapAppZipUsername",
+              "value": "[parameters('redcapAppZipUsername')]"
+            },
+            {
+              "Name": "redcapAppZipPassword",
+              "value": "[parameters('redcapAppZipPassword')]"
+            },
+            {
+              "Name": "redcapAppZipVersion",
+              "value": "[parameters('redcapAppZipVersion')]"
+            },
+            {
+              "Name": "redcapAppZipInstall",
+              "value": "[parameters('redcapAppZipInstall')]"
             },
             {
               "Name": "DBHostName",
