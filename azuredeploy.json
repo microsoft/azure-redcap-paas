@@ -292,7 +292,7 @@
             },
             {
               "Name": "redcapAppZip",
-              "value": "NOT_USED"
+              "value": ""
             },
             {
               "Name": "redcapAppZipUsername",
