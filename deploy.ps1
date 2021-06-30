@@ -11,10 +11,9 @@ $webRoot = "$($env:HOME)\site\wwwroot"
 
 $dbver=""
 $zipUri = "$env:APPSETTING_redcapAppZip"
-$zipUsername = "$env:APPSETTING_redcapAppZipUsername"
-$zipPassword = "$env:APPSETTING_redcapAppZipPassword"
+$zipUsername = "$env:APPSETTING_redcapCommunityUsername"
+$zipPassword = "$env:APPSETTING_redcapCommunityPassword"
 $zipVersion = "$env:APPSETTING_redcapAppZipVersion"
-$zipInstall = "$env:APPSETTING_redcapAppZipInstall"
 $stamp=(Get-Date).toString("yyyy-MM-dd-HH-mm-ss")
 $logFile = "$path\log-$stamp.txt"
 Set-Content "$($env:HOME)\site\repository\currlogname.txt" -Value $logFile -NoNewline
@@ -254,18 +253,11 @@ function DownloadFile($filePath) {
 			$zipVersion = "latest"
 		}
 
-		if ([string]::IsNullOrEmpty($zipInstall)) {
-			$zipRequestBody = @{
-				username=$zipUsername
-				password=$zipPassword
-				version=$zipVersion}
-		} else {
-			$zipRequestBody = @{
-				username=$zipUsername
-				password=$zipPassword
-				version=$zipVersion
-				install='1'}
-		}
+		$zipRequestBody = @{
+			username=$zipUsername
+			password=$zipPassword
+			version=$zipVersion
+			install='1'}
 
 		$zipRequestContentType = 'application/x-www-form-urlencoded'
 		$zipResponse = Invoke-WebRequest -Method POST -Uri https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php -body $zipRequestBody -ContentType $zipRequestContentType -UseBasicParsing
