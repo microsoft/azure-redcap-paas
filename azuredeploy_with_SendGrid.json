@@ -27,13 +27,13 @@
       "type": "string",
       "metadata": {
         "description": "REDCap Community site username for downloading the REDCap zip file."
-      },
+      }
     },
     "redcapAppZipPassword": {
       "type": "securestring",
       "metadata": {
         "description": "REDCap Community site password for downloading the REDCap zip file."
-      },
+      }
     },
     "redcapAppZipVersion": {
       "type": "string",
