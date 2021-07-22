@@ -1,0 +1,276 @@
+trigger:
+- none
+
+variables:
+# Secrets pull in via Azure Key Vault
+- group: kvdevops1
+# Build agent ACI name
+- name: AGENTACINAME
+  value: acicontoso
+# Build agent ACI resource group name
+- name: AGENTRGNAME
+  value: rg-devops
+# Hub virtual network resource group name
+- name: HUBRGNAME
+  value: rg-netops
+# Hub virtual network name
+- name: HUBVNETNAME
+  value: vn-netops
+# Notification contact for approval gates
+- name: NOTIFYUSERS
+  value: pauyu@microsoft.com
+
+stages:
+- stage: start_aci
+  displayName: Build Prep
+  condition: ne(variables.workspace, '')
+  pool:
+    vmImage: ubuntu-latest
+  jobs:
+  - job: start_aci
+    displayName: Start build agent
+    steps:
+    - task: AzureCLI@2
+      displayName: Start Azure Container Instance
+      inputs:
+        azureSubscription: 'terraform'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: 'az container start -n $(AGENTACINAME) -g $(AGENTRGNAME)'
+- stage: terraform_plan
+  displayName: Plan
+  dependsOn: start_aci
+  condition: and(eq(variables.destroy, false), succeeded('start_aci'))
+  pool:
+    name: Contoso
+    demands:
+      - terraform
+      - ansible
+  jobs: 
+  - job: terraform_plan
+    displayName: Terraform Plan 
+    steps:
+    - script: |
+        export ARM_CLIENT_ID=$(client-id) 
+        export ARM_CLIENT_SECRET=$(client-secret)
+        export ARM_SUBSCRIPTION_ID=$(main-subscription-id)
+        export ARM_TENANT_ID=$(tenant-id)
+        terraform init \
+          -backend-config="resource_group_name=rg-devops" \
+          -backend-config="storage_account_name=satfstate98722" \
+          -backend-config="container_name=research-redcap-tfstate" \
+          -backend-config="key=terraform.tfstate"
+        terraform workspace select $(workspace) || terraform workspace new $(workspace)
+        terraform plan -var-file="workspaces/$(workspace).tfvars" -var="vm_username=$(local-vm-username)" -var="vm_password=$(local-vm-password)" -var="redcapAppZip=$(redcapzip)" -out=$(System.DefaultWorkingDirectory)/$(workspace).tfplan
+      displayName: Terraform Plan
+      name: terraform_plan
+      workingDirectory: Terraform
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(System.DefaultWorkingDirectory)/$(workspace).tfplan'
+        artifactName: '$(workspace).tfplan'
+      displayName: Publish $(workspace).tfplan
+      name: publish_tfplan
+- stage: terraform_apply
+  displayName: Build
+  dependsOn: terraform_plan
+  condition: succeeded('terraform_plan')
+  pool:
+    name: Contoso
+    demands:
+      - terraform
+      - ansible
+  jobs:
+  - job: manual_validation
+    displayName: Approval Gate
+    pool: Server
+    steps:
+    - task: ManualValidation@0
+      inputs:
+        notifyUsers: $(NOTIFYUSERS)
+        instructions: 'Have you looked at the Terraform plan output?'
+      displayName: Manual Approval
+      name: manual_validation_task
+  - job: terraform_apply
+    displayName: Terraform Apply
+    dependsOn: manual_validation
+    condition: succeeded('manual_validation')
+    steps:
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifactName: $(workspace).tfplan
+        patterns: '**/$(workspace).tfplan'
+        path: $(System.DefaultWorkingDirectory)
+      displayName: Download $(workspace).tfplan
+      name: download_tfplan
+    - script: |
+        export ARM_CLIENT_ID=$(client-id) 
+        export ARM_CLIENT_SECRET=$(client-secret)
+        export ARM_SUBSCRIPTION_ID=$(main-subscription-id)
+        export ARM_TENANT_ID=$(tenant-id)
+        terraform init \
+          -backend-config="resource_group_name=rg-devops" \
+          -backend-config="storage_account_name=satfstate98722" \
+          -backend-config="container_name=research-redcap-tfstate" \
+          -backend-config="key=terraform.tfstate"
+        terraform workspace select $(workspace) || terraform workspace new $(workspace)
+        terraform apply --auto-approve $(System.DefaultWorkingDirectory)/$(workspace).tfplan
+        echo "##vso[task.setvariable variable=TF_RESOURCE_GROUP_NAME;isOutput=true]$(terraform output -raw resource_group_name)"
+        echo "##vso[task.setvariable variable=TF_APP_SERVICE_NAME;isOutput=true]$(terraform output -raw app_service_name)"
+        echo "##vso[task.setvariable variable=TF_DEPLOY_SUBSCRIPTION;isOutput=true]$(terraform output -raw deploy_source_sub)"
+        echo "##vso[task.setvariable variable=TF_DEPLOY_SOURCE;isOutput=true]$(terraform output -raw deploy_source)"
+        echo "##vso[task.setvariable variable=TF_REGISTRATION_TOKEN;isOutput=true]$(terraform output -raw registration_token)"
+        echo "##vso[task.setvariable variable=TF_VNET_ID;isOutput=true]$(terraform output -raw vnet_id)"
+      displayName: Terraform Apply
+      name: terraform_apply
+      workingDirectory: Terraform
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: $(System.DefaultWorkingDirectory)/Terraform/ansible/inventory
+        artifactName: $(workspace)-inventory
+      displayName: Publish inventory
+      name: publish_inventory
+  - job: vnet_peering
+    displayName: VNET Peering
+    dependsOn: terraform_apply
+    condition: succeeded('terraform_apply')
+    variables:
+      TF_DEPLOY_SUBSCRIPTION: $[ dependencies.terraform_apply.outputs['terraform_apply.TF_DEPLOY_SUBSCRIPTION'] ]
+      TF_VNET_ID: $[ dependencies.terraform_apply.outputs['terraform_apply.TF_VNET_ID'] ]
+    steps:
+    - script: |
+        az login --service-principal --username $(client-id) --password $(client-secret) --tenant $(tenant-id)
+        az account set -s $(TF_DEPLOY_SUBSCRIPTION)
+        az account set -s $(main-subscription-id)
+        echo "Peering vn-hub to redcap vnet"
+        az network vnet peering create -n to-redcap-$(workspace) -g $(HUBRGNAME) --vnet-name $(HUBVNETNAME) --remote-vnet $(TF_VNET_ID) --allow-forwarded-traffic --allow-gateway-transit --allow-vnet-access
+      displayName: Establish VNET peerings coming back to REDCap
+  - job: manual_validation_deploy
+    displayName: Approval Gate
+    dependsOn: vnet_peering
+    condition: succeeded('vnet_peering')
+    pool: Server
+    steps:
+    - task: ManualValidation@0
+      inputs:
+        notifyUsers: $(NOTIFYUSERS)
+        instructions: 'Confirm that all infrastructure has been provisioned successfully.'
+  - job: deploy_source
+    displayName: REDCap Code Deploy
+    dependsOn: 
+      - manual_validation_deploy
+      - terraform_apply
+      - vnet_peering
+    condition: succeeded('manual_validation_deploy')
+    variables:
+      TF_RESOURCE_GROUP_NAME: $[ dependencies.terraform_apply.outputs['terraform_apply.TF_RESOURCE_GROUP_NAME'] ]
+      TF_APP_SERVICE_NAME: $[ dependencies.terraform_apply.outputs['terraform_apply.TF_APP_SERVICE_NAME'] ]
+      TF_DEPLOY_SUBSCRIPTION: $[ dependencies.terraform_apply.outputs['terraform_apply.TF_DEPLOY_SUBSCRIPTION'] ]
+      TF_DEPLOY_SOURCE: $[ dependencies.terraform_apply.outputs['terraform_apply.TF_DEPLOY_SOURCE'] ]
+    steps:
+    - script: |
+        echo "sleep for a bit while the vnet plumbing settles down"
+        sleep 60
+        echo "waking up... time to do some work!"
+        az account set -s $(TF_DEPLOY_SUBSCRIPTION)
+        echo "updating app service client cert mode to Allow"
+        az webapp update --set clientCertEnabled=true --set clientCertMode=1 -n $(TF_APP_SERVICE_NAME) -g $(TF_RESOURCE_GROUP_NAME)
+        echo "rebooting virtual machines"
+        az vm restart --ids $(az vm list -g $(TF_RESOURCE_GROUP_NAME) --query "[].id" -o tsv)
+      displayName: Reboot VMs to ensure all networking settles in
+    - script: |
+        az account set -s $(TF_DEPLOY_SUBSCRIPTION)
+        eval "$(TF_DEPLOY_SOURCE)"
+      displayName: Deploy REDCap from GitHub and apply database schema
+  - job: ansible_playbook
+    displayName: Ansible Playbook for AVD
+    dependsOn: 
+      - deploy_source
+      - terraform_apply
+      - vnet_peering
+    condition: succeeded('deploy_source')
+    variables:
+      TF_REGISTRATION_TOKEN: $[ dependencies.terraform_apply.outputs['terraform_apply.TF_REGISTRATION_TOKEN'] ]
+    steps:
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifactName: $(workspace)-inventory
+        downloadPath: $(System.DefaultWorkingDirectory)/Terraform/ansible
+      displayName: Download inventory
+      name: download_inventory
+    - script: |
+        echo '$(ansible-vault-password)' > pass        
+        ansible all -i inventory -e @secrets.yml --vault-password-file pass -m win_ping
+        ansible-playbook -i inventory -e "registration_token=$(TF_REGISTRATION_TOKEN)" -e @secrets.yml --vault-password-file pass site.yml
+        rm pass
+      displayName: Run Ansible playbook to install WVD agents and domain join
+      workingDirectory: Terraform/ansible
+- stage: terraform_destroy
+  displayName: Destroy
+  dependsOn: start_aci
+  condition: and(eq(variables.destroy, true), succeeded('start_aci'))
+  pool:
+    name: Contoso
+    demands: 
+      - terraform
+      - ansible
+  jobs: 
+  - job: manual_validation_destroy
+    displayName: Manual Approval
+    pool: Server
+    steps:
+    - task: ManualValidation@0
+      inputs:
+        notifyUsers: $(NOTIFYUSERS)
+        instructions: 'Click resume to destroy...'
+  - job: terraform_destroy
+    displayName: Terraform Destroy
+    dependsOn: manual_validation_destroy
+    condition: succeeded('manual_validation_destroy')
+    steps:
+    - script: |
+        export ARM_CLIENT_ID=$(client-id)
+        export ARM_CLIENT_SECRET=$(client-secret)
+        export ARM_SUBSCRIPTION_ID=$(main-subscription-id)
+        export ARM_TENANT_ID=$(tenant-id)
+        terraform init \
+          -backend-config="resource_group_name=rg-devops" \
+          -backend-config="storage_account_name=satfstate98722" \
+          -backend-config="container_name=research-redcap-tfstate" \
+          -backend-config="key=terraform.tfstate"
+        terraform workspace select $(workspace)
+        terraform destroy -var-file="workspaces/$(workspace).tfvars" -var="vm_username=$(local-vm-username)" -var="vm_password=$(local-vm-password)" -var="redcapAppZip=$(redcapzip)" --auto-approve
+        terraform workspace select default
+        terraform workspace delete $(workspace)
+      displayName: Destroy REDCap infrastructure
+      name: terraform_destroy
+      workingDirectory: Terraform
+  - job: vnet_peer_destroy
+    displayName: Delete VNET Peering
+    dependsOn: terraform_destroy
+    condition: succeeded('terraform_destroy')
+    steps:
+    - script: |
+        az login --service-principal --username $(client-id) --password $(client-secret) --tenant $(tenant-id)
+        az account set -s $(main-subscription-id)
+        az network vnet peering delete -n to-redcap-$(workspace) -g $(HUBRGNAME) --vnet-name $(HUBVNETNAME)
+      displayName: Delete VNET Peering from vn-hub to vn-redcap-$(workspace)
+- stage: stop_aci
+  displayName: Build Cleanup
+  dependsOn:
+  - terraform_apply
+  - terraform_destroy
+  condition: or(succeeded('terraform_apply'), succeeded('terraform_destroy'))
+  pool:
+    vmImage: ubuntu-latest
+  jobs:
+  - job: stop_aci
+    displayName: Stop build agent
+    steps:
+    - task: AzureCLI@2
+      displayName: Stop Azure Container Instance
+      inputs:
+        azureSubscription: 'terraform'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: 'az container stop -n $(AGENTACINAME) -g $(AGENTRGNAME)'

@@ -1,0 +1,46 @@
+---
+- name: Windows Virtual Desktop Setup
+  hosts: winclient
+  gather_facts: yes
+  tasks:
+    - name: Download Windows Virtual Desktop Agent
+      ansible.windows.win_get_url:
+        url: https://query.prod.cms.rt.microsoft.com/cms/api/am/binary/RWrmXv
+        dest: C:\RDAgent.msi
+    - name: Install Windows Virtual Desktop Agent
+      ansible.windows.win_package:
+        path: C:\RDAgent.msi
+        provider: auto
+        arguments:
+          - /quiet
+          - /qn
+          - /norestart
+          - /passive
+          - REGISTRATIONTOKEN={{ registration_token }}
+        state: present
+        log_path: C:\Users\AgentInstall.txt
+    - name: Download Windows Virtual Desktop Agent Boot Loader
+      ansible.windows.win_get_url:
+        url: https://query.prod.cms.rt.microsoft.com/cms/api/am/binary/RWrxrH
+        dest: C:\RDAgentBootLoader.msi
+    - name: Install Windows Virtual Desktop Agent Boot Loader
+      ansible.windows.win_package:
+        path: C:\RDAgentBootLoader.msi
+        provider: auto
+        arguments: 
+          - /quiet
+          - /qn
+          - /norestart
+          - /passive
+        state: present
+        log_path: C:\Users\AgentBootLoaderInstall.txt
+    - name: Join virtual machine to domain
+      ansible.windows.win_domain_membership:
+        dns_domain_name: "{{ dns_domain_name }}"
+        domain_admin_user: "{{ domain_admin_user }}"
+        domain_admin_password: "{{ domain_admin_password }}"
+        domain_ou_path: "{{ domain_ou_path }}"
+        state: domain
+      register: domain_state
+    - ansible.windows.win_reboot:
+      when: domain_state.reboot_required
