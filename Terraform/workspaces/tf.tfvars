@@ -52,7 +52,7 @@ subnets = [
 
 # the values below are pretty much static for all deployments
 repoURL                          = "https://github.com/pauldotyu/azure-redcap-paas.git"
-branch                           = "terraform"
+branch                           = "master"
 location                         = "westus2"
 storage_account_tier             = "Standard"
 storage_account_replication_type = "LRS"
