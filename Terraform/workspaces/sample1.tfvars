@@ -51,7 +51,7 @@ subnets = [
 ]
 
 # the values below are pretty much static for all deployments
-repoURL                          = "https://github.com/pauldotyu/azure-redcap-paas.git"
+repoURL                          = "https://github.com/microsoft/azure-redcap-paas.git"
 branch                           = "master"
 location                         = "westus2"
 storage_account_tier             = "Standard"
