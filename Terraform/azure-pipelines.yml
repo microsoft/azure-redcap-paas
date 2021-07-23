@@ -256,7 +256,6 @@ stages:
         terraform workspace select default
         terraform workspace delete $(workspace)
       displayName: Destroy Terraform workspace
-      name: terraform_destroy
       workingDirectory: Terraform
   - job: vnet_peer_destroy
     displayName: Delete VNET Peering
