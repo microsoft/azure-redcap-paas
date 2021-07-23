@@ -62,7 +62,6 @@ The alternative would be to create branches for each deployment but managing cod
 
 ## So, what get's deployed?
 
-- [Azure Monitor alerts](https://docs.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-overview) to satisfy [Azure HIPAA compliance policies](https://docs.microsoft.com/en-us/azure/governance/policy/samples/hipaa-hitrust-9-2).
 - [Azure Virtual Network](https://docs.microsoft.com/en-us/azure/virtual-network/virtual-networks-overview) with [service endpoints](https://docs.microsoft.com/en-us/azure/virtual-network/virtual-network-service-endpoints-overview) enabled for Key Vault, Storage, Sql, and Web and a subnet delegation for App Service Vnet integration.
     > Virtual network peering will also be made to hub (one way) but peer from hub to REDCap is not in scope here. Also, route table routes will be added to send traffic for internet and AD to the firewall but routes coming back to REDCap is not in scope here either. You will need to manage these in another repo or via Azure Portal.
 - [Azure Private DNS](https://docs.microsoft.com/en-us/azure/dns/private-dns-overview) zones for blob, mysql, and keyvault.
