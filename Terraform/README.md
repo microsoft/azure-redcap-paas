@@ -4,7 +4,7 @@ This repo will deploy REDCap on Azure using Terraform. The Terraform configurati
 
 ![Solution Architecture](media/solution-architecture.png)
 
-> This repo does not include any REDCap shared services such as Azure FrontDoor or SendGrid. That needs to be managed from a separate repository.
+> This repo does not include any REDCap shared services such as Azure FrontDoor or SendGrid (the box in the upper right portion of the diagram above). That needs to be managed from a separate repository. If you do not have Azure Front Door in place, you can access the app service front end and kudu console while logged into the AVD session host.
 
 ## Prerequisites
 
@@ -77,18 +77,31 @@ The alternative would be to create branches for each deployment but managing cod
 - [Windows Virtual Machines](https://docs.microsoft.com/en-us/azure/virtual-machines/windows/overview) with [Windows Virtual Desktop Agents](https://docs.microsoft.com/en-us/azure/virtual-desktop/agent-overview) installed to register as WVD Session Hosts
     > The virtual machines will have the following extensions installed: [DependencyAgent](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/agent-dependency-windows), [IaaSAntimalware](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/iaas-antimalware-windows), and [WinRM (for Ansible)](https://docs.ansible.com/ansible/latest/user_guide/windows_winrm.html) installed via [Custom Script Extension](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/custom-script-windows).
 - [Azure Recovery Services Vault](https://docs.microsoft.com/en-us/azure/backup/backup-azure-recovery-services-vault-overview) with [VM Backup Policy](https://docs.microsoft.com/en-us/azure/backup/backup-azure-manage-vms) and [Azure Files backup policy](https://docs.microsoft.com/en-us/azure/backup/backup-afs).
-- [Ansible inventory file](https://docs.ansible.com/ansible/latest/network/getting_started/first_inventory.html) which you can use to run the `site.yml` playbook against
+- [Ansible inventory file](https://docs.ansible.com/ansible/latest/network/getting_started/first_inventory.html) will be created during the Terraform provisioning process which you can use to run the `site.yml` playbook against
     > Ansible playbook will perform the actions of [downloading and installing the WVD agents](https://docs.microsoft.com/en-us/azure/virtual-desktop/create-host-pools-powershell#register-the-virtual-machines-to-the-windows-virtual-desktop-host-pool) and joining the VM to your domain.
 
 ## Provisioning REDCap Infrastructure
 
 1. Create a new `.tfvars` file and drop into the `workspaces` directory.
 
-    - The name of your `.tfvars` file and the `terraform workspace` will need to be the same.
+    - The name of your `.tfvars` file and the `terraform workspace` should be the same.
 
 1. Execute the `terraform plan` and `terraform apply` commands and pass in your `.tfvars` file in the `-var-file` parameter.
 
     - You will be required to enter the local VM username and password and the REDCap zip file URL.
+    - Here is a sample `terraform plan` command:
+
+      ```sh
+      workspace=sample1
+      terraform workspace select $(workspace) || terraform workspace new $(workspace)
+      terraform plan -var-file="workspaces/$(workspace).tfvars" -var="vm_username=$(local-vm-username)" -var="vm_password=$(local-vm-password)" -var="redcapAppZip=$(redcapzip)" -out=$(System.DefaultWorkingDirectory)/$(workspace).tfplan
+      ```
+
+    - Here is a sample `terraform apply` command:
+
+      ```sh
+      terraform apply --auto-approve $(workspace).tfplan
+      ```
 
 1. After the resources have been provisioned, you'll need to create a vnet peering back from the hub vnet to the REDCap's vnet.
 
@@ -97,8 +110,15 @@ The alternative would be to create branches for each deployment but managing cod
 1. Next, deploy the source code from the github repo
 
     - The command to deploy the source is in the `terraform output` as `deploy_source`
+    - To get the value of the `deploy_source` output variable use this command:
+
+      ```sh
+      terraform output -raw deploy_source
+      ```
 
 ## Configure REDCap WVD Workstations
+
+> Ansible can automate configuration on Windows machines; however, the Ansible playbooks must be run from a Linux OS (Ubuntu, REDHat, CentOS, etc.).
 
 Configuration of secure workstations will be automated using Ansible. The `site.yml` [Ansible Playbook](https://docs.ansible.com/ansible/latest/user_guide/playbooks.html) found in this repo relies on a few variables needed to  domain join your virtual machines. Rather then saving credentials to the repo (never a good thing) we'll use `ansible-vault` to encrypt contents leveraging [Ansible Vault](https://docs.ansible.com/ansible/latest/user_guide/vault.html) and pass in a `secrets.yml` file on the ansible-playbook run.
 
@@ -150,7 +170,7 @@ ansible-playbook -i inventory-sample2 -e @secrets.yml --vault-password-file vaul
 
 ## Deleting REDCap
 
-- If you have deployed a Recovery Services Vault, you'll need to make sure to stop and delete your VM and file share backups, unregister your storage account from Backup Infrastructure, and remove the management lock on the resource group before running the `terraform destroy` command.
+- If you have deployed a Recovery Services Vault, you'll need to make sure to stop and delete your VM and file share backups, unregister your storage account from Backup Infrastructure, and remove the management lock on the resource group (if necessary) before running the `terraform destroy` command.
 - Be sure to delete the vnet peering from the hub to the REDCap instance
 - Be sure to delete the `terraform workspace`
 
