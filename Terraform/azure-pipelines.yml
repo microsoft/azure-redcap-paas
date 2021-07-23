@@ -240,9 +240,22 @@ stages:
           -backend-config="key=terraform.tfstate"
         terraform workspace select $(workspace)
         terraform destroy -var-file="workspaces/$(workspace).tfvars" -var="vm_username=$(local-vm-username)" -var="vm_password=$(local-vm-password)" -var="redcapAppZip=$(redcapzip)" --auto-approve
+      displayName: Destroy REDCap infrastructure
+      name: terraform_destroy
+      workingDirectory: Terraform
+    - script: |
+        export ARM_CLIENT_ID=$(client-id)
+        export ARM_CLIENT_SECRET=$(client-secret)
+        export ARM_SUBSCRIPTION_ID=$(main-subscription-id)
+        export ARM_TENANT_ID=$(tenant-id)
+        terraform init \
+          -backend-config="resource_group_name=rg-devops" \
+          -backend-config="storage_account_name=satfstate98722" \
+          -backend-config="container_name=research-redcap-tfstate" \
+          -backend-config="key=terraform.tfstate"
         terraform workspace select default
         terraform workspace delete $(workspace)
-      displayName: Destroy REDCap infrastructure
+      displayName: Destroy Terraform workspace
       name: terraform_destroy
       workingDirectory: Terraform
   - job: vnet_peer_destroy
