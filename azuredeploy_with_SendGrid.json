@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.7.4.23292",
-      "templateHash": "3982466538065941822"
+      "templateHash": "10974727704408636365"
     }
   },
   "parameters": {
@@ -179,14 +179,14 @@
     },
     "repoURL": {
       "type": "string",
-      "defaultValue": "https://github.com/vanderbilt-redcap/redcap-azure.git",
+      "defaultValue": "https://github.com/microsoft/azure-redcap-paas.git",
       "metadata": {
         "description": "The path to the deployment source files on GitHub"
       }
     },
     "branch": {
       "type": "string",
-      "defaultValue": "master",
+      "defaultValue": "main",
       "metadata": {
         "description": "The main branch of the application repo"
       }

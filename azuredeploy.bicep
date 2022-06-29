@@ -115,10 +115,10 @@ param storageType string = 'Standard_LRS'
 param storageContainerName string = 'redcap'
 
 @description('The path to the deployment source files on GitHub')
-param repoURL string = 'https://github.com/vanderbilt-redcap/redcap-azure.git'
+param repoURL string = 'https://github.com/microsoft/azure-redcap-paas.git'
 
 @description('The main branch of the application repo')
-param branch string = 'master'
+param branch string = 'main'
 
 var siteName_var = replace(siteName, ' ', '')
 var databaseName = '${siteName_var}_db'
