@@ -162,6 +162,11 @@ variable "devops_subnet_id" {
   type = string
 }
 
+variable "linuxFxVersion" {
+  type    = string
+  default = "php|7.4"
+}
+
 #############################################
 # AZURE ARM TEMPLATE PARAMETERS
 #############################################
