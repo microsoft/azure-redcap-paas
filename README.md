@@ -41,9 +41,11 @@ If you use Exchange Online (part of the Microsoft 365 Suite), you can follow the
 
 This template will automatically deploy the resources necessary to run REDCap in Azure using PaaS (Platform as a Service) features. **IMPORTANT**: _The "Site Name" you choose will be re-used as part of the storage, website, and MySql database name. Make sure you don't use characters that will be rejected by MySql._
 
-After the template is deployed, deployment automation will download the REDCap ZIP file you specify, and install it in your web app. It will then automatically update the database connection information in the app. It will then update a few settings in the database, and configure Azure file storage if you have that version of REDCap. It will also create the initial storage container.
+After the template is deployed, deployment automation will download the REDCap ZIP file you specify, and install it in your web app. It will then automatically update the database connection information in the app.
 
-With the download and unzipping, the entire operation will take between 12-16 minutes.
+> NOTE: The database will not be initialized; therefore, REDCap will not be usable until then. See the **Post-Setup** section below on how to initialize the database.
+
+With the download and unzipping of REDCap application, the entire operation will take between 12-16 minutes.
 
 If you need to connect to the MySQL database using the MySQL client, you will need to open the firewall to your managed MySQL instance and allow connections from the location where you will run the client. Here are the instructions:
 https://docs.microsoft.com/en-us/azure/mysql/quickstart-create-mysql-server-database-using-azure-portal#configure-a-server-level-firewall-rule
@@ -59,7 +61,23 @@ https://docs.microsoft.com/en-us/azure/mysql/concepts-ssl-connection-security
 
 **Post-Setup**
 
-After the deployment and installation of REDCap has completed, everything should be green on the REDCap Configuration Check page. If anything displays on that page in red or yellow, it is recommended that you perform a "Restart" of the Azure "App Service". This needs to be done due to the fact that some necessary server environment settings get changed after the initial deployment, but restarting the App Service will load the service with the intended settings. Everything should be fine after that initial restart though.
+After the deployment and installation of REDCap has completed, you will need to initialize the database. The application gets deployed via Kudu which calls the `deploy.sh` script. After deployment, the `postbuild.sh` script extracts the MySQL commands from REDCap's installation page (`install.php`) and drops the output into a file called `install.sql`. Both `install.sh` and `install.sql` files will be dropped into `/home` directory.
+
+Once the source control deployment of REDCap has completed, you will need to SSH into the running container:
+
+![ssh](images/ssh.png)
+
+Execute the following command from the `/home` directory:
+
+```sh
+bash install.sh
+```
+
+![ssh](images/install.png)
+
+It will take a few minutes to execute the SQL.
+
+Once you regain access to the console, you can navigate to the root of your app service and confirm everything shows green on the REDCap Configuration Check page - with the exception of CronJob status which you may have to manually invoke. If anything displays on that page in red or yellow, it is recommended that you perform a "Restart" of the Azure "App Service". This needs to be done due to the fact that some necessary server environment settings get changed after the initial deployment, but restarting the App Service will load the service with the intended settings. Everything should be fine after that initial restart though.
 
 **Note about REDCap "Easy Upgade"**
 
