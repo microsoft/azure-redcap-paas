@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "<=2.99.0"
+    }
+  }
+}
+
 provider "azurerm" {
   subscription_id = var.subscription_id
 
@@ -624,6 +633,8 @@ resource "azurerm_app_service_plan" "redcap" {
   resource_group_name = azurerm_resource_group.redcap.name
   location            = azurerm_resource_group.redcap.location
   tags                = var.tags
+  kind                = "Linux"
+  reserved            = true
 
   sku {
     tier     = var.app_service_plan_tier
@@ -650,8 +661,9 @@ resource "azurerm_app_service" "redcap" {
   }
 
   site_config {
-    php_version = "7.3"
-    always_on   = true
+    linux_fx_version = var.linuxFxVersion
+    app_command_line = "/home/startup.sh"
+    always_on        = true
 
     default_documents = [
       "index.php",
@@ -720,7 +732,7 @@ resource "azurerm_app_service" "redcap" {
     "DBName"                                          = "${var.siteName}_db",
     "DBUserName"                                      = "${var.administratorLogin}@${local.mysql_name}",
     "DBPassword"                                      = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.redcap.name};SecretName=${azurerm_key_vault_secret.mysql.name})",
-    "PHP_INI_SCAN_DIR"                                = "d:\\home\\site\\ini",
+    "PHP_INI_SCAN_DIR"                                = "/usr/local/etc/php/conf.d:/home/site",
     "from_email_address"                              = var.administrator_email,
     "smtp_fqdn_name"                                  = "NOT_USED",
     "smtp_port"                                       = "NOT_USED",
@@ -739,6 +751,7 @@ resource "azurerm_app_service" "redcap" {
     "XDT_MicrosoftApplicationInsights_PreemptSdk"     = "disabled"
     "WEBSITE_DNS_SERVER"                              = "168.63.129.16"
     "WEBSITE_VNET_ROUTE_ALL"                          = "1"
+    "SCM_DO_BUILD_DURING_DEPLOYMENT"                  = "1"
   }
 
   connection_string {

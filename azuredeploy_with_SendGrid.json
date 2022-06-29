@@ -1,6 +1,13 @@
-﻿{
-  "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.7.4.23292",
+      "templateHash": "3982466538065941822"
+    }
+  },
   "parameters": {
     "siteName": {
       "type": "string",
@@ -8,19 +15,33 @@
         "description": "Name of azure web app"
       }
     },
+    "linuxFxVersion": {
+      "type": "string",
+      "defaultValue": "php|7.4",
+      "metadata": {
+        "description": "Stack settings"
+      }
+    },
     "administratorLogin": {
       "type": "string",
-      "minLength": 1,
       "defaultValue": "redcap_app",
+      "minLength": 1,
       "metadata": {
         "description": "Database administrator login name"
       }
     },
     "administratorLoginPassword": {
-      "type": "securestring",
+      "type": "secureString",
       "minLength": 8,
       "metadata": {
         "description": "Password used for database administration and SendGrid email access"
+      }
+    },
+    "redcapAppZip": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "REDCap zip file URI."
       }
     },
     "redcapCommunityUsername": {
@@ -30,17 +51,17 @@
       }
     },
     "redcapCommunityPassword": {
-      "type": "securestring",
+      "type": "secureString",
       "metadata": {
         "description": "REDCap Community site password for downloading the REDCap zip file."
       }
     },
     "redcapAppZipVersion": {
       "type": "string",
+      "defaultValue": "latest",
       "metadata": {
         "description": "REDCap zip file version to be downloaded from the REDCap Community site."
-      },
-      "defaultValue": "latest"
+      }
     },
     "fromEmailAddress": {
       "type": "string",
@@ -60,10 +81,12 @@
         "S1",
         "S2",
         "S3",
-        "P1",
-        "P2",
-        "P3",
-        "P4"
+        "P1v2",
+        "P2v2",
+        "P3v2",
+        "P1v3",
+        "P2v3",
+        "P3v3"
       ],
       "metadata": {
         "description": "Describes plan's pricing tier and capacity - this can be changed after deployment. Check details at https://azure.microsoft.com/en-us/pricing/details/app-service/"
@@ -87,32 +110,29 @@
     "databaseForMySqlTier": {
       "type": "string",
       "defaultValue": "GeneralPurpose",
-      "metadata": {
-        "description": "Select MySql server performance tier. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
-      },
       "allowedValues": [
         "Basic",
         "GeneralPurpose",
         "MemoryOptimized"
-      ]
+      ],
+      "metadata": {
+        "description": "Select MySql server performance tier. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
+      }
     },
     "databaseForMySqlFamily": {
       "type": "string",
       "defaultValue": "Gen5",
-      "metadata": {
-        "description": "Select MySql compute generation. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
-      },
       "allowedValues": [
         "Gen4",
         "Gen5"
-      ]
+      ],
+      "metadata": {
+        "description": "Select MySql compute generation. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
+      }
     },
     "databaseForMySqlCores": {
       "type": "int",
       "defaultValue": 2,
-      "metadata": {
-        "description": "Select MySql vCore count. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
-      },
       "allowedValues": [
         1,
         2,
@@ -120,15 +140,18 @@
         8,
         16,
         32
-      ]
+      ],
+      "metadata": {
+        "description": "Select MySql vCore count. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
+      }
     },
     "mysqlVersion": {
       "type": "string",
+      "defaultValue": "5.7",
       "allowedValues": [
         "5.6",
         "5.7"
       ],
-      "defaultValue": "5.7",
       "metadata": {
         "description": "MySQL version"
       }
@@ -170,27 +193,27 @@
     }
   },
   "variables": {
-    "siteName": "[replace(parameters('siteName'), ' ', '')]",
-    "databaseName": "[concat(variables('siteName'), '_db')]",
-    "serverName": "[concat(variables('siteName'), uniqueString(resourceGroup().id))]",
-    "hostingPlanName": "[concat(variables('siteName'), '_serviceplan')]",
-    "sendgridAccountName": "[concat(variables('siteName'), '_sendgrid')]",
-    "webSiteName": "[concat(variables('siteName'), uniqueString(resourceGroup().id))]",
+    "siteName_var": "[replace(parameters('siteName'), ' ', '')]",
+    "databaseName": "[format('{0}_db', variables('siteName_var'))]",
+    "serverName_var": "[concat(variables('siteName_var'), uniqueString(resourceGroup().id))]",
+    "hostingPlanName_var": "[format('{0}_serviceplan', variables('siteName_var'))]",
+    "sendgridAccountName_var": "[format('{0}_sendgrid', variables('siteName_var'))]",
+    "webSiteName_var": "[concat(variables('siteName_var'), uniqueString(resourceGroup().id))]",
     "tierSymbol": {
       "Basic": "B",
       "GeneralPurpose": "GP",
       "MemoryOptimized": "MO"
     },
-    "databaseForMySqlSku": "[concat(variables('tierSymbol')[parameters('databaseForMySqlTier')], '_', parameters('databaseForMySqlFamily'), '_', parameters('databaseForMySqlCores'))]",
-    "storageName": "[concat('storage', uniqueString(resourceGroup().id))]",
-    "storageAccountId": "[concat(resourceGroup().id,'/providers/Microsoft.Storage/storageAccounts/', variables('storageName'))]"
+    "databaseForMySqlSku": "[format('{0}_{1}_{2}', variables('tierSymbol')[parameters('databaseForMySqlTier')], parameters('databaseForMySqlFamily'), parameters('databaseForMySqlCores'))]",
+    "storageName_var": "[format('storage{0}', uniqueString(resourceGroup().id))]",
+    "storageAccountId": "[format('{0}/providers/Microsoft.Storage/storageAccounts/{1}', resourceGroup().id, variables('storageName_var'))]"
   },
   "resources": [
     {
-      "name": "[variables('sendgridAccountName')]",
       "type": "Sendgrid.Email/accounts",
-      "location": "[resourceGroup().location]",
       "apiVersion": "2015-01-01",
+      "name": "[variables('sendgridAccountName_var')]",
+      "location": "[resourceGroup().location]",
       "tags": {
         "displayName": "SendGrid"
       },
@@ -207,23 +230,38 @@
       }
     },
     {
-      "name": "[variables('storageName')]",
       "type": "Microsoft.Storage/storageAccounts",
-      "location": "[resourceGroup().location]",
       "apiVersion": "2016-01-01",
+      "name": "[variables('storageName_var')]",
+      "location": "[resourceGroup().location]",
       "sku": {
         "name": "[parameters('storageType')]"
       },
-      "dependsOn": [],
       "tags": {
         "displayName": "BackingStorage"
       },
       "kind": "Storage"
     },
     {
-      "apiVersion": "2016-09-01",
-      "name": "[variables('hostingPlanName')]",
+      "type": "Microsoft.Storage/storageAccounts/blobServices",
+      "apiVersion": "2021-09-01",
+      "name": "[format('{0}/{1}', variables('storageName_var'), 'default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName_var'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2021-09-01",
+      "name": "[format('{0}/{1}/{2}', variables('storageName_var'), 'default', parameters('storageContainerName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices', variables('storageName_var'), 'default')]"
+      ]
+    },
+    {
       "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2016-09-01",
+      "name": "[variables('hostingPlanName_var')]",
       "location": "[resourceGroup().location]",
       "tags": {
         "displayName": "HostingPlan"
@@ -232,133 +270,139 @@
         "name": "[parameters('skuName')]",
         "capacity": "[parameters('skuCapacity')]"
       },
+      "kind": "linux",
       "properties": {
-        "name": "[variables('hostingPlanName')]"
+        "name": "[variables('hostingPlanName_var')]",
+        "reserved": true
       }
     },
     {
-      "apiVersion": "2016-08-01",
-      "name": "[variables('webSiteName')]",
       "type": "Microsoft.Web/sites",
+      "apiVersion": "2016-08-01",
+      "name": "[variables('webSiteName_var')]",
       "location": "[resourceGroup().location]",
-      "dependsOn": [
-        "[variables('hostingPlanName')]",
-        "[variables('storageName')]",
-        "[variables('sendgridAccountName')]"
-      ],
       "tags": {
         "displayName": "WebApp"
       },
       "properties": {
-        "name": "[variables('webSiteName')]",
-        "serverFarmId": "[variables('hostingPlanName')]",
+        "name": "[variables('webSiteName_var')]",
+        "serverFarmId": "[variables('hostingPlanName_var')]",
         "siteConfig": {
-          "phpVersion": "7.3",
+          "linuxFxVersion": "[parameters('linuxFxVersion')]",
           "alwaysOn": true,
           "connectionStrings": [
             {
               "name": "defaultConnection",
-              "ConnectionString": "[concat('Database=', variables('databaseName'), ';Data Source=', variables('serverName'),'.mysql.database.azure.com;User Id=',parameters('administratorLogin'),'@',variables('serverName'),';Password=',parameters('administratorLoginPassword'))]",
+              "connectionString": "[format('Database={0};Data Source={1}.mysql.database.azure.com;User Id={2}@{3};Password={4}', variables('databaseName'), variables('serverName_var'), parameters('administratorLogin'), variables('serverName_var'), parameters('administratorLoginPassword'))]",
               "type": "MySql"
             }
           ],
+          "appCommandLine": "/home/startup.sh",
           "appSettings": [
             {
-              "Name": "StorageContainerName",
-              "Value": "[parameters('storageContainerName')]"
+              "name": "StorageContainerName",
+              "value": "[parameters('storageContainerName')]"
             },
             {
-              "Name": "StorageAccount",
-              "Value": "[variables('storageName')]"
+              "name": "StorageAccount",
+              "value": "[variables('storageName_var')]"
             },
             {
-              "Name": "StorageKey",
-              "value": "[concat(listKeys(variables('storageAccountId'),'2015-05-01-preview').key1)]"
+              "name": "StorageKey",
+              "value": "[concat(listKeys(variables('storageAccountId'), '2015-05-01-preview').key1)]"
             },
             {
-              "Name": "redcapAppZip",
-              "value": ""
+              "name": "redcapAppZip",
+              "value": "[parameters('redcapAppZip')]"
             },
             {
-              "Name": "redcapCommunityUsername",
+              "name": "redcapCommunityUsername",
               "value": "[parameters('redcapCommunityUsername')]"
             },
             {
-              "Name": "redcapCommunityPassword",
+              "name": "redcapCommunityPassword",
               "value": "[parameters('redcapCommunityPassword')]"
             },
             {
-              "Name": "redcapAppZipVersion",
+              "name": "redcapAppZipVersion",
               "value": "[parameters('redcapAppZipVersion')]"
             },
             {
-              "Name": "DBHostName",
-              "value": "[concat(variables('serverName') ,'.mysql.database.azure.com')]"
+              "name": "DBHostName",
+              "value": "[format('{0}.mysql.database.azure.com', variables('serverName_var'))]"
             },
             {
-              "Name": "DBName",
+              "name": "DBName",
               "value": "[variables('databaseName')]"
             },
             {
-              "Name": "DBUserName",
-              "value": "[concat(parameters('administratorLogin'),'@',variables('serverName'))]"
+              "name": "DBUserName",
+              "value": "[format('{0}@{1}', parameters('administratorLogin'), variables('serverName_var'))]"
             },
             {
-              "Name": "DBPassword",
+              "name": "DBPassword",
               "value": "[parameters('administratorLoginPassword')]"
             },
             {
-              "Name": "PHP_INI_SCAN_DIR",
-              "value": "d:\\home\\site\\ini"
+              "name": "PHP_INI_SCAN_DIR",
+              "value": "/usr/local/etc/php/conf.d:/home/site"
             },
             {
-              "Name": "from_email_address",
+              "name": "from_email_address",
               "value": "[parameters('fromEmailAddress')]"
             },
             {
-              "Name": "smtp_fqdn_name",
-              "value": "[reference(resourceId('Sendgrid.Email/accounts', variables('sendgridAccountName'))).smtpServer]"
+              "name": "smtp_fqdn_name",
+              "value": "[reference(resourceId('Sendgrid.Email/accounts', variables('sendgridAccountName_var'))).smtpServer]"
             },
             {
-              "Name": "smtp_port",
+              "name": "smtp_port",
               "value": "587"
             },
             {
-              "Name": "smtp_user_name",
-              "value": "[reference(resourceId('Sendgrid.Email/accounts', variables('sendgridAccountName'))).username]"
+              "name": "smtp_user_name",
+              "value": "[reference(resourceId('Sendgrid.Email/accounts', variables('sendgridAccountName_var'))).username]"
             },
             {
-              "Name": "smtp_password",
+              "name": "smtp_password",
               "value": "[parameters('administratorLoginPassword')]"
+            },
+            {
+              "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+              "value": "1"
             }
           ]
         }
       },
-      "resources": [
-        {
-          "name": "web",
-          "type": "sourcecontrols",
-          "location": "[resourceGroup().location]",
-          "apiVersion": "2015-08-01",
-          "dependsOn": [
-            "[resourceId('Microsoft.Web/sites', variables('webSiteName'))]",
-            "[concat('Microsoft.DBforMySQL/servers/', variables('serverName'))]"
-          ],
-          "tags": {
-            "displayName": "CodeDeploy"
-          },
-          "properties": {
-            "RepoUrl": "[parameters('repoUrl')]",
-            "branch": "[parameters('branch')]",
-            "IsManualIntegration": true
-          }
-        }
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName_var'))]",
+        "[resourceId('Sendgrid.Email/accounts', variables('sendgridAccountName_var'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName_var'))]"
       ]
     },
     {
-      "apiVersion": "2017-12-01-preview",
+      "type": "Microsoft.Web/sites/sourcecontrols",
+      "apiVersion": "2015-08-01",
+      "name": "[format('{0}/{1}', variables('webSiteName_var'), 'web')]",
       "location": "[resourceGroup().location]",
-      "name": "[variables('serverName')]",
+      "tags": {
+        "displayName": "CodeDeploy"
+      },
+      "properties": {
+        "repoUrl": "[parameters('repoURL')]",
+        "branch": "[parameters('branch')]",
+        "isManualIntegration": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforMySQL/servers', variables('serverName_var'))]",
+        "[resourceId('Microsoft.Web/sites', variables('webSiteName_var'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforMySQL/servers",
+      "apiVersion": "2017-12-01-preview",
+      "name": "[variables('serverName_var')]",
+      "location": "[resourceGroup().location]",
       "tags": {
         "displayName": "MySQLAzure"
       },
@@ -375,61 +419,58 @@
       },
       "sku": {
         "name": "[variables('databaseForMySqlSku')]"
+      }
+    },
+    {
+      "type": "Microsoft.DBforMySQL/servers/firewallRules",
+      "apiVersion": "2017-12-01-preview",
+      "name": "[format('{0}/{1}', variables('serverName_var'), 'AllowAzureIPs')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "startIpAddress": "0.0.0.0",
+        "endIpAddress": "0.0.0.0"
       },
-      "type": "Microsoft.DBforMySQL/servers",
-      "resources": [
-        {
-          "type": "firewallrules",
-          "apiVersion": "2017-12-01-preview",
-          "dependsOn": [
-            "[concat('Microsoft.DBforMySQL/servers/', variables('serverName'),'/databases/' , variables('databaseName'))]",
-            "[concat('Microsoft.DBforMySQL/servers/', variables('serverName'))]"
-          ],
-          "location": "[resourceGroup().location]",
-          "name": "AllowAzureIPs",
-          "properties": {
-            "startIpAddress": "0.0.0.0",
-            "endIpAddress": "0.0.0.0"
-          }
-        },
-        {
-          "name": "[variables('databaseName')]",
-          "type": "databases",
-          "apiVersion": "2017-12-01",
-          "tags": {
-            "displayName": "DB"
-          },
-          "properties": {
-            "charset": "utf8",
-            "collation": "utf8_general_ci"
-          },
-          "dependsOn": [
-            "[concat('Microsoft.DBforMySQL/servers/', variables('serverName'))]"
-          ]
-        }
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforMySQL/servers', variables('serverName_var'))]",
+        "[resourceId('Microsoft.DBforMySQL/servers/databases', variables('serverName_var'), format('{0}', variables('databaseName')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforMySQL/servers/databases",
+      "apiVersion": "2017-12-01",
+      "name": "[format('{0}/{1}', variables('serverName_var'), format('{0}', variables('databaseName')))]",
+      "tags": {
+        "displayName": "DB"
+      },
+      "properties": {
+        "charset": "utf8",
+        "collation": "utf8_general_ci"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforMySQL/servers', variables('serverName_var'))]"
       ]
     }
   ],
   "outputs": {
     "MySQLHostName": {
       "type": "string",
-      "value": "[concat(variables('serverName'),'.mysql.database.azure.com')]"
+      "value": "[format('{0}.mysql.database.azure.com', variables('serverName_var'))]"
     },
     "MySqlUserName": {
       "type": "string",
-      "value": "[concat(parameters('administratorLogin'),'@',variables('serverName'))]"
+      "value": "[format('{0}@{1}', parameters('administratorLogin'), variables('serverName_var'))]"
     },
     "webSiteFQDN": {
       "type": "string",
-      "value": "[concat(variables('webSiteName'),'.azurewebsites.net')]"
+      "value": "[format('{0}.azurewebsites.net', variables('webSiteName_var'))]"
     },
     "storageAccountKey": {
       "type": "string",
-      "value": "[concat(listKeys(variables('storageAccountId'),'2015-05-01-preview').key1)]"
+      "value": "[concat(listKeys(variables('storageAccountId'), '2015-05-01-preview').key1)]"
     },
     "storageAccountName": {
       "type": "string",
-      "value": "[variables('storageName')]"
+      "value": "[variables('storageName_var')]"
     },
     "storageContainerName": {
       "type": "string",
@@ -437,7 +478,7 @@
     },
     "SendGrid": {
       "type": "object",
-      "value": "[reference(resourceId('Sendgrid.Email/accounts', variables('sendgridAccountName')))]"
+      "value": "[reference(resourceId('Sendgrid.Email/accounts', variables('sendgridAccountName_var')))]"
     }
   }
 }
