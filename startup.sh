@@ -20,7 +20,7 @@ apt-get install -y sendmail cron
 #
 ####################################################################################
 
-echo "* * * * * /usr/local/bin/php /var/www/html/redcap/cron.php > /dev/null" >> /etc/crontab
+echo "* * * * * /usr/local/bin/php /home/site/wwwroot/cron.php > /dev/null" >> /etc/crontab
 service cron start
 
 ####################################################################################
