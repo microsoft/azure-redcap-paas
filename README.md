@@ -61,7 +61,7 @@ https://docs.microsoft.com/en-us/azure/mysql/concepts-ssl-connection-security
 
 **Post-Setup**
 
-After the deployment and installation of REDCap has completed, you will need to initialize the database. The application gets deployed via Kudu which calls the `deploy.sh` script. After deployment, the `postbuild.sh` script extracts the MySQL commands from REDCap's installation page (`install.php`) and drops the output into a file called `install.sql`. Both `install.sh` and `install.sql` files will be dropped into `/home` directory.
+After the deployment and installation of REDCap has completed; however, you will need to initialize the database manually. The application gets deployed via Kudu which calls the `deploy.sh` script. After deployment, the `postbuild.sh` script extracts the MySQL commands from REDCap's installation page (`install.php`) and drops the output into a file called `install.sql`. Both `install.sh` and `install.sql` files will be dropped into `/home` directory.
 
 Once the source control deployment of REDCap has completed, you will need to SSH into the running container:
 
