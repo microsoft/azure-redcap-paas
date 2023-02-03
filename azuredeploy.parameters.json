@@ -44,17 +44,17 @@
     "skuCapacity": {
       "value": 1
     },
-    "databaseSkuSizeMB": {
-      "value": 5120
+    "databaseStorageSizeGB": {
+      "value": 32
     },
-    "databaseForMySqlTier": {
-      "value": "GeneralPurpose"
+    "databaseStorageIops": {
+      "value": 396
     },
-    "databaseForMySqlFamily": {
-      "value": "Gen5"
+    "databaseStorageAutoGrow": {
+      "value": "Enabled"
     },
-    "databaseForMySqlCores": {
-      "value": 2
+    "databseStorageAutoIoScaling": {
+      "value": "Enabled"
     },
     "mysqlVersion": {
       "value": "5.7"

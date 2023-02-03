@@ -1,3 +1,5 @@
+param location string = resourceGroup().location
+
 @description('Name of azure web app')
 param siteName string
 
@@ -52,34 +54,23 @@ param skuName string = 'S1'
 @minValue(1)
 param skuCapacity int = 1
 
-@description('Azure database for MySQL sku Size ')
-param databaseSkuSizeMB int = 5120
+@description('Initial MySQL database storage size in GB ')
+param databaseStorageSizeGB int = 32
 
-@description('Select MySql server performance tier. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region.')
-@allowed([
-  'Basic'
-  'GeneralPurpose'
-  'MemoryOptimized'
-])
-param databaseForMySqlTier string = 'GeneralPurpose'
+@description('Initial MySQL databse storage IOPS')
+param databaseStorageIops int = 396
 
-@description('Select MySql compute generation. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region.')
 @allowed([
-  'Gen4'
-  'Gen5'
+  'Enabled'
+  'Disabled'
 ])
-param databaseForMySqlFamily string = 'Gen5'
+param databaseStorageAutoGrow string = 'Enabled'
 
-@description('Select MySql vCore count. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region.')
 @allowed([
-  1
-  2
-  4
-  8
-  16
-  32
+  'Enabled'
+  'Disabled'
 ])
-param databaseForMySqlCores int = 2
+param databseStorageAutoIoScaling string = 'Enabled'
 
 @description('MySQL version')
 @allowed([
@@ -107,24 +98,18 @@ param repoURL string = 'https://github.com/microsoft/azure-redcap-paas.git'
 @description('The main branch of the application repo')
 param branch string = 'main'
 
-var siteName_var = replace(siteName, ' ', '')
-var databaseName = '${siteName_var}_db'
-var serverName_var = concat(siteName_var, uniqueString(resourceGroup().id))
-var hostingPlanName_var = '${siteName_var}_serviceplan'
-var sendgridAccountName_var = '${siteName_var}_sendgrid'
-var webSiteName_var = concat(siteName_var, uniqueString(resourceGroup().id))
-var tierSymbol = {
-  Basic: 'B'
-  GeneralPurpose: 'GP'
-  MemoryOptimized: 'MO'
-}
-var databaseForMySqlSku = '${tierSymbol[databaseForMySqlTier]}_${databaseForMySqlFamily}_${databaseForMySqlCores}'
-var storageName_var = 'storage${uniqueString(resourceGroup().id)}'
-var storageAccountId = '${resourceGroup().id}/providers/Microsoft.Storage/storageAccounts/${storageName_var}'
+var siteNameCleaned = replace(siteName, ' ', '')
+var databaseName = '${siteNameCleaned}_db'
+var uniqueServerName = '${siteNameCleaned}${uniqueString(resourceGroup().id)}'
+var hostingPlanNameCleaned = '${siteNameCleaned}_serviceplan'
+var uniqueSendgridAccountName = '${siteNameCleaned}_sendgrid'
+var uniqueWebSiteName = '${siteNameCleaned}${uniqueString(resourceGroup().id)}'
+var uniqueStorageName = 'storage${uniqueString(resourceGroup().id)}'
+var storageAccountId = '${resourceGroup().id}/providers/Microsoft.Storage/storageAccounts/${uniqueStorageName}'
 
 resource sendgridAccountName 'Sendgrid.Email/accounts@2015-01-01' = {
-  name: sendgridAccountName_var
-  location: resourceGroup().location
+  name: uniqueSendgridAccountName
+  location: location
   tags: {
     displayName: 'SendGrid'
   }
@@ -142,8 +127,8 @@ resource sendgridAccountName 'Sendgrid.Email/accounts@2015-01-01' = {
 }
 
 resource storageName 'Microsoft.Storage/storageAccounts@2016-01-01' = {
-  name: storageName_var
-  location: resourceGroup().location
+  name: uniqueStorageName
+  location: location
   sku: {
     name: storageType
   }
@@ -165,8 +150,8 @@ resource storageContainer 'Microsoft.Storage/storageAccounts/blobServices/contai
 }
 
 resource hostingPlanName 'Microsoft.Web/serverfarms@2016-09-01' = {
-  name: hostingPlanName_var
-  location: resourceGroup().location
+  name: hostingPlanNameCleaned
+  location: location
   tags: {
     displayName: 'HostingPlan'
   }
@@ -176,27 +161,27 @@ resource hostingPlanName 'Microsoft.Web/serverfarms@2016-09-01' = {
   }
   kind: 'linux'
   properties: {
-    name: hostingPlanName_var
+    name: hostingPlanNameCleaned
     reserved: true
   }
 }
 
 resource webSiteName 'Microsoft.Web/sites@2016-08-01' = {
-  name: webSiteName_var
-  location: resourceGroup().location
+  name: uniqueWebSiteName
+  location: location
   tags: {
     displayName: 'WebApp'
   }
   properties: {
-    name: webSiteName_var
-    serverFarmId: hostingPlanName_var
+    name: uniqueWebSiteName
+    serverFarmId: hostingPlanNameCleaned
     siteConfig: {
       linuxFxVersion: linuxFxVersion
       alwaysOn: true
       connectionStrings: [
         {
           name: 'defaultConnection'
-          connectionString: 'Database=${databaseName};Data Source=${serverName_var}.mysql.database.azure.com;User Id=${administratorLogin}@${serverName_var};Password=${administratorLoginPassword}'
+          connectionString: 'Database=${databaseName};Data Source=${uniqueServerName}.mysql.database.azure.com;User Id=${administratorLogin}@${uniqueServerName};Password=${administratorLoginPassword}'
           type: 'MySql'
         }
       ]
@@ -208,7 +193,7 @@ resource webSiteName 'Microsoft.Web/sites@2016-08-01' = {
         }
         {
           name: 'StorageAccount'
-          value: storageName_var
+          value: uniqueStorageName
         }
         {
           name: 'StorageKey'
@@ -232,7 +217,7 @@ resource webSiteName 'Microsoft.Web/sites@2016-08-01' = {
         }
         {
           name: 'DBHostName'
-          value: '${serverName_var}.mysql.database.azure.com'
+          value: '${uniqueServerName}.mysql.database.azure.com'
         }
         {
           name: 'DBName'
@@ -240,11 +225,15 @@ resource webSiteName 'Microsoft.Web/sites@2016-08-01' = {
         }
         {
           name: 'DBUserName'
-          value: '${administratorLogin}@${serverName_var}'
+          value: '${administratorLogin}@${uniqueServerName}'
         }
         {
           name: 'DBPassword'
           value: administratorLoginPassword
+        }
+        {
+          name: 'DBSslCa'
+          value: '/home/site/wwwroot/DigiCertGlobalRootCA.crt.pem'
         }
         {
           name: 'PHP_INI_SCAN_DIR'
@@ -286,7 +275,7 @@ resource webSiteName 'Microsoft.Web/sites@2016-08-01' = {
 resource webSiteName_web 'Microsoft.Web/sites/sourcecontrols@2015-08-01' = {
   parent: webSiteName
   name: 'web'
-  location: resourceGroup().location
+  location: location
   tags: {
     displayName: 'CodeDeploy'
   }
@@ -300,9 +289,9 @@ resource webSiteName_web 'Microsoft.Web/sites/sourcecontrols@2015-08-01' = {
   ]
 }
 
-resource serverName 'Microsoft.DBforMySQL/servers@2017-12-01-preview' = {
-  location: resourceGroup().location
-  name: serverName_var
+resource serverName 'Microsoft.DBforMySQL/flexibleServers@2021-12-01-preview' = {
+  location: location
+  name: uniqueServerName
   tags: {
     displayName: 'MySQLAzure'
   }
@@ -310,21 +299,29 @@ resource serverName 'Microsoft.DBforMySQL/servers@2017-12-01-preview' = {
     version: mysqlVersion
     administratorLogin: administratorLogin
     administratorLoginPassword: administratorLoginPassword
-    storageProfile: {
-      storageMB: databaseSkuSizeMB
-      backupRetentionDays: '7'
+    storage: {
+      storageSizeGB: databaseStorageSizeGB
+      iops: databaseStorageIops
+      autoGrow: databaseStorageAutoGrow
+      autoIoScaling: databseStorageAutoIoScaling
+    }
+    backup: {
+      backupRetentionDays: 7
       geoRedundantBackup: 'Disabled'
     }
-    sslEnforcement: 'Disabled'
+    highAvailability: {
+      mode: 'Disabled'
+    }
+    replicationRole: 'None'
   }
   sku: {
-    name: databaseForMySqlSku
+    name: 'Standard_B1ms'
+    tier: 'Burstable'
   }
 }
 
-resource serverName_AllowAzureIPs 'Microsoft.DBforMySQL/servers/firewallrules@2017-12-01-preview' = {
+resource serverName_AllowAzureIPs 'Microsoft.DBforMySQL/flexibleServers/firewallRules@2021-12-01-preview' = {
   parent: serverName
-  location: resourceGroup().location
   name: 'AllowAzureIPs'
   properties: {
     startIpAddress: '0.0.0.0'
@@ -335,22 +332,18 @@ resource serverName_AllowAzureIPs 'Microsoft.DBforMySQL/servers/firewallrules@20
   ]
 }
 
-resource serverName_databaseName 'Microsoft.DBforMySQL/servers/databases@2017-12-01' = {
+resource serverName_databaseName 'Microsoft.DBforMySQL/flexibleServers/databases@2021-12-01-preview' = {
   parent: serverName
-  name: '${databaseName}'
-  tags: {
-    displayName: 'DB'
-  }
+  name: databaseName
   properties: {
     charset: 'utf8'
     collation: 'utf8_general_ci'
   }
 }
 
-output MySQLHostName string = '${serverName_var}.mysql.database.azure.com'
-output MySqlUserName string = '${administratorLogin}@${serverName_var}'
-output webSiteFQDN string = '${webSiteName_var}.azurewebsites.net'
-output storageAccountKey string = concat(listKeys(storageAccountId, '2015-05-01-preview').key1)
-output storageAccountName string = storageName_var
+output MySQLHostName string = '${uniqueServerName}.mysql.database.azure.com'
+output MySqlUserName string = '${administratorLogin}@${uniqueServerName}'
+output webSiteFQDN string = '${uniqueWebSiteName}.azurewebsites.net'
+output storageAccountName string = uniqueStorageName
 output storageContainerName string = storageContainerName
 output SendGrid object = sendgridAccountName.properties

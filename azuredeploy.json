@@ -4,11 +4,15 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.7.4.23292",
-      "templateHash": "14039527216535323467"
+      "version": "0.14.6.61914",
+      "templateHash": "10457554200344794888"
     }
   },
   "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
     "siteName": {
       "type": "string",
       "metadata": {
@@ -31,7 +35,7 @@
       }
     },
     "administratorLoginPassword": {
-      "type": "secureString",
+      "type": "securestring",
       "minLength": 8,
       "metadata": {
         "description": "Database administrator password"
@@ -51,7 +55,7 @@
       }
     },
     "redcapCommunityPassword": {
-      "type": "secureString",
+      "type": "securestring",
       "metadata": {
         "description": "REDCap Community site password for downloading the REDCap zip file."
       }
@@ -82,7 +86,7 @@
       }
     },
     "smtpPassword": {
-      "type": "secureString",
+      "type": "securestring",
       "metadata": {
         "description": "Login password for your SMTP relay"
       }
@@ -125,50 +129,35 @@
         "description": "Describes plan's instance count (how many distinct web servers will be deployed in the farm) - this can be changed after deployment"
       }
     },
-    "databaseSkuSizeMB": {
+    "databaseStorageSize": {
       "type": "int",
-      "defaultValue": 5120,
+      "defaultValue": 32,
       "metadata": {
-        "description": "Azure database for MySQL sku Size "
+        "description": "Initial MySQL database storage size "
       }
     },
-    "databaseForMySqlTier": {
-      "type": "string",
-      "defaultValue": "GeneralPurpose",
-      "allowedValues": [
-        "Basic",
-        "GeneralPurpose",
-        "MemoryOptimized"
-      ],
-      "metadata": {
-        "description": "Select MySql server performance tier. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
-      }
-    },
-    "databaseForMySqlFamily": {
-      "type": "string",
-      "defaultValue": "Gen5",
-      "allowedValues": [
-        "Gen4",
-        "Gen5"
-      ],
-      "metadata": {
-        "description": "Select MySql compute generation. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
-      }
-    },
-    "databaseForMySqlCores": {
+    "databaseStorageIops": {
       "type": "int",
-      "defaultValue": 2,
-      "allowedValues": [
-        1,
-        2,
-        4,
-        8,
-        16,
-        32
-      ],
+      "defaultValue": 396,
       "metadata": {
-        "description": "Select MySql vCore count. Please review https://docs.microsoft.com/en-us/azure/mysql/concepts-pricing-tiers and ensure your choices are available in the selected region."
+        "description": "Initial MySQL databse storage IOPS"
       }
+    },
+    "databaseStorageAutoGrow": {
+      "type": "string",
+      "defaultValue": "Enabled",
+      "allowedValues": [
+        "Enabled",
+        "Disabled"
+      ]
+    },
+    "databseStorageAutoIoScaling": {
+      "type": "string",
+      "defaultValue": "Enabled",
+      "allowedValues": [
+        "Enabled",
+        "Disabled"
+      ]
     },
     "mysqlVersion": {
       "type": "string",
@@ -218,26 +207,20 @@
     }
   },
   "variables": {
-    "siteName_var": "[replace(parameters('siteName'), ' ', '')]",
-    "databaseName": "[format('{0}_db', variables('siteName_var'))]",
-    "serverName_var": "[format('{0}{1}', variables('siteName_var'), uniqueString(resourceGroup().id))]",
-    "hostingPlanName_var": "[format('{0}_serviceplan', variables('siteName_var'))]",
-    "webSiteName_var": "[format('{0}{1}', variables('siteName_var'), uniqueString(resourceGroup().id))]",
-    "tierSymbol": {
-      "Basic": "B",
-      "GeneralPurpose": "GP",
-      "MemoryOptimized": "MO"
-    },
-    "databaseForMySqlSku": "[format('{0}_{1}_{2}', variables('tierSymbol')[parameters('databaseForMySqlTier')], parameters('databaseForMySqlFamily'), parameters('databaseForMySqlCores'))]",
-    "storageName_var": "[format('storage{0}', uniqueString(resourceGroup().id))]",
-    "storageAccountId": "[format('{0}/providers/Microsoft.Storage/storageAccounts/{1}', resourceGroup().id, variables('storageName_var'))]"
+    "siteNameCleaned": "[replace(parameters('siteName'), ' ', '')]",
+    "databaseName": "[format('{0}_db', variables('siteNameCleaned'))]",
+    "uniqueServerName": "[format('{0}{1}', variables('siteNameCleaned'), uniqueString(resourceGroup().id))]",
+    "hostingPlanNameCleaned": "[format('{0}_serviceplan', variables('siteNameCleaned'))]",
+    "uniqueWebSiteName": "[format('{0}{1}', variables('siteNameCleaned'), uniqueString(resourceGroup().id))]",
+    "uniqueStorageName": "[format('storage{0}', uniqueString(resourceGroup().id))]",
+    "storageAccountId": "[format('{0}/providers/Microsoft.Storage/storageAccounts/{1}', resourceGroup().id, variables('uniqueStorageName'))]"
   },
   "resources": [
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2016-01-01",
-      "name": "[variables('storageName_var')]",
-      "location": "[resourceGroup().location]",
+      "name": "[variables('uniqueStorageName')]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "[parameters('storageType')]"
       },
@@ -249,24 +232,24 @@
     {
       "type": "Microsoft.Storage/storageAccounts/blobServices",
       "apiVersion": "2021-09-01",
-      "name": "[format('{0}/{1}', variables('storageName_var'), 'default')]",
+      "name": "[format('{0}/{1}', variables('uniqueStorageName'), 'default')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName_var'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueStorageName'))]"
       ]
     },
     {
       "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
       "apiVersion": "2021-09-01",
-      "name": "[format('{0}/{1}/{2}', variables('storageName_var'), 'default', parameters('storageContainerName'))]",
+      "name": "[format('{0}/{1}/{2}', variables('uniqueStorageName'), 'default', parameters('storageContainerName'))]",
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts/blobServices', variables('storageName_var'), 'default')]"
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices', variables('uniqueStorageName'), 'default')]"
       ]
     },
     {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2016-09-01",
-      "name": "[variables('hostingPlanName_var')]",
-      "location": "[resourceGroup().location]",
+      "name": "[variables('hostingPlanNameCleaned')]",
+      "location": "[parameters('location')]",
       "tags": {
         "displayName": "HostingPlan"
       },
@@ -276,31 +259,24 @@
       },
       "kind": "linux",
       "properties": {
-        "name": "[variables('hostingPlanName_var')]",
+        "name": "[variables('hostingPlanNameCleaned')]",
         "reserved": true
       }
     },
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2016-08-01",
-      "name": "[variables('webSiteName_var')]",
-      "location": "[resourceGroup().location]",
+      "name": "[variables('uniqueWebSiteName')]",
+      "location": "[parameters('location')]",
       "tags": {
         "displayName": "WebApp"
       },
       "properties": {
-        "name": "[variables('webSiteName_var')]",
-        "serverFarmId": "[variables('hostingPlanName_var')]",
+        "name": "[variables('uniqueWebSiteName')]",
+        "serverFarmId": "[variables('hostingPlanNameCleaned')]",
         "siteConfig": {
           "linuxFxVersion": "[parameters('linuxFxVersion')]",
           "alwaysOn": true,
-          "connectionStrings": [
-            {
-              "name": "defaultConnection",
-              "connectionString": "[format('Database={0};Data Source={1}.mysql.database.azure.com;User Id={2}@{3};Password={4}', variables('databaseName'), variables('serverName_var'), parameters('administratorLogin'), variables('serverName_var'), parameters('administratorLoginPassword'))]",
-              "type": "MySql"
-            }
-          ],
           "appCommandLine": "/home/startup.sh",
           "appSettings": [
             {
@@ -309,7 +285,7 @@
             },
             {
               "name": "StorageAccount",
-              "value": "[variables('storageName_var')]"
+              "value": "[variables('uniqueStorageName')]"
             },
             {
               "name": "StorageKey",
@@ -333,7 +309,7 @@
             },
             {
               "name": "DBHostName",
-              "value": "[format('{0}.mysql.database.azure.com', variables('serverName_var'))]"
+              "value": "[format('{0}.mysql.database.azure.com', variables('uniqueServerName'))]"
             },
             {
               "name": "DBName",
@@ -341,11 +317,15 @@
             },
             {
               "name": "DBUserName",
-              "value": "[format('{0}@{1}', parameters('administratorLogin'), variables('serverName_var'))]"
+              "value": "[parameters('administratorLogin')]"
             },
             {
               "name": "DBPassword",
               "value": "[parameters('administratorLoginPassword')]"
+            },
+            {
+              "name": "DBSslCa",
+              "value": "/home/site/wwwroot/DigiCertGlobalRootCA.crt.pem"
             },
             {
               "name": "PHP_INI_SCAN_DIR",
@@ -379,15 +359,15 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName_var'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName_var'))]"
+        "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanNameCleaned'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueStorageName'))]"
       ]
     },
     {
       "type": "Microsoft.Web/sites/sourcecontrols",
       "apiVersion": "2015-08-01",
-      "name": "[format('{0}/{1}', variables('webSiteName_var'), 'web')]",
-      "location": "[resourceGroup().location]",
+      "name": "[format('{0}/{1}', variables('uniqueWebSiteName'), 'web')]",
+      "location": "[parameters('location')]",
       "tags": {
         "displayName": "CodeDeploy"
       },
@@ -397,15 +377,15 @@
         "isManualIntegration": true
       },
       "dependsOn": [
-        "[resourceId('Microsoft.DBforMySQL/servers', variables('serverName_var'))]",
-        "[resourceId('Microsoft.Web/sites', variables('webSiteName_var'))]"
+        "[resourceId('Microsoft.DBforMySQL/flexibleServers', variables('uniqueServerName'))]",
+        "[resourceId('Microsoft.Web/sites', variables('uniqueWebSiteName'))]"
       ]
     },
     {
-      "type": "Microsoft.DBforMySQL/servers",
-      "apiVersion": "2017-12-01-preview",
-      "name": "[variables('serverName_var')]",
-      "location": "[resourceGroup().location]",
+      "type": "Microsoft.DBforMySQL/flexibleServers",
+      "apiVersion": "2021-12-01-preview",
+      "name": "[variables('uniqueServerName')]",
+      "location": "[parameters('location')]",
       "tags": {
         "displayName": "MySQLAzure"
       },
@@ -413,67 +393,68 @@
         "version": "[parameters('mysqlVersion')]",
         "administratorLogin": "[parameters('administratorLogin')]",
         "administratorLoginPassword": "[parameters('administratorLoginPassword')]",
-        "storageProfile": {
-          "storageMB": "[parameters('databaseSkuSizeMB')]",
-          "backupRetentionDays": "7",
+        "storage": {
+          "storageSizeGB": "[parameters('databaseStorageSize')]",
+          "iops": "[parameters('databaseStorageIops')]",
+          "autoGrow": "[parameters('databaseStorageAutoGrow')]",
+          "autoIoScaling": "[parameters('databseStorageAutoIoScaling')]"
+        },
+        "backup": {
+          "backupRetentionDays": 7,
           "geoRedundantBackup": "Disabled"
         },
-        "sslEnforcement": "Disabled"
+        "highAvailability": {
+          "mode": "Disabled"
+        },
+        "replicationRole": "None"
       },
       "sku": {
-        "name": "[variables('databaseForMySqlSku')]"
+        "name": "Standard_B1ms",
+        "tier": "Burstable"
       }
     },
     {
-      "type": "Microsoft.DBforMySQL/servers/firewallRules",
-      "apiVersion": "2017-12-01-preview",
-      "name": "[format('{0}/{1}', variables('serverName_var'), 'AllowAzureIPs')]",
-      "location": "[resourceGroup().location]",
+      "type": "Microsoft.DBforMySQL/flexibleServers/firewallRules",
+      "apiVersion": "2021-12-01-preview",
+      "name": "[format('{0}/{1}', variables('uniqueServerName'), 'AllowAzureIPs')]",
       "properties": {
         "startIpAddress": "0.0.0.0",
         "endIpAddress": "0.0.0.0"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.DBforMySQL/servers', variables('serverName_var'))]",
-        "[resourceId('Microsoft.DBforMySQL/servers/databases', variables('serverName_var'), format('{0}', variables('databaseName')))]"
+        "[resourceId('Microsoft.DBforMySQL/flexibleServers', variables('uniqueServerName'))]",
+        "[resourceId('Microsoft.DBforMySQL/flexibleServers/databases', variables('uniqueServerName'), variables('databaseName'))]"
       ]
     },
     {
-      "type": "Microsoft.DBforMySQL/servers/databases",
-      "apiVersion": "2017-12-01",
-      "name": "[format('{0}/{1}', variables('serverName_var'), format('{0}', variables('databaseName')))]",
-      "tags": {
-        "displayName": "DB"
-      },
+      "type": "Microsoft.DBforMySQL/flexibleServers/databases",
+      "apiVersion": "2021-12-01-preview",
+      "name": "[format('{0}/{1}', variables('uniqueServerName'), variables('databaseName'))]",
       "properties": {
         "charset": "utf8",
         "collation": "utf8_general_ci"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.DBforMySQL/servers', variables('serverName_var'))]"
+        "[resourceId('Microsoft.DBforMySQL/flexibleServers', variables('uniqueServerName'))]"
       ]
     }
   ],
   "outputs": {
     "MySQLHostName": {
       "type": "string",
-      "value": "[format('{0}.mysql.database.azure.com', variables('serverName_var'))]"
+      "value": "[format('{0}.mysql.database.azure.com', variables('uniqueServerName'))]"
     },
     "MySqlUserName": {
       "type": "string",
-      "value": "[format('{0}@{1}', parameters('administratorLogin'), variables('serverName_var'))]"
+      "value": "[format('{0}@{1}', parameters('administratorLogin'), variables('uniqueServerName'))]"
     },
     "webSiteFQDN": {
       "type": "string",
-      "value": "[format('{0}.azurewebsites.net', variables('webSiteName_var'))]"
-    },
-    "storageAccountKey": {
-      "type": "string",
-      "value": "[concat(listKeys(variables('storageAccountId'), '2015-05-01-preview').key1)]"
+      "value": "[format('{0}.azurewebsites.net', variables('uniqueWebSiteName'))]"
     },
     "storageAccountName": {
       "type": "string",
-      "value": "[variables('storageName_var')]"
+      "value": "[variables('uniqueStorageName')]"
     },
     "storageContainerName": {
       "type": "string",
