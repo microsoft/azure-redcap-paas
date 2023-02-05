@@ -520,38 +520,28 @@ resource "azurerm_private_endpoint" "keyvault" {
 ##############################################
 # AZURE DATABASE FOR MYSQL
 ##############################################
-resource "azurerm_mysql_server" "redcap" {
-  name                              = local.mysql_name
-  resource_group_name               = azurerm_resource_group.redcap.name
-  location                          = azurerm_resource_group.redcap.location
-  tags                              = var.tags
-  administrator_login               = var.administratorLogin
-  administrator_login_password      = random_password.redcap.result
-  sku_name                          = local.mysql_sku
-  storage_mb                        = var.databaseSkuSizeMB
-  version                           = var.mysqlVersion
-  auto_grow_enabled                 = true
-  backup_retention_days             = 30
-  geo_redundant_backup_enabled      = true
-  infrastructure_encryption_enabled = false
-  public_network_access_enabled     = true
-  ssl_enforcement_enabled           = false
-  #ssl_minimal_tls_version_enforced  = "TLS1_2"
-
-  # threat_detection_policy {
-  #   enabled                    = true
-  #   email_account_admins       = true
-  #   email_addresses            = [var.administrator_email]
-  #   retention_days             = 30
-  #   storage_account_access_key = azurerm_storage_account.redcap.primary_access_key
-  #   storage_endpoint           = azurerm_storage_account.redcap.primary_blob_endpoint
-  # }
+resource "azurerm_mysql_flexible_server" "redcap" {
+  name                   = local.mysql_name
+  resource_group_name    = azurerm_resource_group.redcap.name
+  location               = azurerm_resource_group.redcap.location
+  tags                   = var.tags
+  administrator_login    = var.administratorLogin
+  administrator_password = random_password.redcap.result
+  sku_name               = local.mysql_sku
+  storage {
+    size_gb           = var.databaseStorageSizeGB
+    auto_grow_enabled = true
+    iops              = 360
+  }
+  version                      = var.mysqlVersion
+  backup_retention_days        = 30
+  geo_redundant_backup_enabled = true
 }
 
 resource "azurerm_mysql_virtual_network_rule" "compute" {
   name                = "${azurerm_subnet.redcap["ComputeSubnet"].name}Rule"
   resource_group_name = azurerm_resource_group.redcap.name
-  server_name         = azurerm_mysql_server.redcap.name
+  server_name         = azurerm_mysql_flexible_server.redcap.name
   subnet_id           = azurerm_subnet.redcap["ComputeSubnet"].id
 
   depends_on = [
@@ -562,7 +552,7 @@ resource "azurerm_mysql_virtual_network_rule" "compute" {
 resource "azurerm_mysql_virtual_network_rule" "integration" {
   name                = "${azurerm_subnet.redcap["IntegrationSubnet"].name}Rule"
   resource_group_name = azurerm_resource_group.redcap.name
-  server_name         = azurerm_mysql_server.redcap.name
+  server_name         = azurerm_mysql_flexible_server.redcap.name
   subnet_id           = azurerm_subnet.redcap["IntegrationSubnet"].id
 
   depends_on = [
@@ -573,7 +563,7 @@ resource "azurerm_mysql_virtual_network_rule" "integration" {
 resource "azurerm_mysql_virtual_network_rule" "privatelink" {
   name                = "${azurerm_subnet.redcap["PrivateLinkSubnet"].name}Rule"
   resource_group_name = azurerm_resource_group.redcap.name
-  server_name         = azurerm_mysql_server.redcap.name
+  server_name         = azurerm_mysql_flexible_server.redcap.name
   subnet_id           = azurerm_subnet.redcap["PrivateLinkSubnet"].id
 
   depends_on = [
@@ -581,10 +571,10 @@ resource "azurerm_mysql_virtual_network_rule" "privatelink" {
   ]
 }
 
-resource "azurerm_mysql_database" "redcap" {
+resource "azurerm_mysql_flexible_database" "redcap" {
   name                = "${var.siteName}_db"
   resource_group_name = azurerm_resource_group.redcap.name
-  server_name         = azurerm_mysql_server.redcap.name
+  server_name         = azurerm_mysql_flexible_server.redcap.name
   charset             = "utf8"
   collation           = "utf8_unicode_ci"
 }
@@ -605,7 +595,7 @@ resource "azurerm_private_endpoint" "mysql" {
 
   private_service_connection {
     name                           = "${local.mysql_name}-pe"
-    private_connection_resource_id = azurerm_mysql_server.redcap.id
+    private_connection_resource_id = azurerm_mysql_flexible_server.redcap.id
     is_manual_connection           = false
     subresource_names = [
       "mysqlServer"
@@ -732,6 +722,7 @@ resource "azurerm_app_service" "redcap" {
     "DBName"                                          = "${var.siteName}_db",
     "DBUserName"                                      = "${var.administratorLogin}@${local.mysql_name}",
     "DBPassword"                                      = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.redcap.name};SecretName=${azurerm_key_vault_secret.mysql.name})",
+    "DBSslCa"                                         = "/home/site/wwwroot/DigiCertGlobalRootCA.crt.pem",
     "PHP_INI_SCAN_DIR"                                = "/usr/local/etc/php/conf.d:/home/site",
     "from_email_address"                              = var.administrator_email,
     "smtp_fqdn_name"                                  = "NOT_USED",

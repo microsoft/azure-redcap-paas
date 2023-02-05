@@ -218,9 +218,9 @@ variable "skuCapacity" {
   default     = 1
 }
 
-variable "databaseSkuSizeMB" {
+variable "databaseStorageSizeGB" {
   type    = number
-  default = 5120
+  default = 32
 
   description = "Azure database for MySQL sku Size."
 }

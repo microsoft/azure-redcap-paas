@@ -33,8 +33,8 @@ extension=/usr/local/lib/php/extensions/no-debug-non-zts-20190902/mysqli.so" >> 
 ####################################################################################
 
 cd /tmp
-  if [ -z "$APPSETTING_redcapAppZip" ]; then
-    echo "Downloading REDCap zip file from REDCap Community site" >> /home/site/log-$stamp.txt
+if [ -z "$APPSETTING_redcapAppZip" ]; then
+  echo "Downloading REDCap zip file from REDCap Community site" >> /home/site/log-$stamp.txt
 
   if [ -z "$APPSETTING_zipUsername" ]; then
     echo "Missing REDCap Community site username." >> /home/site/log-$stamp.txt
@@ -78,11 +78,18 @@ rm -Rf /home/site/wwwroot/redcap
 ####################################################################################
 
 echo "Updating database connection info in database.php" >> /home/site/log-$stamp.txt
+
 cd /home/site/wwwroot
-sed -i "s/your_mysql_host_name/$APPSETTING_DBHostName/" database.php
-sed -i "s/your_mysql_db_name/$APPSETTING_DBName/" database.php
-sed -i "s/your_mysql_db_username/$APPSETTING_DBUserName/" database.php
-sed -i "s/your_mysql_db_password/$APPSETTING_DBPassword/" database.php
+
+wget --no-check-certificate https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem
+
+sed -i "s/'your_mysql_host_name'/'$APPSETTING_DBHostName'/" database.php
+sed -i "s/'your_mysql_db_name'/'$APPSETTING_DBName'/" database.php
+sed -i "s/'your_mysql_db_username'/'$APPSETTING_DBUserName'/" database.php
+sed -i "s/'your_mysql_db_password'/'$APPSETTING_DBPassword'/" database.php
+sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = '$APPSETTING_DBSslCa';|" database.php
+
+sed -i "s/db_ssl_verify_server_cert = false;/db_ssl_verify_server_cert = true;/" database.php
 sed -i "s/$salt = '';/$salt = '$(echo $RANDOM | md5sum | head -c 20; echo;)';/" database.php
 
 ####################################################################################
