@@ -118,7 +118,72 @@ var hostingPlanNameCleaned = '${siteNameCleaned}_serviceplan'
 var uniqueWebSiteName = '${siteNameCleaned}${uniqueString(resourceGroup().id)}'
 var uniqueStorageName = 'storage${uniqueString(resourceGroup().id)}'
 var storageAccountId = '${resourceGroup().id}/providers/Microsoft.Storage/storageAccounts/${uniqueStorageName}'
+var uniqueFileShareStorageAccountName = 'fileShare${uniqueString(resourceGroup().id)}'
+var fileShareStorageAccountId = '${resourceGroup().id}/providers/Microsoft.Storage/storageAccounts/${uniqueFileShareStorageAccountName}'
+var addressSpace = [
+  '10.230.0.0/24'
+]
 
+var mySqlSubnetName = 'MySQLFlexSubnet'
+
+var subnets = [
+  {
+    name: 'PrivateLinkSubnet'
+    subnetPrefix: '10.230.0.0/27'
+  }
+  {
+    name: 'ComputeSubnet'
+    subnetPrefix: '10.230.0.32/27'
+  }
+  {
+    name: 'IntegrationSubnet'
+    subnetPrefix: '10.230.0.64/26'
+  }
+]
+
+var mySqlSubnet = {
+    name: mySqlSubnetName
+    subnetPrefix: '10.230.0.128/29'
+  }
+
+  resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
+    name: 'redcap'
+    location: location
+    properties: {
+      addressSpace: {
+        addressPrefixes: addressSpace
+      }
+    }
+  }
+  
+  @batchSize(1)
+  resource redcapSubnets 'Microsoft.Network/virtualNetworks/subnets@2022-11-01' = [for (sn,index) in subnets: {
+    name: sn.name
+    parent: virtualNetwork
+    properties : {
+      addressPrefix: sn.subnetPrefix
+    }
+  }]
+  
+  resource redcapSqlSubNet 'Microsoft.Network/virtualNetworks/subnets@2022-11-01' = {
+    name: mySqlSubnet.name
+    parent: virtualNetwork
+    properties : {
+      addressPrefix: mySqlSubnet.subnetPrefix
+      delegations: [
+        {
+          name: 'Microsoft.DBforMySQL/flexibleServers'
+          properties: {
+            serviceName: 'Microsoft.DBforMySQL/flexibleServers'
+          }
+        }
+      ]
+    }
+    dependsOn:[
+      redcapSubnets
+    ]
+  }
+  
 resource storageName 'Microsoft.Storage/storageAccounts@2016-01-01' = {
   name: uniqueStorageName
   location: location
@@ -142,6 +207,103 @@ resource storageContainer 'Microsoft.Storage/storageAccounts/blobServices/contai
   parent: blobServices
 }
 
+// resource fileShareStorageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
+//   name: uniqueFileShareStorageAccountName
+//   location: location
+//   sku: {
+//     name: storageType
+//   }
+//   tags: {
+//     displayName: 'FileStorage'
+//   }
+//   kind: 'FileStorage'
+//   properties: {
+//     accessTier: 'Premium'
+//     networkAcls: {
+//       bypass: 'Logging,Metrics,AzureServices'
+//       defaultAction: 'Deny'
+//       ipRules: [
+//         {
+//           action: 'Allow'
+//           value: 'string' //TODO
+//         }
+//       ]
+//       virtualNetworkRules:[
+//         {
+//           action: 'Allow'
+//           id: 'string' //TODO
+//         }
+//       ]
+//     }
+//   }
+//   dependsOn: []
+// }
+
+// resource fileServices 'Microsoft.Storage/storageAccounts/fileServices@2022-09-01' = {
+//   name: 'default'
+//   parent: fileShareStorageAccount
+// }
+
+// resource fileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01' = {
+//   name: storageContainerName
+//   parent: fileServices
+//   properties: {
+//     accessTier: 'Premium'
+//     enabledProtocols: 'string'
+//     // metadata: {}
+//     // rootSquash: 'string'
+//     shareQuota: 100
+//     signedIdentifiers: [
+//       {
+//         accessPolicy: {
+//           expiryTime: 'string'
+//           permission: 'string'
+//           startTime: 'string'
+//         }
+//         id: 'string'
+//       }
+//     ]
+//   }
+// }
+
+// resource kv 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
+//   name: keyVaultName
+//   location: location
+//   properties: {
+//     enabledForDeployment: enabledForDeployment
+//     enabledForDiskEncryption: enabledForDiskEncryption
+//     enabledForTemplateDeployment: enabledForTemplateDeployment
+//     tenantId: tenantId
+//     enableSoftDelete: true
+//     softDeleteRetentionInDays: 90
+//     accessPolicies: [
+//       {
+//         objectId: objectId
+//         tenantId: tenantId
+//         permissions: {
+//           keys: keysPermissions
+//           secrets: secretsPermissions
+//         }
+//       }
+//     ]
+//     sku: {
+//       name: skuName
+//       family: 'A'
+//     }
+//     networkAcls: {
+//       defaultAction: 'Allow'
+//       bypass: 'AzureServices'
+//     }
+//   }
+// }
+
+// resource secret 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+//   parent: kv
+//   name: secretName
+//   properties: {
+//     value: secretValue
+//   }
+// }
 resource hostingPlanName 'Microsoft.Web/serverfarms@2016-09-01' = {
   name: hostingPlanNameCleaned
   location: location
@@ -291,6 +453,9 @@ resource serverName 'Microsoft.DBforMySQL/flexibleServers@2021-12-01-preview' = 
       autoGrow: databaseStorageAutoGrow
       autoIoScaling: databseStorageAutoIoScaling
     }
+    network: {
+      delegatedSubnetResourceId: redcapSqlSubNet.id
+    }
     backup: {
       backupRetentionDays: 7
       geoRedundantBackup: 'Disabled'
@@ -304,6 +469,9 @@ resource serverName 'Microsoft.DBforMySQL/flexibleServers@2021-12-01-preview' = 
     name: 'Standard_B1ms'
     tier: 'Burstable'
   }
+  dependsOn:[
+    redcapSubnets
+  ]
 }
 
 resource serverName_AllowAzureIPs 'Microsoft.DBforMySQL/flexibleServers/firewallRules@2021-12-01-preview' = {
