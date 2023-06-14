@@ -118,72 +118,124 @@ var hostingPlanNameCleaned = '${siteNameCleaned}_serviceplan'
 var uniqueWebSiteName = '${siteNameCleaned}${uniqueString(resourceGroup().id)}'
 var uniqueStorageName = 'storage${uniqueString(resourceGroup().id)}'
 var storageAccountId = '${resourceGroup().id}/providers/Microsoft.Storage/storageAccounts/${uniqueStorageName}'
-var uniqueFileShareStorageAccountName = 'fileShare${uniqueString(resourceGroup().id)}'
+var uniqueFileShareStorageAccountName = 'fsrc${uniqueString(resourceGroup().id)}'
 var fileShareStorageAccountId = '${resourceGroup().id}/providers/Microsoft.Storage/storageAccounts/${uniqueFileShareStorageAccountName}'
+var keyVaultName = 'kv${uniqueString(resourceGroup().id)}'
 var addressSpace = [
   '10.230.0.0/24'
 ]
 
-var mySqlSubnetName = 'MySQLFlexSubnet'
+var privateLinkSubnet = {
+  name: 'PrivateLinkSubnet'
+  subnetPrefix: '10.230.0.0/27'
+}
 
-var subnets = [
-  {
-    name: 'PrivateLinkSubnet'
-    subnetPrefix: '10.230.0.0/27'
-  }
-  {
-    name: 'ComputeSubnet'
-    subnetPrefix: '10.230.0.32/27'
-  }
-  {
-    name: 'IntegrationSubnet'
-    subnetPrefix: '10.230.0.64/26'
-  }
-]
+var computeSubnet = {
+  name: 'ComputeSubnet'
+  subnetPrefix: '10.230.0.32/27'
+}
+
+var integrationSubnet = {
+  name: 'IntegrationSubnet'
+  subnetPrefix: '10.230.0.64/26'
+}
 
 var mySqlSubnet = {
-    name: mySqlSubnetName
-    subnetPrefix: '10.230.0.128/29'
-  }
+  name: 'MySQLFlexSubnet'
+  subnetPrefix: '10.230.0.128/29'
+}
 
-  resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
-    name: 'redcap'
-    location: location
-    properties: {
-      addressSpace: {
-        addressPrefixes: addressSpace
-      }
+resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
+  name: 'redcap'
+  location: location
+  properties: {
+    addressSpace: {
+      addressPrefixes: addressSpace
     }
   }
-  
-  @batchSize(1)
-  resource redcapSubnets 'Microsoft.Network/virtualNetworks/subnets@2022-11-01' = [for (sn,index) in subnets: {
-    name: sn.name
-    parent: virtualNetwork
-    properties : {
-      addressPrefix: sn.subnetPrefix
-    }
-  }]
-  
-  resource redcapSqlSubNet 'Microsoft.Network/virtualNetworks/subnets@2022-11-01' = {
-    name: mySqlSubnet.name
-    parent: virtualNetwork
-    properties : {
-      addressPrefix: mySqlSubnet.subnetPrefix
-      delegations: [
-        {
-          name: 'Microsoft.DBforMySQL/flexibleServers'
-          properties: {
-            serviceName: 'Microsoft.DBforMySQL/flexibleServers'
-          }
-        }
-      ]
-    }
-    dependsOn:[
-      redcapSubnets
+}
+
+resource redcapPrivateLinkSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-11-01' = {
+  name: privateLinkSubnet.name
+  parent: virtualNetwork
+  properties: {
+    addressPrefix: privateLinkSubnet.subnetPrefix
+    serviceEndpoints: [
+      {
+        service: 'Microsoft.KeyVault'
+      }
+      {
+        service: 'Microsoft.Storage'
+      }
     ]
   }
-  
+}
+
+resource redcapComputeSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-11-01' = {
+  name: computeSubnet.name
+  parent: virtualNetwork
+  properties: {
+    addressPrefix: computeSubnet.subnetPrefix
+    serviceEndpoints: [
+      {
+        service: 'Microsoft.KeyVault'
+      }
+      {
+        service: 'Microsoft.Storage'
+      }
+    ]
+  }
+  dependsOn: [
+    redcapPrivateLinkSubnet
+  ]
+}
+
+resource redcapIntegrationSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-11-01' = {
+  name: integrationSubnet.name
+  parent: virtualNetwork
+  properties: {
+    addressPrefix: integrationSubnet.subnetPrefix
+    serviceEndpoints: [
+      {
+        service: 'Microsoft.KeyVault'
+      }
+      {
+        service: 'Microsoft.Storage'
+      }
+    ]
+  }
+  dependsOn: [
+    redcapComputeSubnet
+  ]
+}
+
+resource redcapSqlSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-11-01' = {
+  name: mySqlSubnet.name
+  parent: virtualNetwork
+  properties: {
+    addressPrefix: mySqlSubnet.subnetPrefix
+    serviceEndpoints: [
+      {
+        service: 'Microsoft.KeyVault'
+      }
+      {
+        service: 'Microsoft.Storage'
+      }
+    ]
+    delegations: [
+      {
+        name: 'Microsoft.DBforMySQL/flexibleServers'
+        properties: {
+          serviceName: 'Microsoft.DBforMySQL/flexibleServers'
+        }
+      }
+    ]
+  }
+  dependsOn: [
+    redcapIntegrationSubnet
+  ]
+}
+
 resource storageName 'Microsoft.Storage/storageAccounts@2016-01-01' = {
   name: uniqueStorageName
   location: location
@@ -207,103 +259,70 @@ resource storageContainer 'Microsoft.Storage/storageAccounts/blobServices/contai
   parent: blobServices
 }
 
-// resource fileShareStorageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
-//   name: uniqueFileShareStorageAccountName
-//   location: location
-//   sku: {
-//     name: storageType
-//   }
-//   tags: {
-//     displayName: 'FileStorage'
-//   }
-//   kind: 'FileStorage'
-//   properties: {
-//     accessTier: 'Premium'
-//     networkAcls: {
-//       bypass: 'Logging,Metrics,AzureServices'
-//       defaultAction: 'Deny'
-//       ipRules: [
-//         {
-//           action: 'Allow'
-//           value: 'string' //TODO
-//         }
-//       ]
-//       virtualNetworkRules:[
-//         {
-//           action: 'Allow'
-//           id: 'string' //TODO
-//         }
-//       ]
-//     }
-//   }
-//   dependsOn: []
-// }
+resource fileShareStorageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
+  name: uniqueFileShareStorageAccountName
+  location: location
+  sku: {
+    name: 'Premium_LRS'
+  }
+  tags: {
+    displayName: 'FileStorage'
+  }
+  kind: 'FileStorage'
+  properties: {
+    accessTier: 'Hot'
+    networkAcls: {
+      bypass: 'Logging,Metrics,AzureServices'
+      defaultAction: 'Deny'
+      // TODO data.http.ifconfig.body
+      // ipRules: [
+      //   {
+      //     action: 'Allow'
+      //     value: 'string'
+      //   }
+      // ]
+      virtualNetworkRules: [
+        {
+          action: 'Allow'
+          id: redcapPrivateLinkSubnet.id
+        }
+        {
+          action: 'Allow'
+          id: redcapComputeSubnet.id
+        }
+        {
+          action: 'Allow'
+          id: redcapIntegrationSubnet.id
+        }
+        {
+          action: 'Allow'
+          id: redcapSqlSubnet.id
+        }
+        // TODO Devops subnet id
+        // {
+        //   action: 'Allow'
+        //   id: ''
+        // }
+      ]
+    }
+  }
+  dependsOn: []
+}
 
-// resource fileServices 'Microsoft.Storage/storageAccounts/fileServices@2022-09-01' = {
-//   name: 'default'
-//   parent: fileShareStorageAccount
-// }
+resource fileServices 'Microsoft.Storage/storageAccounts/fileServices@2022-09-01' = {
+  name: 'default'
+  parent: fileShareStorageAccount
+}
 
-// resource fileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01' = {
-//   name: storageContainerName
-//   parent: fileServices
-//   properties: {
-//     accessTier: 'Premium'
-//     enabledProtocols: 'string'
-//     // metadata: {}
-//     // rootSquash: 'string'
-//     shareQuota: 100
-//     signedIdentifiers: [
-//       {
-//         accessPolicy: {
-//           expiryTime: 'string'
-//           permission: 'string'
-//           startTime: 'string'
-//         }
-//         id: 'string'
-//       }
-//     ]
-//   }
-// }
+resource fileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01' = {
+  name: storageContainerName
+  parent: fileServices
+  properties: {
+    accessTier: 'Premium'
+    shareQuota: 100
+  }
+}
 
-// resource kv 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
-//   name: keyVaultName
-//   location: location
-//   properties: {
-//     enabledForDeployment: enabledForDeployment
-//     enabledForDiskEncryption: enabledForDiskEncryption
-//     enabledForTemplateDeployment: enabledForTemplateDeployment
-//     tenantId: tenantId
-//     enableSoftDelete: true
-//     softDeleteRetentionInDays: 90
-//     accessPolicies: [
-//       {
-//         objectId: objectId
-//         tenantId: tenantId
-//         permissions: {
-//           keys: keysPermissions
-//           secrets: secretsPermissions
-//         }
-//       }
-//     ]
-//     sku: {
-//       name: skuName
-//       family: 'A'
-//     }
-//     networkAcls: {
-//       defaultAction: 'Allow'
-//       bypass: 'AzureServices'
-//     }
-//   }
-// }
-
-// resource secret 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
-//   parent: kv
-//   name: secretName
-//   properties: {
-//     value: secretValue
-//   }
-// }
 resource hostingPlanName 'Microsoft.Web/serverfarms@2016-09-01' = {
   name: hostingPlanNameCleaned
   location: location
@@ -324,6 +343,9 @@ resource hostingPlanName 'Microsoft.Web/serverfarms@2016-09-01' = {
 resource webSiteName 'Microsoft.Web/sites@2016-08-01' = {
   name: uniqueWebSiteName
   location: location
+  identity:{
+    type: 'SystemAssigned'
+  }
   tags: {
     displayName: 'WebApp'
   }
@@ -437,6 +459,161 @@ resource webSiteName_web 'Microsoft.Web/sites/sourcecontrols@2015-08-01' = {
   ]
 }
 
+resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
+  name: keyVaultName
+  location: location
+  properties: {
+    enabledForDiskEncryption: true
+    enabledForTemplateDeployment: true
+    tenantId: tenant().tenantId
+    enableSoftDelete: true
+    softDeleteRetentionInDays: 90
+    sku: {
+      name: 'standard'
+      family: 'A'
+    }
+    accessPolicies:[
+      {
+        objectId: webSiteName.identity.principalId
+        permissions: {
+          certificates: [
+            'all'
+          ]
+          keys: [
+            'backup'
+            'create'
+            'decrypt'
+            'delete'
+            'encrypt'
+            'get'
+            'import'
+            'list'
+            'purge'
+            'recover'
+            'restore'
+            'sign'
+            'unwrapKey'
+            'update'
+            'verify'
+            'wrapKey'
+          ]
+          secrets: [
+            'backup'
+            'delete'
+            'get'
+            'list'
+            'purge'
+            'recover'
+            'restore'
+            'set'
+          ]
+          storage: [
+            'backup'
+            'delete'
+            'deletesas'
+            'get'
+            'getsas'
+            'list'
+            'listsas'
+            'purge'
+            'recover'
+            'regeneratekey'
+            'restore'
+            'set'
+            'setsas'
+            'update'
+          ]
+        }
+        tenantId: tenant().tenantId
+      }
+    ]
+    networkAcls: {
+      defaultAction: 'Allow'
+      bypass: 'AzureServices'
+      // TODO data.http.ifconfig.body
+      // ipRules: [
+      //   {
+      //     value: 'string'
+      //   }
+      // ]
+      virtualNetworkRules: [
+        {
+          id: redcapPrivateLinkSubnet.id
+        }
+        {
+          id: redcapComputeSubnet.id
+        }
+        {
+          id: redcapIntegrationSubnet.id
+        }
+        {
+          id: redcapSqlSubnet.id
+        }
+        // TODO Devops subnet id
+        // {
+        //   action: 'Allow'
+        //   id: ''
+        // }
+      ]
+    }
+  }
+}
+
+
+resource secretMySql 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+  parent: keyVault
+  name: 'mysql-password'
+  properties: {
+    value: administratorLoginPassword
+  }
+  dependsOn:[]
+}
+
+resource secretStorage 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+  parent: keyVault
+  name: 'storage-key'
+  properties: {
+    value: storageName.listKeys().keys[0].value
+  }
+  dependsOn:[]
+}
+
+resource secretConnectionString 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+  parent: keyVault
+  name: 'connection-string'
+  properties: {
+    value: 'Database=${databaseName};Data Source=${uniqueServerName}.mysql.database.azure.com;User Id=${administratorLogin}@mysql-${uniqueServerName};Password=${administratorLoginPassword}'
+  }
+  dependsOn:[]
+}
+
+resource secretRCZip 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+  parent: keyVault
+  name: 'redcap-zipfile'
+  properties: {
+    value: redcapAppZip
+  }
+  dependsOn:[]
+}
+
+resource secretRCUser 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+  parent: keyVault
+  name: 'redcap-username'
+  properties: {
+    value: redcapCommunityUsername
+  }
+  dependsOn:[]
+}
+
+resource secretRCPass 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+  parent: keyVault
+  name: 'redcap-password'
+  properties: {
+    value: redcapCommunityPassword
+  }
+  dependsOn:[]
+}
+
 resource serverName 'Microsoft.DBforMySQL/flexibleServers@2021-12-01-preview' = {
   location: location
   name: uniqueServerName
@@ -454,7 +631,7 @@ resource serverName 'Microsoft.DBforMySQL/flexibleServers@2021-12-01-preview' = 
       autoIoScaling: databseStorageAutoIoScaling
     }
     network: {
-      delegatedSubnetResourceId: redcapSqlSubNet.id
+      delegatedSubnetResourceId: redcapSqlSubnet.id
     }
     backup: {
       backupRetentionDays: 7
@@ -469,9 +646,7 @@ resource serverName 'Microsoft.DBforMySQL/flexibleServers@2021-12-01-preview' = 
     name: 'Standard_B1ms'
     tier: 'Burstable'
   }
-  dependsOn:[
-    redcapSubnets
-  ]
+  dependsOn: []
 }
 
 resource serverName_AllowAzureIPs 'Microsoft.DBforMySQL/flexibleServers/firewallRules@2021-12-01-preview' = {
