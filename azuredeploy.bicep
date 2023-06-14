@@ -145,6 +145,7 @@ var mySqlSubnet = {
   subnetPrefix: '10.230.0.128/29'
 }
 
+// Virtual network and service endpoint region
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: 'redcap'
   location: location
@@ -236,7 +237,64 @@ resource redcapSqlSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-11-01' 
   ]
 }
 
-resource storageName 'Microsoft.Storage/storageAccounts@2016-01-01' = {
+// Private DNS zones and Vnet links
+resource privateDnsZoneBlob 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.blob.core.windows.net'
+  location: 'global'
+}
+
+resource vnetLinkBlob 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  name: 'vnetlinkblob'
+  location: 'global'
+  parent: privateDnsZoneBlob
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: virtualNetwork.id
+    }
+  }
+}
+
+resource privateDnsZoneFileShare 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.file.core.windows.net'
+  location: 'global'
+}
+
+resource vnetLinkFileShare 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  name: 'vnetlinkfile'
+  location: 'global'
+  parent: privateDnsZoneFileShare
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: virtualNetwork.id
+    }
+  }
+}
+
+// resource privateDnsZoneMySql 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+//   name: 'privatelink.mysql.database.azure.com'
+// }
+
+resource privateDnsZoneKeyVault 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.vaultcore.azure.net'
+  location: 'global'
+}
+
+resource vnetLinkKeyVault 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  name: 'vnetlinkkeyvault'
+  location: 'global'
+  parent: privateDnsZoneKeyVault
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: virtualNetwork.id
+    }
+  }
+}
+
+// Blob Storage region
+resource storageName 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: uniqueStorageName
   location: location
   sku: {
@@ -245,7 +303,7 @@ resource storageName 'Microsoft.Storage/storageAccounts@2016-01-01' = {
   tags: {
     displayName: 'BackingStorage'
   }
-  kind: 'Storage'
+  kind: 'StorageV2'
   dependsOn: []
 }
 
@@ -259,6 +317,43 @@ resource storageContainer 'Microsoft.Storage/storageAccounts/blobServices/contai
   parent: blobServices
 }
 
+resource privateEndpointBlob 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+  name: '${uniqueStorageName}-pe'
+  location: location
+  properties: {
+    subnet: {
+      id: redcapPrivateLinkSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: '${uniqueStorageName}-pe'
+        properties: {
+          privateLinkServiceId: storageName.id
+          groupIds: [
+            'blob'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource privateDnsZoneGroupsBlob 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
+  name: 'privatednsgroupblob'
+  parent: privateEndpointBlob
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'privatelink-blob'
+        properties: {
+          privateDnsZoneId: privateDnsZoneBlob.id
+        }
+      }
+    ]
+  }
+}
+
+// File Share region
 resource fileShareStorageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: uniqueFileShareStorageAccountName
   location: location
@@ -323,7 +418,45 @@ resource fileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2022-0
   }
 }
 
-resource hostingPlanName 'Microsoft.Web/serverfarms@2016-09-01' = {
+resource privateEndpointFileShare 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+  name: '${uniqueFileShareStorageAccountName}-pe'
+  location: location
+  properties: {
+    subnet: {
+      id: redcapPrivateLinkSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: '${uniqueFileShareStorageAccountName}-pe'
+        properties: {
+          privateLinkServiceId: fileShareStorageAccount.id
+          groupIds: [
+            'file'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource privateDnsZoneGroupsFileShare 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
+  name: 'privatednszonegroupfile'
+  parent: privateEndpointFileShare
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'privatelink-file'
+        properties: {
+          privateDnsZoneId: privateDnsZoneFileShare.id
+        }
+      }
+    ]
+  }
+}
+
+// App Service region
+
+resource hostingPlanName 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: hostingPlanNameCleaned
   location: location
   tags: {
@@ -340,10 +473,10 @@ resource hostingPlanName 'Microsoft.Web/serverfarms@2016-09-01' = {
   }
 }
 
-resource webSiteName 'Microsoft.Web/sites@2016-08-01' = {
+resource webSiteName 'Microsoft.Web/sites@2022-09-01' = {
   name: uniqueWebSiteName
   location: location
-  identity:{
+  identity: {
     type: 'SystemAssigned'
   }
   tags: {
@@ -442,7 +575,7 @@ resource webSiteName 'Microsoft.Web/sites@2016-08-01' = {
   ]
 }
 
-resource webSiteName_web 'Microsoft.Web/sites/sourcecontrols@2015-08-01' = {
+resource webSiteName_web 'Microsoft.Web/sites/sourcecontrols@2022-09-01' = {
   parent: webSiteName
   name: 'web'
   location: location
@@ -459,6 +592,7 @@ resource webSiteName_web 'Microsoft.Web/sites/sourcecontrols@2015-08-01' = {
   ]
 }
 
+// Key Vault and secrets region
 resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
   name: keyVaultName
   location: location
@@ -472,7 +606,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
       name: 'standard'
       family: 'A'
     }
-    accessPolicies:[
+    accessPolicies: [
       {
         objectId: webSiteName.identity.principalId
         permissions: {
@@ -559,14 +693,13 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
   }
 }
 
-
 resource secretMySql 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
   name: 'mysql-password'
   properties: {
     value: administratorLoginPassword
   }
-  dependsOn:[]
+  dependsOn: []
 }
 
 resource secretStorage 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
@@ -575,7 +708,7 @@ resource secretStorage 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = 
   properties: {
     value: storageName.listKeys().keys[0].value
   }
-  dependsOn:[]
+  dependsOn: []
 }
 
 resource secretConnectionString 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
@@ -584,7 +717,7 @@ resource secretConnectionString 'Microsoft.KeyVault/vaults/secrets@2021-11-01-pr
   properties: {
     value: 'Database=${databaseName};Data Source=${uniqueServerName}.mysql.database.azure.com;User Id=${administratorLogin}@mysql-${uniqueServerName};Password=${administratorLoginPassword}'
   }
-  dependsOn:[]
+  dependsOn: []
 }
 
 resource secretRCZip 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
@@ -593,7 +726,7 @@ resource secretRCZip 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   properties: {
     value: redcapAppZip
   }
-  dependsOn:[]
+  dependsOn: []
 }
 
 resource secretRCUser 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
@@ -602,7 +735,7 @@ resource secretRCUser 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   properties: {
     value: redcapCommunityUsername
   }
-  dependsOn:[]
+  dependsOn: []
 }
 
 resource secretRCPass 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
@@ -611,8 +744,46 @@ resource secretRCPass 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   properties: {
     value: redcapCommunityPassword
   }
-  dependsOn:[]
+  dependsOn: []
 }
+
+resource privateEndpointKeyVault 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+  name: '${keyVaultName}-pe'
+  location: location
+  properties: {
+    subnet: {
+      id: redcapPrivateLinkSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: '${keyVaultName}-pe'
+        properties: {
+          privateLinkServiceId: keyVault.id
+          groupIds: [
+            'vault'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource privateDnsZoneGroupsKeyVault 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
+  name: 'privatednszonegroupkeyvault'
+  parent: privateEndpointKeyVault
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'privatelink-keyvault'
+        properties: {
+          privateDnsZoneId: privateDnsZoneKeyVault.id
+        }
+      }
+    ]
+  }
+}
+
+// MySql Flex Region
 
 resource serverName 'Microsoft.DBforMySQL/flexibleServers@2021-12-01-preview' = {
   location: location
