@@ -1054,7 +1054,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = [for i in range(0, 
     }
     storageProfile: {
       osDisk: {
-        name: 'vm--OS-${i}'
+        name: 'vm-OS-${i}'
         caching: vmDiskCachingType
         managedDisk: {
           storageAccountType: vmDiskType
