@@ -1003,7 +1003,7 @@ resource hostPool 'Microsoft.DesktopVirtualization/hostPools@2022-10-14-preview'
     maxSessionLimit: 999999
     registrationInfo: {
       expirationTime: avdRegistrationExpiriationDate
-      registrationTokenOperation: 'Update'
+      // registrationTokenOperation: 'Update'
     }
     validationEnvironment: false
   }
