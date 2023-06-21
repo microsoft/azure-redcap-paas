@@ -120,6 +120,17 @@ param repoURL string = 'https://github.com/microsoft/azure-redcap-paas.git'
 @description('The main branch of the application repo')
 param branch string = 'main'
 
+@description('The username of a domain user or service account to use to join the Active Directory domain.')
+param domainJoinUsername string
+@secure()
+@description('The password of the domain user or service account to use to join the Active Directory domain.')
+param domainJoinPassword string
+
+@description('The fully qualified DNS name of the Active Directory domain to join.')
+param adDomainFqdn string
+@description('Optional. The OU path in LDAP notation to use when joining the session hosts.')
+param adOuPath string = ''
+
 var siteNameCleaned = replace(siteName, ' ', '')
 var databaseName = '${siteNameCleaned}_db'
 var uniqueServerName = '${siteNameCleaned}${uniqueString(resourceGroup().id)}'
@@ -128,6 +139,11 @@ var uniqueWebSiteName = '${siteNameCleaned}${uniqueString(resourceGroup().id)}'
 var uniqueStorageName = 'storage${uniqueString(resourceGroup().id)}'
 var uniqueFileShareStorageAccountName = 'fsrc${uniqueString(resourceGroup().id)}'
 var keyVaultName = 'kv${uniqueString(resourceGroup().id)}'
+// Assumed to be the same between both cloud environments
+// Latest as of 2023-05-10
+var configurationFileName = 'Configuration_01-19-2023.zip'
+
+var artifactsLocation = 'https://wvdportalstorageblob.blob.${az.environment().suffixes.storage}/galleryartifacts/${configurationFileName}'
 var addressSpace = [
   '10.230.0.0/24'
 ]
@@ -987,6 +1003,7 @@ resource hostPool 'Microsoft.DesktopVirtualization/hostPools@2022-10-14-preview'
     maxSessionLimit: 999999
     registrationInfo: {
       expirationTime: avdRegistrationExpiriationDate
+      registrationTokenOperation: 'Update'
     }
     validationEnvironment: false
   }
@@ -1083,6 +1100,113 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = [for i in range(0, 
     nic[i]
   ]
 }]
+
+// Reference https://github.com/Azure/avdaccelerator/blob/e247ec5d1ba5fac0c6e9f822c4198c6b41cb77b4/workload/bicep/modules/avdSessionHosts/deploy.bicep#L162
+// Needed to get the hostpool in order to pass registration info token, else it comes as null when usiung
+// registrationInfoToken: hostPool.properties.registrationInfo.token
+// Workaround: reference https://github.com/Azure/bicep/issues/6105
+// registrationInfoToken: reference(getHostPool.id, '2021-01-14-preview').registrationInfo.token - also does not work
+resource getHostPool 'Microsoft.DesktopVirtualization/hostPools@2019-12-10-preview' existing = {
+  name: hostPool.name
+}
+
+// Deploy the AVD agents to each session host
+resource avdAgentDscExtension 'Microsoft.Compute/virtualMachines/extensions@2018-10-01' = [for i in range(0, AVDnumberOfInstances): {
+  name: 'AvdAgentDSC'
+  parent: vm[i]
+  location: location
+  properties: {
+    publisher: 'Microsoft.Powershell'
+    type: 'DSC'
+    typeHandlerVersion: '2.73'
+    autoUpgradeMinorVersion: true
+    settings: {
+      modulesUrl: artifactsLocation
+      configurationFunction: 'Configuration.ps1\\AddSessionHost'
+      properties: {
+        hostPoolName: hostPool.name
+        registrationInfoToken: getHostPool.properties.registrationInfo.token
+        aadJoin: false
+      }
+    }
+  }
+  dependsOn: [
+    getHostPool
+  ]
+}]
+
+resource domainJoinExtension 'Microsoft.Compute/virtualMachines/extensions@2018-10-01' = [for i in range(0, AVDnumberOfInstances): {
+  name: 'DomainJoin'
+  parent: vm[i]
+  location: location
+  properties: {
+    publisher: 'Microsoft.Compute'
+    type: 'JsonADDomainExtension'
+    typeHandlerVersion: '1.3'
+    autoUpgradeMinorVersion: true
+    settings: {
+      name: adDomainFqdn
+      ouPath: adOuPath
+      user: domainJoinUsername
+      restart: 'true'
+      options: '3'
+    }
+    protectedSettings: {
+      password: domainJoinPassword
+    }
+  }
+  dependsOn: [
+    avdAgentDscExtension[i]
+  ]
+}]
+
+resource dependencyAgentExtension 'Microsoft.Compute/virtualMachines/extensions@2018-10-01' = [for i in range(0, AVDnumberOfInstances): {
+  name: 'DAExtension'
+  parent: vm[i]
+  location: location
+  properties: {
+    publisher: 'Microsoft.Azure.Monitoring.DependencyAgent'
+    type: 'DependencyAgentWindows'
+    typeHandlerVersion: '9.5'
+    autoUpgradeMinorVersion: true
+  }
+}]
+
+resource antiMalwareExtension 'Microsoft.Compute/virtualMachines/extensions@2018-10-01' = [for i in range(0, AVDnumberOfInstances): {
+  name: 'IaaSAntiMalware'
+  parent: vm[i]
+  location: location
+  properties: {
+    publisher: 'Microsoft.Azure.Security'
+    type: 'IaaSAntimalware'
+    typeHandlerVersion: '1.5'
+    autoUpgradeMinorVersion: true
+    settings: {
+      AntimalwareEnabled: true
+    }
+  }
+}]
+
+resource ansibleExtension 'Microsoft.Compute/virtualMachines/extensions@2018-10-01' = [for i in range(0, AVDnumberOfInstances): {
+  name: 'AnsibleWinRM'
+  parent: vm[i]
+  location: location
+  properties: {
+    publisher: 'Microsoft.Compute'
+    type: 'CustomScriptExtension'
+    typeHandlerVersion: '1.10'
+    autoUpgradeMinorVersion: true
+    settings: {
+      fileUris: ['https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1']
+    }
+    protectedSettings: {
+      commandToExecute: 'powershell.exe -Command \'./ConfigureRemotingForAnsible.ps1; exit 0;\''
+    }
+  }
+}]
+
+
+
 
 
 output MySQLHostName string = '${uniqueServerName}.mysql.database.azure.com'
