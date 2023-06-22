@@ -109,7 +109,7 @@ param storageContainerName string = 'redcap'
 
 param vmAdminUserName string
 @secure()
-param vmAdminPasswordName string
+param vmAdminPassword string
 param vmSku string = 'Standard_D4s_v4'
 param vmDiskType string = 'Standard_LRS'
 param vmDiskCachingType string = 'ReadWrite'
@@ -1003,7 +1003,6 @@ resource hostPool 'Microsoft.DesktopVirtualization/hostPools@2022-10-14-preview'
     maxSessionLimit: 999999
     registrationInfo: {
       expirationTime: avdRegistrationExpiriationDate
-      // registrationTokenOperation: 'Update'
     }
     validationEnvironment: false
   }
@@ -1061,7 +1060,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = [for i in range(0, 
     osProfile: {
       computerName: 'vm-redcap-${i}'
       adminUsername: vmAdminUserName
-      adminPassword: vmAdminPasswordName
+      adminPassword: vmAdminPassword
       windowsConfiguration: {
         enableAutomaticUpdates: false
         patchSettings: {
