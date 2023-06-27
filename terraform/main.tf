@@ -579,33 +579,33 @@ resource "azurerm_mysql_flexible_database" "redcap" {
   collation           = "utf8_unicode_ci"
 }
 
-resource "azurerm_private_endpoint" "mysql" {
-  name                = "${local.mysql_name}-pe"
-  resource_group_name = azurerm_resource_group.redcap.name
-  location            = azurerm_resource_group.redcap.location
-  tags                = var.tags
-  subnet_id           = azurerm_subnet.redcap["PrivateLinkSubnet"].id
+# resource "azurerm_private_endpoint" "mysql" {
+#   name                = "${local.mysql_name}-pe"
+#   resource_group_name = azurerm_resource_group.redcap.name
+#   location            = azurerm_resource_group.redcap.location
+#   tags                = var.tags
+#   subnet_id           = azurerm_subnet.redcap["PrivateLinkSubnet"].id
 
-  private_dns_zone_group {
-    name = "default"
-    private_dns_zone_ids = [
-      azurerm_private_dns_zone.mysql.id
-    ]
-  }
+#   private_dns_zone_group {
+#     name = "default"
+#     private_dns_zone_ids = [
+#       azurerm_private_dns_zone.mysql.id
+#     ]
+#   }
 
-  private_service_connection {
-    name                           = "${local.mysql_name}-pe"
-    private_connection_resource_id = azurerm_mysql_flexible_server.redcap.id
-    is_manual_connection           = false
-    subresource_names = [
-      "mysqlServer"
-    ]
-  }
+#   private_service_connection {
+#     name                           = "${local.mysql_name}-pe"
+#     private_connection_resource_id = azurerm_mysql_flexible_server.redcap.id
+#     is_manual_connection           = false
+#     subresource_names = [
+#       "mysqlServer"
+#     ]
+#   }
 
-  depends_on = [
-    azurerm_subnet.redcap["PrivateLinkSubnet"]
-  ]
-}
+#   depends_on = [
+#     azurerm_subnet.redcap["PrivateLinkSubnet"]
+#   ]
+# }
 
 ##############################################
 # AZURE APP SERVICE
