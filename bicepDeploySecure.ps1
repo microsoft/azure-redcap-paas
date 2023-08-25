@@ -6,55 +6,53 @@ $version = 0;
 
 #DEPLOYMENT OPTIONS
 #Please review the azuredeploy.bicep file for available options
-$RGName        = "<YOUR RESOURCE GROUP>"
-$DeployRegion  = "<SELECT AZURE REGION>"
+$RGName        = "RG-Redcap"
+$DeployRegion  = "eastus"
 
 $parms = @{
 
     #Alternative to the zip file above, you can use REDCap Community credentials to download the zip file.
-    "redcapCommunityUsername"     = "<REDCap Community site username>";
-    "redcapCommunityPassword"     = "<REDCap Community site password>";
+    "redcapCommunityUsername"     = "vishalkalal@thevktech.com";
+    "redcapCommunityPassword"     = "abc@1234";
     "redcapAppZipVersion"         = "<REDCap version";
 
     #Mail settings
-    "fromEmailAddress"            = "<email address listed as sender for outbound emails>";
-    "smtpFQDN"                    = "<what it says>"
-    "smtpUser"                    = "<login name for smtp auth>"
-    "smtpPassword"                = "<password for smtp auth>"
+    "fromEmailAddress"            = "vishalkalal@thevktech.com";
+    "smtpFQDN"                    = "smtp.thevktech.com"
+    "smtpUser"                    = "smtpuser"
+    "smtpPassword"                = "password@123"
 
     #Azure Web App
-    "siteName"                    = "<WEB SITE NAME, like 'redcap'>";
+    "siteName"                    = "vkdemoredcap";
     "skuName"                     = "S1";
     "skuCapacity"                 = 1;
 
     #MySQL
-    "administratorLogin"          = "<MySQL admin account name>";
-    "administratorLoginPassword"  = "<MySQL admin login password>";
+    "administratorLogin"          = "vishalkalal";
+    "administratorLoginPassword"  = "P@ssw0rd@123";
 
     # "databaseForMySqlCores"       = 2;
     # "databaseForMySqlFamily"      = "Gen5";
     # "databaseSkuSizeMB"           = 5120;
     # "databaseForMySqlTier"        = "GeneralPurpose";
     "mysqlVersion"                = "5.7";
-    
+
     #Azure Storage
     "storageType"                 = "Standard_LRS";
     "storageContainerName"        = "redcap";
 
     #GitHub
-    "repoURL"                     = "https://github.com/vanderbilt-redcap/redcap-azure.git";
+    "repoURL"                     = "https://github.com/microsoft/azure-redcap-paas.git";
     "branch"                      = "master";
 
     #AVD session hosts
-    "vmAdminUserName"             = "<vm admin user name>"
-    "vmAdminPassword"             = "<vm admin password>"
+    "vmAdminUserName"             = "vishalkalal"
+    "vmAdminPassword"             = "P@ssw0rd@123"
 
     #Domain join
-    "domainJoinUsername"          = "<domain join user name>"
-    "domainJoinPassword"          = "<domain join password>"
-    "adDomainFqdn"                = "<AD Domain FQDN>"
-
-
+    "domainJoinUsername"          = "ADDC01-admin"
+    "domainJoinPassword"          = "Info$world"
+    "adDomainFqdn"                = "thevktech.local"
 }
 #END DEPLOYMENT OPTIONS
 
