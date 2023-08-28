@@ -233,40 +233,18 @@ module keyvault './modules/kv/kv.bicep' = {
       virtualNetwork.outputs.subnets.PrivateLinkSubnet.id
     ]
     privateDnsZone: 'privatelink.vaultcore.azure.net'
-    // kvAccessPolicy: [
-    //   {
-    //     objectId: webApp.outputs.webAppIdentity
-    //     permissions: {
-    //       certificates: [ 'all' ]
-    //       keys: [ 'all' ]
-    //       secrets: [ 'all' ]
-    //       storage: [ 'all' ]
-    //     }
-    //   }
-    //   {
-    //     objectId: myObjectId
-    //     permissions: {
-    //       certificates: [ 'all' ]
-    //       keys: [ 'all' ]
-    //       secrets: [ 'all' ]
-    //       storage: [ 'all' ]
-    //     }
-    //   }
-    // ]
+    secrets: [
+      {
+        name: 'sqlUserName'
+        value: sqlUserName
+      }
+      {
+        name: 'sqlPassword'
+        value: sqlPassword
+      }
+    ]
   }
 }
-
-// resource serverName_AllowAzureIPs 'Microsoft.DBforMySQL/flexibleServers/firewallRules@2021-12-01-preview' = {
-//   parent: serverName
-//   name: 'AllowAzureIPs'
-//   properties: {
-//     startIpAddress: '0.0.0.0'
-//     endIpAddress: '0.0.0.0'
-//   }
-//   dependsOn: [
-//     serverName_databaseName
-//   ]
-// }
 
 // // Azure Virtual Desktop and Session Hosts region
 

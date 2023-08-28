@@ -1,4 +1,32 @@
-﻿$startTime=Get-Date
+﻿function Generate-RandomPassword {
+    param (
+        [Parameter(Mandatory)]
+        [int] $length
+    )
+
+    $charSet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.ToCharArray()
+
+    $rng = New-Object System.Security.Cryptography.RNGCryptoServiceProvider
+    $bytes = New-Object byte[]($length)
+
+    $rng.GetBytes($bytes)
+
+    $result = New-Object char[]($length)
+
+    for ($i = 0 ; $i -lt $length ; $i++) {
+        $result[$i] = $charSet[$bytes[$i]%$charSet.Length]
+    }
+
+    return -join $result
+}
+
+# Generate a secure password
+$securePassword = ConvertTo-SecureString -String (Generate-RandomPassword 10) -AsPlainText -Force
+
+
+#Read more: https://www.sharepointdiary.com/2020/04/powershell-generate-random-password.html#ixzz8Bi4xSZ4w
+
+$startTime=Get-Date
 Write-Host "Beginning deployment at $starttime"
 
 Import-Module Azure -ErrorAction SilentlyContinue
@@ -11,7 +39,7 @@ $DeployRegion  = "<SELECT AZURE REGION>"
 $AssetLocation = "https://github.com/vanderbilt-redcap/redcap-azure/blob/master/azuredeploy.json"
 
 $parms = @{
-
+    "initials" = "redcap"
     #Alternative to the zip file above, you can use REDCap Community credentials to download the zip file.
     "redcapCommunityUsername"     = "<REDCap Community site username>";
     "redcapCommunityPassword"     = "<REDCap Community site password>";
@@ -30,14 +58,14 @@ $parms = @{
 
     #MySQL
     "administratorLogin"          = "<MySQL admin account name>";
-    "administratorLoginPassword"  = "<MySQL admin login password>";
+    "administratorLoginPassword"  = $securePassword;
 
     "databaseForMySqlCores"       = 2;
     "databaseForMySqlFamily"      = "Gen5";
     "databaseSkuSizeMB"           = 5120;
     "databaseForMySqlTier"        = "GeneralPurpose";
     "mysqlVersion"                = "5.7";
-    
+
     #Azure Storage
     "storageType"                 = "Standard_LRS";
     "storageContainerName"        = "redcap";

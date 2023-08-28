@@ -107,8 +107,18 @@ resource database 'Microsoft.DBforMySQL/flexibleServers/databases@2021-12-01-pre
   properties: {
     charset: db_charset
     collation: db_collation
+
   }
 }
+
+// resource dbConfig 'Microsoft.DBforMySQL/flexibleServers/configurations@2022-01-01' = {
+//   name: '${flexibleServerName}-sql_generate_invisible_primary_key'
+//   parent: server
+//   properties: {
+//     source: 'user-override'
+//     value: 'off'
+//   }
+// }
 
 output dbServerName string = server.name
 output dbName string = database.name

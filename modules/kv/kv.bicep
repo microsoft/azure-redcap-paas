@@ -11,6 +11,12 @@ param subnetIds array
 param objectIds array
 param privateDnsZone string
 
+param secrets array = [
+  // {
+  //   testSecret: 'testValue'
+  // }
+]
+
 @allowed([
   'disabled'
   'enabled'
@@ -46,6 +52,14 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
     publicNetworkAccess: publicNetworkAccess
   }
 }
+
+resource keyVaultSecrets 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = [for secret in secrets: {
+  parent: keyVault
+  name: secret.name
+  properties: {
+    value: secret.value
+  }
+}]
 
 var kvAdministratorRoleDefinitionId = resourceId('Microsoft.Authorization/roleDefinitions', '00482a5a-887f-4fb3-b363-3b7fe8e74483')
 
@@ -97,93 +111,3 @@ resource privateDnsZoneGroupsKeyVault 'Microsoft.Network/privateEndpoints/privat
     ]
   }
 }]
-
-// resource secretMySql 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
-//   parent: keyVault
-//   name: mySqlSecretName
-//   properties: {
-//     value: administratorLoginPassword
-//   }
-//   dependsOn: []
-// }
-
-// resource secretStorage 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
-//   parent: keyVault
-//   name: storageSecretName
-//   properties: {
-//     value: storageName.listKeys().keys[0].value
-//   }
-//   dependsOn: []
-// }
-
-// resource secretConnectionString 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
-//   parent: keyVault
-//   name: connectionStringSecretName
-//   properties: {
-//     value: 'Database=${databaseName};Data Source=${uniqueServerName}.mysql.database.azure.com;User Id=${administratorLogin}@mysql-${uniqueServerName};Password=${administratorLoginPassword}'
-//   }
-//   dependsOn: []
-// }
-
-// resource secretRCZip 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
-//   parent: keyVault
-//   name: redcaAppZipSecretName
-//   properties: {
-//     value: redcapAppZip
-//   }
-//   dependsOn: []
-// }
-
-// resource secretRCUser 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
-//   parent: keyVault
-//   name: redcapUsernameSecretName
-//   properties: {
-//     value: redcapCommunityUsername
-//   }
-//   dependsOn: []
-// }
-
-// resource secretRCPass 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
-//   parent: keyVault
-//   name: redcapPasswordSecretName
-//   properties: {
-//     value: redcapCommunityPassword
-//   }
-//   dependsOn: []
-// }
-
-// resource privateEndpointKeyVault 'Microsoft.Network/privateEndpoints@2022-07-01' = {
-//   name: '${keyVaultName}-pe'
-//   location: location
-//   properties: {
-//     subnet: {
-//       id: redcapPrivateLinkSubnet.id
-//     }
-//     privateLinkServiceConnections: [
-//       {
-//         name: '${keyVaultName}-pe'
-//         properties: {
-//           privateLinkServiceId: keyVault.id
-//           groupIds: [
-//             'vault'
-//           ]
-//         }
-//       }
-//     ]
-//   }
-// }
-
-// resource privateDnsZoneGroupsKeyVault 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
-//   name: 'privatednszonegroupkeyvault'
-//   parent: privateEndpointKeyVault
-//   properties: {
-//     privateDnsZoneConfigs: [
-//       {
-//         name: 'privatelink-keyvault'
-//         properties: {
-//           privateDnsZoneId: privateDnsZoneKeyVault.id
-//         }
-//       }
-//     ]
-//   }
-// }
