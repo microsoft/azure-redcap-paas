@@ -1,3 +1,4 @@
+
 param location string = resourceGroup().location
 
 var prefix = 'Redcap'
@@ -7,90 +8,7 @@ var tags = {
   workload: prefix
 }
 
-var subnets = {
-  PrivateLinkSubnet: {
-    addressPrefix: '10.230.0.0/27'
-    serviceEndpoints: [
-      {
-        service: 'Microsoft.KeyVault'
-        locations: [
-          location
-        ]
-      }
-      {
-        service: 'Microsoft.Storage'
-        locations: [
-          location
-        ]
-      }
-    ]
-  }
-  ComputeSubnet: {
-    addressPrefix: '10.230.0.32/27'
-    serviceEndpoints: [
-      {
-        service: 'Microsoft.KeyVault'
-        locations: [
-          location
-        ]
-      }
-      {
-        service: 'Microsoft.Storage'
-        locations: [
-          location
-        ]
-      }
-      {
-        service: 'Microsoft.Web'
-        locations: [
-          location
-        ]
-      }
-    ]
-  }
-  IntegrationSubnet: {
-    addressPrefix: '10.230.0.64/26'
-    serviceEndpoints: [
-      {
-        service: 'Microsoft.KeyVault'
-        locations: [
-          location
-        ]
-      }
-      {
-        service: 'Microsoft.Storage'
-        locations: [
-          location
-        ]
-      }
-      {
-        service: 'Microsoft.Web'
-        locations: [
-          location
-        ]
-      }
-    ]
-    delegation: 'Microsoft.Web/serverFarms'
-  }
-  MySQLFlexSubnet: {
-    addressPrefix: '10.230.0.128/29'
-    serviceEndpoints: [
-      {
-        service: 'Microsoft.KeyVault'
-        locations: [
-          location
-        ]
-      }
-      {
-        service: 'Microsoft.Storage'
-        locations: [
-          location
-        ]
-      }
-    ]
-    delegation: 'Microsoft.DBforMySQL/flexibleServers'
-  }
-}
+
 
 module virtualNetwork './modules/networking/main.bicep' = {
   name: 'vnetDeploy'

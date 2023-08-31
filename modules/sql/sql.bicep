@@ -1,5 +1,5 @@
 @description('Server Name for Azure database for MySQL')
-param flexibleServerName string
+param flexibleSqlServerName string
 
 param location string
 param tags object
@@ -21,8 +21,8 @@ param StorageSizeGB int = 20
 @description('Azure database for MySQL storage Iops')
 param StorageIops int = 360
 
-param subnetId string
-param privateDnsZone string
+param peSubnetId string
+param privateDnsZoneId string
 
 param adminUserName string
 
@@ -35,6 +35,7 @@ param adminPassword string
 @allowed([
   '5.7'
   '8.0.21'
+  //'8.0.32'
 ])
 param mysqlVersion string = '8.0.21'
 
@@ -59,16 +60,12 @@ param highAvailability string = 'Disabled'
 ])
 param publicNetworkAccess string = 'Disabled'
 
-param dbName string
-param db_charset string = 'utf8'
-param db_collation string = 'utf8_general_ci'
-
-resource pDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
-  name: privateDnsZone
-}
+param databaseName string
+param database_charset string = 'utf8'
+param database_collation string = 'utf8_general_ci'
 
 resource server 'Microsoft.DBforMySQL/flexibleServers@2022-09-30-preview' = {
-  name: flexibleServerName
+  name: flexibleSqlServerName
   location: location
   tags: tags
   sku: {
@@ -89,8 +86,8 @@ resource server 'Microsoft.DBforMySQL/flexibleServers@2022-09-30-preview' = {
       mode: highAvailability
     }
     network: {
-      delegatedSubnetResourceId: subnetId
-      privateDnsZoneResourceId: pDnsZone.id
+      delegatedSubnetResourceId: peSubnetId
+      privateDnsZoneResourceId: privateDnsZoneId
       publicNetworkAccess: publicNetworkAccess
     }
     storage: {
@@ -103,16 +100,15 @@ resource server 'Microsoft.DBforMySQL/flexibleServers@2022-09-30-preview' = {
 
 resource database 'Microsoft.DBforMySQL/flexibleServers/databases@2021-12-01-preview' = {
   parent: server
-  name: dbName
+  name: databaseName
   properties: {
-    charset: db_charset
-    collation: db_collation
-
+    charset: database_charset
+    collation: database_collation
   }
 }
 
 // resource dbConfig 'Microsoft.DBforMySQL/flexibleServers/configurations@2022-01-01' = {
-//   name: '${flexibleServerName}-sql_generate_invisible_primary_key'
+//   name: '${flexibleSqlServerName}-sql_generate_invisible_primary_key'
 //   parent: server
 //   properties: {
 //     source: 'user-override'
@@ -120,5 +116,6 @@ resource database 'Microsoft.DBforMySQL/flexibleServers/databases@2021-12-01-pre
 //   }
 // }
 
-output dbServerName string = server.name
-output dbName string = database.name
+output mySqlServerName string = server.name
+output databaseName string = database.name
+output sqlAdmin string = server.properties.administratorLogin

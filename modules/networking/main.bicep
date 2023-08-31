@@ -1,33 +1,34 @@
+targetScope = 'subscription'
+
+param resourceGroupName string
+param location string
 param virtualNetworkName string
 param vnetAddressPrefix string
-param location string
 param subnets object
-param tags object
-param privateDNSZones array
 param customDnsIPs array
+param tags object
+param customTags object
+
+var mergeTags = union(tags, customTags)
+
+resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
+  name: resourceGroupName
+  location: location
+  tags: mergeTags
+}
 
 module vNetModule 'vnet.bicep' = {
   name: 'Deploy-${virtualNetworkName}'
+  scope: resourceGroup
   params: {
-    location: location
-    subnets: subnets
     virtualNetworkName: virtualNetworkName
     vnetAddressPrefix: vnetAddressPrefix
-    tags: tags
+    location: location
+    subnets: subnets
+    tags: mergeTags
     customDnsIPs: customDnsIPs
   }
 }
 
-module privateDNS 'privatedns.bicep' = {
-  name: 'DeployPrivateDNS'
-  dependsOn: [
-    vNetModule
-  ]
-  params: {
-    privateDNSZones: privateDNSZones
-    virtualNetworkName: virtualNetworkName
-    virtualNetworkId: vNetModule.outputs.virtualNetworkId
-  }
-}
-
+output virtualNetworkId string = vNetModule.outputs.virtualNetworkId
 output subnets object = reduce(vNetModule.outputs.subnets, {}, (cur, next) => union(cur, next))

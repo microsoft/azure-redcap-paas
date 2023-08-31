@@ -1,3 +1,6 @@
+
+targetScope = 'resourceGroup'
+
 param location string = resourceGroup().location
 
 @description('virtualNetworkName')
@@ -8,13 +11,14 @@ param vnetAddressPrefix string
 
 @description('subnetsDetails')
 param subnets object
-
 param tags object
+
 param customDnsIPs array
 
 var subnetDefsArray = items(subnets)
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
+
   name: virtualNetworkName
   location: location
   properties: {

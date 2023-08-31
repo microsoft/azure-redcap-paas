@@ -3,15 +3,14 @@ param storageContainerName string = ''
 param peSubnetId string
 param storageAccountName string
 
-@description('privateDnsZones Details')
-param privateDNSZones array
+@description('privateDnsZone Details')
+param privateDnsZoneId string
 
 @description('storageAccountSku')
 param storageAccountSku string
 
 param tags object
 param kind string
-//param accessTier string
 
 var storageType = kind == 'FileStorage' ? 'file' : 'blob'
 
@@ -26,7 +25,6 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   properties: {
     allowBlobPublicAccess: false
     publicNetworkAccess: 'Disabled'
-    //accessTier: accessTier
   }
 }
 
@@ -63,7 +61,7 @@ resource privateEndpoint 'Microsoft.Network/privateEndpoints@2022-07-01' = {
     }
     privateLinkServiceConnections: [
       {
-        name: 'pe-${storageContainerName}'
+        name: 'pe-${storageAccountName}'
         properties: {
           privateLinkServiceId: storageAccount.id
           groupIds: [
@@ -75,22 +73,17 @@ resource privateEndpoint 'Microsoft.Network/privateEndpoints@2022-07-01' = {
   }
 }
 
-@batchSize(1)
-resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' existing = [for (privateDnsZone, i) in privateDNSZones: {
-  name: privateDnsZone
-}]
-
-resource privateDnsZoneGroups 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = [for (pzone, i) in privateDNSZones: {
-  name: 'privatednsgroup-${storageType}${i}'
+resource privateDnsZoneGroupsStorage 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
+  name: 'default'
   parent: privateEndpoint
   properties: {
     privateDnsZoneConfigs: [
       {
-        name: 'privatelink-${storageType}${i}'
+        name: 'pe-${storageAccountName}'
         properties: {
-          privateDnsZoneId: privateDnsZone[i].id
+          privateDnsZoneId: privateDnsZoneId
         }
       }
     ]
   }
-}]
+}

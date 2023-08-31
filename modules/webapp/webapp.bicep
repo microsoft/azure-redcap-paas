@@ -5,14 +5,19 @@ param skuName string
 param skuTier string
 param tags object
 param linuxFxVersion string = 'php|7.4'
-param subnetId string
 param dbHostName string
 param dbName string
+
+@secure()
 param dbUserName string
 
 @secure()
 param dbPassword string
 //param repoUrl string
+
+//param logAnalyticsWorkspaceId string = ''
+param peSubnetId string
+param privateDnsZoneId string
 
 resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: appServicePlan
@@ -38,7 +43,6 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   properties: {
     httpsOnly: true
     serverFarmId: appSrvcPlan.id
-    virtualNetworkSubnetId: subnetId
     siteConfig: {
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
@@ -80,6 +84,14 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'fromEmailAddress'
           value: ''
         }
+        {
+          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+          value: appInsights.properties.InstrumentationKey
+        }
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: appInsights.properties.ConnectionString
+        }
       ]
     }
   }
@@ -88,15 +100,52 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
-// resource webAppSourceControl 'Microsoft.Web/sourcecontrols@2022-03-01' = if(contains(repoUrl,'http')) {
-//   name: 'web'
-//   kind: 'string'
-//   properties: {
-//     expirationTime: 'string'
-//     refreshToken: 'string'
-//     token: 'string'
-//     tokenSecret: 'string'
-//   }
-// }
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: 'appInsights-${webAppName}'
+  location: location
+  tags: tags
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    //WorkspaceResourceId: logAnalyticsWorkspaceId
+    Flow_Type: 'Bluefield'
+  }
+}
+
+resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+  name: 'pe-webAppName'
+  location: location
+  properties: {
+    subnet: {
+      id: peSubnetId
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'pe-${webAppName}'
+        properties: {
+          privateLinkServiceId: webApp.id
+          groupIds: [
+            'sites'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource privateDnsZoneGroupsWebApp 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
+  name: 'privatednszonegroup'
+  parent: peWebApp
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'pe-${webAppName}'
+        properties: {
+          privateDnsZoneId: privateDnsZoneId
+        }
+      }
+    ]
+  }
+}
 
 output webAppIdentity string = webApp.identity.principalId

@@ -7,9 +7,13 @@ param enabledForTemplateDeployment bool = true
 param enableSoftDelete bool = true
 param enableRbacAuthorization bool = true
 param enablePurgeProtection bool = true
-param subnetIds array
-param objectIds array
-param privateDnsZone string
+param peSubnetId string
+
+param roleAssignments array = [ {
+    RoleDefinitionId: ''
+    objectId: ''
+  } ]
+param privateDnsZoneId string
 
 param secrets array = [
   // {
@@ -39,9 +43,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
     networkAcls: {
       bypass: 'AzureServices'
       defaultAction: 'Deny'
-      // virtualNetworkRules: [for subnetId in subnetIds: {
-      //   id: subnetId
-      // }]
     }
     sku: {
       family: 'A'
@@ -61,27 +62,25 @@ resource keyVaultSecrets 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' 
   }
 }]
 
-var kvAdministratorRoleDefinitionId = resourceId('Microsoft.Authorization/roleDefinitions', '00482a5a-887f-4fb3-b363-3b7fe8e74483')
-
-resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for (objectId, i) in objectIds: {
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for roleAssignment in roleAssignments: {
   scope: keyVault
-  name: guid(kvAdministratorRoleDefinitionId, objectId)
+  name: guid(roleAssignment.RoleDefinitionId, roleAssignment.objectId)
   properties: {
-    roleDefinitionId: kvAdministratorRoleDefinitionId
-    principalId: objectId
+    roleDefinitionId: roleAssignment.RoleDefinitionId
+    principalId: roleAssignment.objectId
   }
 }]
 
-resource pekeyVault 'Microsoft.Network/privateEndpoints@2022-07-01' = [for (subnetId, i) in subnetIds: {
-  name: 'pe-${keyVaultName}-${i}'
+resource pekeyVault 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+  name: 'pe-${keyVaultName}'
   location: location
   properties: {
     subnet: {
-      id: subnetId
+      id: peSubnetId
     }
     privateLinkServiceConnections: [
       {
-        name: 'pe-${keyVaultName}-${i}'
+        name: 'pe-${keyVaultName}'
         properties: {
           privateLinkServiceId: keyVault.id
           groupIds: [
@@ -91,23 +90,21 @@ resource pekeyVault 'Microsoft.Network/privateEndpoints@2022-07-01' = [for (subn
       }
     ]
   }
-}]
-
-resource pDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
-  name: privateDnsZone
 }
 
-resource privateDnsZoneGroupsKeyVault 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = [for (subnetId, i) in subnetIds: {
+resource privateDnsZoneGroupsKeyVault 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
   name: 'privatednszonegroup'
-  parent: pekeyVault[i]
+  parent: pekeyVault
   properties: {
     privateDnsZoneConfigs: [
       {
-        name: 'privatelink-keyvault'
+        name: 'pe-${keyVaultName}'
         properties: {
-          privateDnsZoneId: pDnsZone.id
+          privateDnsZoneId: privateDnsZoneId
         }
       }
     ]
   }
-}]
+}
+
+output keyVaultName string = keyVault.name
