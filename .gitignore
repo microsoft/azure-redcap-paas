@@ -330,3 +330,10 @@ ASALocalRun/
 .mfractor/
 *.sln
 *.deployproj
+
+/*.json
+
+# Exclude Bicep parameter files
+*.bicepparam
+# Except for the sample file
+!/*-sample.bicepparam
