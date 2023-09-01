@@ -31,7 +31,7 @@ param requireShorten bool = false
 param removeSegmentSeparator bool = false
 param segmentSeparator string = '-'
 
-@description('If true, when creating a short name, vowels will first be removed from the workload name.')
+@description('If true, when creating a short name, vowels will be removed first from the workload name.')
 param useRemoveVowelStrategy bool = false
 
 @maxValue(13)
@@ -43,12 +43,12 @@ param additionalRandomInitializer string = ''
 var Defs = {
   vnet: {
     lowerCase: false
-    maxLength: 24
+    maxLength: 64
     alwaysRemoveSegmentSeparator: false
   }
   webApp: {
     lowerCase: false
-    maxLength: 24
+    maxLength: 60
     alwaysRemoveSegmentSeparator: false
   }
   kv: {
