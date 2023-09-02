@@ -1,32 +1,44 @@
 targetScope = 'subscription'
 
+@description('The Azure region to target for the deployment. Replaces {loc} in namingConvention.')
 @allowed([
   'eastus'
   'westus'
 ])
 param location string = 'eastus'
 
+@description('The environment designator for the deployment. Replaces {env} in namingConvention.')
 @allowed([
   'test'
   'demo'
   'prod'
 ])
 param environment string = 'demo'
+@description('The workload name. Replaces {workloadName} in namingConvention.')
 param workloadName string = 'redcap'
+@description('The Azure resource naming convention. Include the following placeholders (case-sensitive): {workloadName}, {env}, {rtype}, {loc}, {seq}.')
 param namingConvention string = '{workloadName}-{env}-{rtype}-{loc}-{seq}'
+@description('A sequence number for the deployment. Used to distinguish multiple deployed versions of the same workload. Replaces {seq} in namingConvention.')
 param sequence int = 1
 
-var myObjectId = 'd9608212-09d1-440a-a543-585ee85fcdf2'
+@description('A valid Entra ID object ID, which will be assigned RBAC permissions on the deployed resources.')
+param identityObjectId string
+
+var sequenceFormatted = format('{0:00}', sequence)
+var rgNamingStructure = replace(replace(replace(replace(replace(namingConvention, '{rtype}', 'rg'), '{workloadName}', '${workloadName}-{rgName}'), '{loc}', location), '{seq}', sequenceFormatted), '{env}', environment)
 var vnetName = nameModule[0].outputs.shortName
 var strgName = nameModule[1].outputs.shortName
 var webAppName = nameModule[2].outputs.shortName
 var kvName = nameModule[3].outputs.shortName
 var sqlName = nameModule[4].outputs.shortName
+var planName = nameModule[5].outputs.shortName
 var sqlAdmin = 'sqladmin'
-var sqlPassword = 'P@ssw0rd' // this should be linked to keyvault secret.
+var sqlPassword = 'P@ssw0rd' // TODO: this should be linked to keyvault secret.
 
 var subnets = {
+  // TODO: Define securityRules
   PrivateLinkSubnet: {
+    // TODO: These need to become parameters. Ideally, a single VNet address space parameters and then use the CIDR functions to carve out subnets
     addressPrefix: '10.230.0.0/27'
     serviceEndpoints: [
       {
@@ -91,6 +103,7 @@ var subnets = {
     delegation: 'Microsoft.Web/serverFarms'
   }
   MySQLFlexSubnet: {
+    // TODO: /29 seems very small
     addressPrefix: '10.230.0.128/29'
     serviceEndpoints: [
       {
@@ -118,7 +131,7 @@ var tags = {
 var secrets = [
   {
     name: 'sqlAdminName'
-    value: mysqlDbserver.outputs.sqlAdmin
+    value: mySqlModule.outputs.sqlAdmin
   }
   {
     name: 'sqlPassword'
@@ -126,11 +139,11 @@ var secrets = [
   }
   {
     name: 'dbHostName'
-    value: mysqlDbserver.outputs.mySqlServerName
+    value: mySqlModule.outputs.mySqlServerName
   }
   {
     name: 'dbName'
-    value: mysqlDbserver.outputs.databaseName
+    value: mySqlModule.outputs.databaseName
   }
 ]
 
@@ -140,6 +153,7 @@ var workloads = [
   'webApp'
   'kv'
   'mysql'
+  'plan'
 ]
 
 @batchSize(1)
@@ -156,11 +170,11 @@ module nameModule 'modules/common/createValidAzResourceName.bicep' = [for worklo
   }
 }]
 
-module roles './modules/common/roles.bicep' = {
+module rolesModule './modules/common/roles.bicep' = {
   name: 'Roles'
 }
 
-module kvSecrets './modules/common/appSvcKeyVaultRefs.bicep' = {
+module kvSecretReferencesModule './modules/common/appSvcKeyVaultRefs.bicep' = {
   name: 'secrets'
   params: {
     keyVaultName: kvName
@@ -168,11 +182,12 @@ module kvSecrets './modules/common/appSvcKeyVaultRefs.bicep' = {
   }
 }
 
-module virtualNetwork './modules/networking/main.bicep' = {
+module virtualNetworkModule './modules/networking/main.bicep' = {
   name: 'vnetDeploy'
   params: {
-    resourceGroupName: toUpper('RG-${vnetName}')
+    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'network')
     virtualNetworkName: vnetName
+    // TODO: Parameter
     vnetAddressPrefix: '10.230.0.0/24'
     location: location
     subnets: subnets
@@ -184,19 +199,18 @@ module virtualNetwork './modules/networking/main.bicep' = {
   }
 }
 
-module storageAccounts './modules/storage/main.bicep' = {
+module storageAccountModule './modules/storage/main.bicep' = {
   name: 'strgDeploy'
-  dependsOn: [ virtualNetwork ]
   params: {
-    resourceGroupName: toUpper('RG-${strgName}')
+    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'storage')
     location: location
     storageAccountName: strgName
-    peSubnetId: virtualNetwork.outputs.subnets.PrivateLinkSubnet.id
+    peSubnetId: virtualNetworkModule.outputs.subnets.PrivateLinkSubnet.id
     storageContainerName: 'redcap'
     kind: 'StorageV2'
     storageAccountSku: 'Standard_LRS'
-    virtualNetworkId: virtualNetwork.outputs.virtualNetworkId
-    privateDnsZoneName: 'privatelink.blob.core.windows.net'
+    virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
+    privateDnsZoneName: 'privatelink.blob.${az.environment().suffixes.storage}'
     tags: tags
     customTags: {
       workloadType: 'storageAccount'
@@ -204,26 +218,26 @@ module storageAccounts './modules/storage/main.bicep' = {
   }
 }
 
-module keyvault './modules/kv/main.bicep' = {
+module keyVaultModule './modules/kv/main.bicep' = {
   name: 'kvDeploy'
   params: {
-    resourceGroupName: toUpper('RG-${kvName}')
+    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'keyVault')
     keyVaultName: kvName
     location: location
     tags: tags
     customTags: {
       workloadType: 'keyVault'
     }
-    peSubnetId: virtualNetwork.outputs.subnets.PrivateLinkSubnet.id
-    virtualNetworkId: virtualNetwork.outputs.virtualNetworkId
+    peSubnetId: virtualNetworkModule.outputs.subnets.PrivateLinkSubnet.id
+    virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
     roleAssignments: [
       {
-        RoleDefinitionId: roles.outputs.roles['Key Vault Administrator']
-        objectId: myObjectId
+        RoleDefinitionId: rolesModule.outputs.roles['Key Vault Administrator']
+        objectId: identityObjectId
       }
       {
-        RoleDefinitionId: roles.outputs.roles['Key Vault Secrets User']
-        objectId: webApp.outputs.webAppIdentity
+        RoleDefinitionId: rolesModule.outputs.roles['Key Vault Secrets User']
+        objectId: webAppModule.outputs.webAppIdentity
       }
     ]
     privateDnsZoneName: 'privatelink.vaultcore.azure.net'
@@ -231,10 +245,10 @@ module keyvault './modules/kv/main.bicep' = {
   }
 }
 
-module mysqlDbserver './modules/sql/main.bicep' = {
+module mySqlModule './modules/sql/main.bicep' = {
   name: 'DeploymySqlServer'
   params: {
-    resourceGroupName: toUpper('RG-${sqlName}')
+    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'mysql')
     flexibleSqlServerName: sqlName
     location: location
     tags: tags
@@ -246,7 +260,7 @@ module mysqlDbserver './modules/sql/main.bicep' = {
     SkuTier: 'Burstable'
     StorageSizeGB: 20
     StorageIops: 396
-    peSubnetId: virtualNetwork.outputs.subnets.MySQLFlexSubnet.id
+    peSubnetId: virtualNetworkModule.outputs.subnets.MySQLFlexSubnet.id
     privateDnsZoneName: 'privatelink.mysql.database.azure.com'
     sqlAdminUser: sqlAdmin
     sqlAdminPasword: sqlPassword
@@ -254,20 +268,20 @@ module mysqlDbserver './modules/sql/main.bicep' = {
     databaseName: 'redcapdb'
     database_charset: 'utf8'
     database_collation: 'utf8_general_ci'
-    virtualNetworkId: virtualNetwork.outputs.virtualNetworkId
+    virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
   }
 }
 
-module webApp './modules/webapp/main.bicep' = {
+module webAppModule './modules/webapp/main.bicep' = {
   name: 'webAppDeploy'
   params: {
-    resourceGroupName: toUpper('RG-${webAppName}')
+    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'web')
     webAppName: webAppName
-    appServicePlan: 'ASP-${webAppName}'
+    appServicePlan: planName
     location: location
     skuName: 'S1'
     skuTier: 'Standard'
-    peSubnetId: virtualNetwork.outputs.subnets.ComputeSubnet.id
+    peSubnetId: virtualNetworkModule.outputs.subnets.ComputeSubnet.id
     linuxFxVersion: 'php|8.2'
     tags: tags
 
@@ -275,10 +289,12 @@ module webApp './modules/webapp/main.bicep' = {
       workloadType: 'webApp'
     }
     privateDnsZoneName: 'privatelink.azurewebsites.net'
-    virtualNetworkId: virtualNetwork.outputs.virtualNetworkId
-    dbHostName: mysqlDbserver.outputs.databaseName
-    dbName: mysqlDbserver.outputs.databaseName
-    dbPassword: kvSecrets.outputs.keyVaultRefs[1]
-    dbUserName: mysqlDbserver.outputs.sqlAdmin
+    virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
+    dbHostName: mySqlModule.outputs.databaseName
+    dbName: mySqlModule.outputs.databaseName
+    dbPassword: kvSecretReferencesModule.outputs.keyVaultRefs[1]
+    dbUserName: mySqlModule.outputs.sqlAdmin
   }
 }
+
+// TODO: Consider outputting the web app URL
