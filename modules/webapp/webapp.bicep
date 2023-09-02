@@ -1,4 +1,5 @@
 param webAppName string
+// TODO: Rename to add Name
 param appServicePlan string
 param location string
 param skuName string
@@ -100,19 +101,23 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
+// TODO: App Insights does not appear linked to web app
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  // TODO: Get name from name generator module
   name: 'appInsights-${webAppName}'
   location: location
   tags: tags
   kind: 'web'
   properties: {
     Application_Type: 'web'
+    // TODO: This deploys Classic App Insights; must use Workspace-based now
     //WorkspaceResourceId: logAnalyticsWorkspaceId
     Flow_Type: 'Bluefield'
   }
 }
 
 resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+  // TODO: Inconsistent
   name: 'pe-webAppName'
   location: location
   properties: {

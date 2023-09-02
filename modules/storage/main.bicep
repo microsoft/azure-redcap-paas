@@ -44,3 +44,7 @@ module privateDns '../pdns/main.bicep' = {
     tags: tags
   }
 }
+
+// TODO: Add lock to storage account to avoid accidental deletion
+
+// TODO: Output storage account name, id

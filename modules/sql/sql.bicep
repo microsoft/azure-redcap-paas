@@ -4,6 +4,7 @@ param flexibleSqlServerName string
 param location string
 param tags object
 
+// TODO: skuName and SkuTier are related; should be specified as a single object param, IMHO
 @description('Azure database for MySQL sku name ')
 param skuName string = 'Standard_B1s'
 
