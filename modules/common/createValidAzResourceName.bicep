@@ -19,6 +19,8 @@ param location string
   'ci' // Container Instance
   'mysql' // MySQL Flexible Server
   'webApp' // Web App
+  'plan' // App Service Plan
+  'appi' // Application Insights
 ])
 param resourceType string
 param environment string
@@ -44,6 +46,11 @@ var Defs = {
   vnet: {
     lowerCase: false
     maxLength: 64
+    alwaysRemoveSegmentSeparator: false
+  }
+  plan: {
+    lowerCase: false
+    maxLength: 60
     alwaysRemoveSegmentSeparator: false
   }
   webApp: {
@@ -79,6 +86,11 @@ var Defs = {
   mysql: {
     lowerCase: true
     maxLength: 63
+    alwaysRemoveSegmentSeparator: false
+  }
+  appi: {
+    lowerCase: false
+    maxLength: 260
     alwaysRemoveSegmentSeparator: false
   }
 }
