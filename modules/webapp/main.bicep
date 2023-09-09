@@ -15,6 +15,7 @@ param dbName string
 param peSubnetId string
 param privateDnsZoneName string
 param virtualNetworkId string
+param integrationSubnetId string
 
 @secure()
 param dbPassword string
@@ -44,6 +45,7 @@ module appService 'webapp.bicep' = {
     dbUserName: dbUserName
     peSubnetId: peSubnetId
     privateDnsZoneId: privateDns.outputs.privateDnsId
+    integrationSubnetId: integrationSubnetId
   }
 }
 

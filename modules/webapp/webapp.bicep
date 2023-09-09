@@ -19,6 +19,7 @@ param dbPassword string
 //param logAnalyticsWorkspaceId string = ''
 param peSubnetId string
 param privateDnsZoneId string
+param integrationSubnetId string
 
 resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: appServicePlan
@@ -44,6 +45,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   properties: {
     httpsOnly: true
     serverFarmId: appSrvcPlan.id
+    virtualNetworkSubnetId: integrationSubnetId
     siteConfig: {
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'

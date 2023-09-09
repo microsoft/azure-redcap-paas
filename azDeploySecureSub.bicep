@@ -296,6 +296,9 @@ module webAppModule './modules/webapp/main.bicep' = {
     dbName: mySqlModule.outputs.databaseName
     dbPassword: kvSecretReferencesModule.outputs.keyVaultRefs[1]
     dbUserName: mySqlModule.outputs.sqlAdmin
+
+    // Enable VNet integration
+    integrationSubnetId: virtualNetworkModule.outputs.subnets.IntegrationSubnet.id
   }
 }
 
