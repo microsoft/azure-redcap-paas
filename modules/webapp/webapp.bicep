@@ -5,7 +5,7 @@ param location string
 param skuName string
 param skuTier string
 param tags object
-param linuxFxVersion string = 'php|7.4'
+param linuxFxVersion string
 param dbHostName string
 param dbName string
 
