@@ -120,3 +120,4 @@ resource database 'Microsoft.DBforMySQL/flexibleServers/databases@2021-12-01-pre
 output mySqlServerName string = server.name
 output databaseName string = database.name
 output sqlAdmin string = server.properties.administratorLogin
+output fqdn string = server.properties.fullyQualifiedDomainName

@@ -265,6 +265,7 @@ module mySqlModule './modules/sql/main.bicep' = {
     sqlAdminUser: sqlAdmin
     sqlAdminPasword: sqlPassword
     mysqlVersion: '8.0.21'
+    // TODO: Consider using workloadname + 'db'
     databaseName: 'redcapdb'
     database_charset: 'utf8'
     database_collation: 'utf8_general_ci'
@@ -279,6 +280,7 @@ module webAppModule './modules/webapp/main.bicep' = {
     webAppName: webAppName
     appServicePlan: planName
     location: location
+    // TODO: Consider deploying as P0V3 to ensure the deployment runs on a scale unit that supports P_v3 for future upgrades
     skuName: 'S1'
     skuTier: 'Standard'
     peSubnetId: virtualNetworkModule.outputs.subnets.ComputeSubnet.id
@@ -290,7 +292,7 @@ module webAppModule './modules/webapp/main.bicep' = {
     }
     privateDnsZoneName: 'privatelink.azurewebsites.net'
     virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
-    dbHostName: mySqlModule.outputs.databaseName
+    dbHostName: mySqlModule.outputs.fqdn
     dbName: mySqlModule.outputs.databaseName
     dbPassword: kvSecretReferencesModule.outputs.keyVaultRefs[1]
     dbUserName: mySqlModule.outputs.sqlAdmin

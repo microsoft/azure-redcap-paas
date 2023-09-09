@@ -85,3 +85,4 @@ module privateDns '../pdns/main.bicep' = {
 output mySqlServerName string = mysqlDbserver.outputs.mySqlServerName
 output databaseName string = mysqlDbserver.outputs.databaseName
 output sqlAdmin string = mysqlDbserver.outputs.sqlAdmin
+output fqdn string = mysqlDbserver.outputs.fqdn
