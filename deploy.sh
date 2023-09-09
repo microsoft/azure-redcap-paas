@@ -83,10 +83,12 @@ cd /home/site/wwwroot
 
 wget --no-check-certificate https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem
 
+# TODO: Update because the defaults are now empty instead of 'your_mysql_...'
 sed -i "s/'your_mysql_host_name'/'$APPSETTING_DBHostName'/" database.php
 sed -i "s/'your_mysql_db_name'/'$APPSETTING_DBName'/" database.php
 sed -i "s/'your_mysql_db_username'/'$APPSETTING_DBUserName'/" database.php
 sed -i "s/'your_mysql_db_password'/'$APPSETTING_DBPassword'/" database.php
+# END TODO
 sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = '$APPSETTING_DBSslCa';|" database.php
 
 sed -i "s/db_ssl_verify_server_cert = false;/db_ssl_verify_server_cert = true;/" database.php
