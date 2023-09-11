@@ -19,6 +19,8 @@ param location string
   'ci' // Container Instance
   'mysql' // MySQL Flexible Server
   'webApp' // Web App
+  'plan' // App Service Plan
+  'appi' // Application Insights
 ])
 param resourceType string
 param environment string
@@ -31,7 +33,7 @@ param requireShorten bool = false
 param removeSegmentSeparator bool = false
 param segmentSeparator string = '-'
 
-@description('If true, when creating a short name, vowels will first be removed from the workload name.')
+@description('If true, when creating a short name, vowels will be removed first from the workload name.')
 param useRemoveVowelStrategy bool = false
 
 @maxValue(13)
@@ -43,12 +45,17 @@ param additionalRandomInitializer string = ''
 var Defs = {
   vnet: {
     lowerCase: false
-    maxLength: 24
+    maxLength: 64
+    alwaysRemoveSegmentSeparator: false
+  }
+  plan: {
+    lowerCase: false
+    maxLength: 60
     alwaysRemoveSegmentSeparator: false
   }
   webApp: {
     lowerCase: false
-    maxLength: 24
+    maxLength: 60
     alwaysRemoveSegmentSeparator: false
   }
   kv: {
@@ -79,6 +86,11 @@ var Defs = {
   mysql: {
     lowerCase: true
     maxLength: 63
+    alwaysRemoveSegmentSeparator: false
+  }
+  appi: {
+    lowerCase: false
+    maxLength: 260
     alwaysRemoveSegmentSeparator: false
   }
 }

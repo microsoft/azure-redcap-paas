@@ -1,10 +1,11 @@
 param webAppName string
+// TODO: Rename to add Name
 param appServicePlan string
 param location string
 param skuName string
 param skuTier string
 param tags object
-param linuxFxVersion string = 'php|7.4'
+param linuxFxVersion string
 param dbHostName string
 param dbName string
 
@@ -18,6 +19,7 @@ param dbPassword string
 //param logAnalyticsWorkspaceId string = ''
 param peSubnetId string
 param privateDnsZoneId string
+param integrationSubnetId string
 
 resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: appServicePlan
@@ -43,6 +45,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   properties: {
     httpsOnly: true
     serverFarmId: appSrvcPlan.id
+    virtualNetworkSubnetId: integrationSubnetId
     siteConfig: {
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
@@ -100,19 +103,23 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
+// TODO: App Insights does not appear linked to web app
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  // TODO: Get name from name generator module
   name: 'appInsights-${webAppName}'
   location: location
   tags: tags
   kind: 'web'
   properties: {
     Application_Type: 'web'
+    // TODO: This deploys Classic App Insights; must use Workspace-based now
     //WorkspaceResourceId: logAnalyticsWorkspaceId
     Flow_Type: 'Bluefield'
   }
 }
 
 resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+  // TODO: Inconsistent
   name: 'pe-webAppName'
   location: location
   properties: {
