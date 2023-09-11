@@ -7,3 +7,4 @@ param namingConvention = '{workloadName}-{env}-{rtype}-{loc}-{seq}'
 param sequence = 1
 
 param identityObjectId = '<Valid Entra ID object ID for permissions assignment>'
+param vnetAddressSpace = '10.230.0.0/24'
