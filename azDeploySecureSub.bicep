@@ -24,6 +24,9 @@ param sequence int = 1
 @description('A valid Entra ID object ID, which will be assigned RBAC permissions on the deployed resources.')
 param identityObjectId string
 
+@description('The address space for the virtual network. Subnets will be carved out. Minimum IPv4 size: /24')
+param vnetAddressSpace string
+
 var sequenceFormatted = format('{0:00}', sequence)
 var rgNamingStructure = replace(replace(replace(replace(replace(namingConvention, '{rtype}', 'rg'), '{workloadName}', '${workloadName}-{rgName}'), '{loc}', location), '{seq}', sequenceFormatted), '{env}', environment)
 var vnetName = nameModule[0].outputs.shortName
@@ -33,13 +36,12 @@ var kvName = nameModule[3].outputs.shortName
 var sqlName = nameModule[4].outputs.shortName
 var planName = nameModule[5].outputs.shortName
 var sqlAdmin = 'sqladmin'
-var sqlPassword = 'P@ssw0rd' // TODO: this should be linked to keyvault secret.
+var sqlPassword = 'P@ssw0rd' // TODO: this should be linked to Key Vault secret.
 
 var subnets = {
   // TODO: Define securityRules
   PrivateLinkSubnet: {
-    // TODO: These need to become parameters. Ideally, a single VNet address space parameters and then use the CIDR functions to carve out subnets
-    addressPrefix: '10.230.0.0/27'
+    addressPrefix: cidrSubnet(vnetAddressSpace, 27, 0)
     serviceEndpoints: [
       {
         service: 'Microsoft.KeyVault'
@@ -56,7 +58,7 @@ var subnets = {
     ]
   }
   ComputeSubnet: {
-    addressPrefix: '10.230.0.32/27'
+    addressPrefix: cidrSubnet(vnetAddressSpace, 27, 1)
     serviceEndpoints: [
       {
         service: 'Microsoft.KeyVault'
@@ -79,7 +81,8 @@ var subnets = {
     ]
   }
   IntegrationSubnet: {
-    addressPrefix: '10.230.0.64/26'
+    // Two /27 have already been created, which add up to a /26. This the second /26 (index = 1).
+    addressPrefix: cidrSubnet(vnetAddressSpace, 26, 1)
     serviceEndpoints: [
       {
         service: 'Microsoft.KeyVault'
@@ -104,7 +107,8 @@ var subnets = {
   }
   MySQLFlexSubnet: {
     // TODO: /29 seems very small
-    addressPrefix: '10.230.0.128/29'
+    // Two /26 have been allocated; that's equivalent to sixteen /29s. 
+    addressPrefix: cidrSubnet(vnetAddressSpace, 29, 16)
     serviceEndpoints: [
       {
         service: 'Microsoft.KeyVault'
@@ -187,8 +191,7 @@ module virtualNetworkModule './modules/networking/main.bicep' = {
   params: {
     resourceGroupName: replace(rgNamingStructure, '{rgName}', 'network')
     virtualNetworkName: vnetName
-    // TODO: Parameter
-    vnetAddressPrefix: '10.230.0.0/24'
+    vnetAddressPrefix: vnetAddressSpace
     location: location
     subnets: subnets
     customDnsIPs: []
