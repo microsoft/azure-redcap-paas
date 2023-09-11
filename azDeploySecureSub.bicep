@@ -267,8 +267,11 @@ module mySqlModule './modules/sql/main.bicep' = {
     mysqlVersion: '8.0.21'
     // TODO: Consider using workloadname + 'db'
     databaseName: 'redcapdb'
+
+    // Required charset and collation for REDCap
     database_charset: 'utf8'
     database_collation: 'utf8_general_ci'
+
     virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
   }
 }
