@@ -47,6 +47,12 @@ else {
     Write-Verbose "Current Subscription: '$($AzContext.Subscription.Name)'. No switch needed."
 }
 
+Import-Module .\scripts\PowerShell\Generate-Password.psm1
+# Generate a 25 character random password for the MySQL admin user
+[securestring]$SqlPassword = New-RandomPassword 25
+
+$CmdLetParameters.Add('sqlPassword', $SqlPassword)
+
 # Execute the deployment
 $DeploymentResult = New-AzDeployment @CmdLetParameters
 

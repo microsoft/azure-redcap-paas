@@ -27,6 +27,12 @@ param identityObjectId string
 @description('The address space for the virtual network. Subnets will be carved out. Minimum IPv4 size: /24')
 param vnetAddressSpace string
 
+@description('The password to use for the MySQL Flexible Server admin account \'sqladmin\'.')
+@secure()
+param sqlPassword string
+
+param sqlAdmin string = 'sqladmin'
+
 var sequenceFormatted = format('{0:00}', sequence)
 var rgNamingStructure = replace(replace(replace(replace(replace(namingConvention, '{rtype}', 'rg'), '{workloadName}', '${workloadName}-{rgName}'), '{loc}', location), '{seq}', sequenceFormatted), '{env}', environment)
 var vnetName = nameModule[0].outputs.shortName
@@ -35,8 +41,6 @@ var webAppName = nameModule[2].outputs.shortName
 var kvName = nameModule[3].outputs.shortName
 var sqlName = nameModule[4].outputs.shortName
 var planName = nameModule[5].outputs.shortName
-var sqlAdmin = 'sqladmin'
-var sqlPassword = 'P@ssw0rd' // TODO: this should be linked to Key Vault secret.
 
 var subnets = {
   // TODO: Define securityRules
