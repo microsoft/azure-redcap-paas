@@ -182,7 +182,7 @@ module kvSecretReferencesModule './modules/common/appSvcKeyVaultRefs.bicep' = {
   name: 'secrets'
   params: {
     keyVaultName: kvName
-    secretNames: secrets
+    secretNames: map(secrets, s => s.name)
   }
 }
 
