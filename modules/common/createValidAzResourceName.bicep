@@ -21,6 +21,8 @@ param location string
   'webApp' // Web App
   'plan' // App Service Plan
   'appi' // Application Insights
+  'uami' // User-assigned Managed Identity
+  'dplscr' // Deployment Script
 ])
 param resourceType string
 param environment string
@@ -31,6 +33,11 @@ param sequence int
 param requireShorten bool = false
 @description('If true, hyphens will be removed from the name. If false, they will only be removed if required by the resource type.')
 param removeSegmentSeparator bool = false
+
+@allowed([
+  '-'
+  '_'
+])
 param segmentSeparator string = '-'
 
 @description('If true, when creating a short name, vowels will be removed first from the workload name.')
@@ -93,6 +100,16 @@ var Defs = {
     maxLength: 260
     alwaysRemoveSegmentSeparator: false
   }
+  uami: {
+    lowerCase: false
+    maxLength: 128
+    alwaysRemoveSegmentSeparator: false
+  }
+  dplscr: {
+    lowerCase: false
+    maxLength: 63 // Guess, not documented
+    alwaysRemoveSegmentSeparator: false
+  }
 }
 
 var shortLocations = {
@@ -152,11 +169,3 @@ var actualNameCased = lowerCase ? toLower(actualName) : actualName
 
 // This take() function shouldn't actually remove any characters, just here for safety
 output shortName string = take(actualNameCased, maxLength)
-
-// For debugging only
-output workloadNameCharsKept int = workloadNameCharsToKeep
-output originalShortNameLength int = length(shortName)
-output actualNameCased string = actualNameCased
-output workloadNameVowelsProcessed string = workloadNameVowelsProcessed
-output triedVowelRemoval bool = mustTryVowelRemoval
-output minEffectiveVowelRemovalCount int = minEffectiveVowelRemovalCount
