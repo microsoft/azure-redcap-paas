@@ -38,6 +38,7 @@ module appService 'webapp.bicep' = {
     skuName: skuName
     skuTier: skuTier
     linuxFxVersion: linuxFxVersion
+    // TODO: Should we use mergeTags here? If not, rename mergeTags to rgTags?
     tags: tags
     dbHostName: dbHostName
     dbName: dbName
@@ -55,6 +56,7 @@ module privateDns '../pdns/main.bicep' = {
   params: {
     privateDnsZoneName: privateDnsZoneName
     virtualNetworkId: virtualNetworkId
+    // TODO: Should we use mergeTags here?
     tags: tags
   }
 }
