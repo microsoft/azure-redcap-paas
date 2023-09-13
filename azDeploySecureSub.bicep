@@ -35,6 +35,9 @@ var webAppName = nameModule[2].outputs.shortName
 var kvName = nameModule[3].outputs.shortName
 var sqlName = nameModule[4].outputs.shortName
 var planName = nameModule[5].outputs.shortName
+var uamiName = nameModule[6].outputs.shortName
+var dplscrName = nameModule[7].outputs.shortName
+
 var sqlAdmin = 'sqladmin'
 var sqlPassword = 'P@ssw0rd' // TODO: this should be linked to Key Vault secret.
 
@@ -151,6 +154,7 @@ var secrets = [
   }
 ]
 
+// TODO: Consider renaming to resourceTypes
 var workloads = [
   'vnet'
   'st'
@@ -158,6 +162,8 @@ var workloads = [
   'kv'
   'mysql'
   'plan'
+  'uami'
+  'dplscr'
 ]
 
 @batchSize(1)
@@ -270,6 +276,10 @@ module mySqlModule './modules/sql/main.bicep' = {
     mysqlVersion: '8.0.21'
     // TODO: Consider using workloadname + 'db'
     databaseName: 'redcapdb'
+
+    roles: rolesModule.outputs.roles
+    uamiName: uamiName
+    deploymentScriptName: dplscrName
 
     // Required charset and collation for REDCap
     database_charset: 'utf8'
