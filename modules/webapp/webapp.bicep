@@ -20,6 +20,12 @@ param dbPassword string
 param peSubnetId string
 param privateDnsZoneId string
 param integrationSubnetId string
+@secure()
+param redcapZipUrl string
+@secure()
+param redcapCommunityUsername string
+@secure()
+param redcapCommunityPassword string
 
 resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: appServicePlan
@@ -36,7 +42,6 @@ resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
 }
 
 var DBSslCa = '/home/site/wwwroot/DigiCertGlobalRootCA.crt.pem'
-var redcapUrl = 'https://nam06.safelinks.protection.outlook.com/?url=https%3A%2F%2Fwww.dropbox.com%2Fscl%2Ffi%2F4qag6pi0b2qstv67jzrbw%2Fredcap13.8.5.zip%3Frlkey%3Dhb0qjhqwnmhj9vvcc9akqhcpp%26dl%3D1&data=05%7C01%7Cvishalkalal%40microsoft.com%7Cb471a7309e7f484bde2508db9cd7079a%7C72f988bf86f141af91ab2d7cd011db47%7C1%7C0%7C638276222972219379%7CUnknown%7CTWFpbGZsb3d8eyJWIjoiMC4wLjAwMDAiLCJQIjoiV2luMzIiLCJBTiI6Ik1haWwiLCJXVCI6Mn0%3D%7C3000%7C%7C%7C&sdata=eqvY%2BTynSLyiiGdxAYTz5fMqJJrK6aNfg0SFbnbT4oU%3D&reserved=0'
 
 resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   name: webAppName
@@ -56,7 +61,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
       appSettings: [
         {
           name: 'redcapAppZip'
-          value: redcapUrl
+          value: redcapZipUrl
         }
         {
           name: 'DBHostName'
@@ -73,6 +78,14 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
         {
           name: 'DBPassword'
           value: dbPassword
+        }
+        {
+          name: 'redcapCommunityUsername'
+          value: redcapCommunityUsername
+        }
+        {
+          name: 'redcapCommunityPassword'
+          value: redcapCommunityPassword
         }
         {
           name: 'DBSslCa'
