@@ -26,6 +26,7 @@ param redcapCommunityUsername string
 @secure()
 param redcapCommunityPassword string
 
+
 param appInsights_connectionString string
 
 @secure()
@@ -48,7 +49,6 @@ resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
 
 var DBSslCa = '/home/site/wwwroot/DigiCertGlobalRootCA.crt.pem'
 
-
 resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   name: webAppName
   location: location
@@ -58,6 +58,9 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
     serverFarmId: appSrvcPlan.id
     virtualNetworkSubnetId: integrationSubnetId
     siteConfig: {
+      alwaysOn: true
+      http20Enabled: true
+
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'

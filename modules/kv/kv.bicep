@@ -64,8 +64,7 @@ resource keyVaultSecrets 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' 
 
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for roleAssignment in roleAssignments: {
   scope: keyVault
-  // TODO: Must include the object ID otherwise conflicts occur
-  name: guid(roleAssignment.RoleDefinitionId, roleAssignment.objectId)
+  name: guid(keyVault.id, roleAssignment.objectId, roleAssignment.RoleDefinitionId)
   properties: {
     roleDefinitionId: roleAssignment.RoleDefinitionId
     principalId: roleAssignment.objectId
