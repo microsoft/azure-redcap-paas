@@ -89,7 +89,7 @@ var Defs = {
     maxLength: 63
     alwaysRemoveSegmentSeparator: false
   }
-  app1: {
+  appi: {
     lowerCase: false
     maxLength: 260
     alwaysRemoveSegmentSeparator: false
