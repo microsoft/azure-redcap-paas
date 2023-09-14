@@ -12,31 +12,11 @@ resource logAnalyticsWorkSpace 'Microsoft.OperationalInsights/workspaces@2022-10
   name: logAnalyticsWorkspaceName
   location: location
   tags: tags
-
-  // identity: {
-  //   type: 'string'
-  //   userAssignedIdentities: {}
-  // }
   properties: {
-    // defaultDataCollectionRuleResourceId: 'string'
-    // features: {
-    //   clusterResourceId: 'string'
-    //   disableLocalAuth: bool
-    //   enableDataExport: bool
-    //   enableLogAccessUsingOnlyResourcePermissions: bool
-    //   immediatePurgeDataOn30Days: bool
-    // }
-    // forceCmkForQuery: bool
-    // publicNetworkAccessForIngestion: 'string'
-    // publicNetworkAccessForQuery: 'string'
     retentionInDays: retentionInDays
     sku: {
-      // capacityReservationLevel: int
       name: logAnalyticsWorkspaceSku
     }
-    // workspaceCapping: {
-    //   dailyQuotaGb: int
-    // }
   }
 }
 
