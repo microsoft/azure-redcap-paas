@@ -2,5 +2,4 @@
   "dotnetAcquisitionExtension.existingDotnetPath": [
     "/usr/local/dotnet/current/dotnet"
   ],
-  "editor.fontFamily": "'CaskaydiaCove NF'"
 }

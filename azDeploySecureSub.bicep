@@ -328,5 +328,5 @@ module webAppModule './modules/webapp/main.bicep' = {
   }
 }
 
-// TODO: Consider outputting the web app URL
+// The web app URL
 output webAppUrl string = webAppModule.outputs.webAppUrl
