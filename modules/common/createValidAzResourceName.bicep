@@ -21,6 +21,7 @@ param location string
   'webApp' // Web App
   'plan' // App Service Plan
   'appi' // Application Insights
+  'law' // Log Analytics Workspace
 ])
 param resourceType string
 param environment string

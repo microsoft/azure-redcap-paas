@@ -3,7 +3,7 @@ param resourceGroupName string
 param location string
 
 param webAppName string
-param appServicePlan string
+param appServicePlanName string
 param skuName string
 param skuTier string
 param linuxFxVersion string = 'php|8.2'
@@ -16,6 +16,10 @@ param peSubnetId string
 param privateDnsZoneName string
 param virtualNetworkId string
 param integrationSubnetId string
+param appInsights_connectionString string
+
+@secure()
+param appInsights_instrumentationKey string
 
 @secure()
 param dbPassword string
@@ -33,7 +37,7 @@ module appService 'webapp.bicep' = {
   scope: resourceGroup
   params: {
     webAppName: webAppName
-    appServicePlan: appServicePlan
+    appServicePlanName: appServicePlanName
     location: location
     skuName: skuName
     skuTier: skuTier
@@ -46,6 +50,8 @@ module appService 'webapp.bicep' = {
     peSubnetId: peSubnetId
     privateDnsZoneId: privateDns.outputs.privateDnsId
     integrationSubnetId: integrationSubnetId
+    appInsights_connectionString: appInsights_connectionString
+    appInsights_instrumentationKey: appInsights_instrumentationKey
   }
 }
 
@@ -60,3 +66,5 @@ module privateDns '../pdns/main.bicep' = {
 }
 
 output webAppIdentity string = appService.outputs.webAppIdentity
+
+output webAppUrl string = appService.outputs.webAppUrl
