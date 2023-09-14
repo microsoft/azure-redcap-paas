@@ -45,6 +45,8 @@ var webAppName = nameModule[2].outputs.shortName
 var kvName = nameModule[3].outputs.shortName
 var sqlName = nameModule[4].outputs.shortName
 var planName = nameModule[5].outputs.shortName
+var lawName = nameModule[6].outputs.shortName
+
 var sqlAdmin = 'sqladmin'
 var sqlPassword = 'P@ssw0rd' // TODO: this should be linked to Key Vault secret.
 
@@ -176,6 +178,7 @@ var workloads = [
   'kv'
   'mysql'
   'plan'
+  'law'
 ]
 
 @batchSize(1)
@@ -216,6 +219,22 @@ module virtualNetworkModule './modules/networking/main.bicep' = {
     tags: tags
     customTags: {
       workloadType: 'networking'
+    }
+  }
+}
+
+module monitoring './modules/monitoring/main.bicep' = {
+  name: 'monitoring'
+  params: {
+    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'monitoring')
+    appInsightsName: 'appInsights-${webAppName}'
+    logAnalyticsWorkspaceName: lawName
+    logAnalyticsWorkspaceSku: 'PerGB2018'
+    retentionInDays: 30
+    location: location
+    tags: tags
+    customTags: {
+      workloadType: 'monitoring'
     }
   }
 }
@@ -302,15 +321,16 @@ module webAppModule './modules/webapp/main.bicep' = {
   params: {
     resourceGroupName: replace(rgNamingStructure, '{rgName}', 'web')
     webAppName: webAppName
-    appServicePlan: planName
+    appServicePlanName: planName
     location: location
     // TODO: Consider deploying as P0V3 to ensure the deployment runs on a scale unit that supports P_v3 for future upgrades
     skuName: 'S1'
     skuTier: 'Standard'
     peSubnetId: virtualNetworkModule.outputs.subnets.ComputeSubnet.id
+    appInsights_connectionString: monitoring.outputs.appInsightsResourceId
+    appInsights_instrumentationKey: monitoring.outputs.appInsightsInstrumentationKey
     linuxFxVersion: 'php|8.2'
     tags: tags
-
     customTags: {
       workloadType: 'webApp'
     }
@@ -328,4 +348,5 @@ module webAppModule './modules/webapp/main.bicep' = {
   }
 }
 
-// TODO: Consider outputting the web app URL
+// The web app URL
+output webAppUrl string = webAppModule.outputs.webAppUrl
