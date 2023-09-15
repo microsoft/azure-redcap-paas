@@ -23,6 +23,7 @@ param location string
   'appi' // Application Insights
   'uami' // User-assigned Managed Identity
   'dplscr' // Deployment Script
+  'law' // Log Analytics Workspace
 ])
 param resourceType string
 param environment string
@@ -108,6 +109,11 @@ var Defs = {
   dplscr: {
     lowerCase: false
     maxLength: 63 // Guess, not documented
+    alwaysRemoveSegmentSeparator: false
+  }
+  law: {
+    lowerCase: false
+    maxLength: 260
     alwaysRemoveSegmentSeparator: false
   }
 }
