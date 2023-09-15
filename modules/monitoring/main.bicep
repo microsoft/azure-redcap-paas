@@ -8,6 +8,8 @@ param logAnalyticsWorkspaceSku string
 param retentionInDays int
 param appInsightsName string
 
+param deploymentNameStructure string
+
 var mergeTags = union(tags, customTags)
 
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
@@ -17,7 +19,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 }
 
 module logAnalyticsWorkspace 'law.bicep' = {
-  name: 'DeployLAW'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'log'), 64)
   scope: resourceGroup
   params: {
     logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
@@ -29,7 +31,7 @@ module logAnalyticsWorkspace 'law.bicep' = {
 }
 
 module appInsights 'appInsights.bicep' = {
-  name: 'DeployAppInsigh'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'appi'), 64)
   scope: resourceGroup
   params: {
     appInsightsName: appInsightsName

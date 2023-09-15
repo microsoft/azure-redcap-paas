@@ -6,17 +6,15 @@ param tags object
 param customTags object
 param keyVaultName string
 param peSubnetId string
-param roleAssignments array = [{
-  RoleDefinitionId:''
-  objectId: ''
-}]
-param secrets array = [
-  // {
-  //   testSecret: 'testValue'
-  // }
-]
+param roleAssignments array = [ {
+    RoleDefinitionId: ''
+    objectId: ''
+  } ]
+param secrets array = []
 param privateDnsZoneName string
 param virtualNetworkId string
+
+param deploymentNameStructure string
 
 var mergeTags = union(tags, customTags)
 
@@ -26,9 +24,8 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   tags: mergeTags
 }
 
-
 module keyvault './kv.bicep' = {
-  name: 'kvDeploy'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'kv'), 64)
   scope: resourceGroup
   params: {
     keyVaultName: keyVaultName
@@ -42,11 +39,11 @@ module keyvault './kv.bicep' = {
 }
 
 module privateDns '../pdns/main.bicep' = {
-  name: 'deploy-peDns'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'kv-dns'), 64)
   scope: resourceGroup
-  params:{
-    privateDnsZoneName:privateDnsZoneName
-    virtualNetworkId:virtualNetworkId
+  params: {
+    privateDnsZoneName: privateDnsZoneName
+    virtualNetworkId: virtualNetworkId
     tags: tags
   }
 }
