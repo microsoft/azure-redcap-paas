@@ -1,6 +1,6 @@
 ## deploy azDeploySecureSub.bicep
 
-name: Azure REDCAP Deployment
+name: Azure REDCap Deployment
 
 on:
     workflow_dispatch:
@@ -9,21 +9,17 @@ on:
         branches:
             - main
 
-    # pull_request:
-    #     branches:
-    #         - main
-
 permissions:
     id-token: write
     contents: read
 
 env:
-#   bicepFile: ./azDeploySecureSub.bicep
     azCliVersion: 2.5.72
+    environment: 'DEMO-REDCAP'
             
 jobs:
     # Validate the Bicep templates
-    validateTemplates:
+    validateDeployment:
         runs-on: ubuntu-latest
         
         steps:
@@ -33,45 +29,32 @@ jobs:
             - uses: azure/login@v1
               name: Azure Login
               with:
-                client-id: ${{ secrets.AZURE_CLIENT_ID }}
-                tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-                subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+                client-id: secrets.AZURE_CLIENT_ID
+                client-secret: secrets.AZURE_CLIENT_SECRET
+                tenant-id: secrets.AZURE_TENANT_ID
+                subscription-id: secrets.AZURE_SUBSCRIPTION_ID
 
             - uses: azure/cli@v1
               name: Azure CLI
               with:
-                azcliversion: ${{ env.azCliVersion }}
+                azcliversion: $azCliVersion
                 inlineScript: |
                     az deployment sub validate --location westeurope --template-file ./azDeploySecureSub.bicep
-    
-    # validate the resources before creation
-    validateResources:
-        runs-on: ubuntu-latest
-        needs: [validateTemplates]
-        steps:
-            - uses: action/checkout@v4
-              name: Checkout
-
-            - uses: azure/login@v1
-              name: Azure Login
-              with:
-                client-id: ${{ secrets.AZURE_CLIENT_ID }}
-                tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-                subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-                client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-
+            
             - uses: azure/cli@v1
               name: Azure CLI
               with:
-                azcliversion: ${{ env.azCliVersion }}
+                azcliversion: $azCliVersion
                 inlineScript: |
                     az deployment sub create --location westeurope --template-file ./azDeploySecureSub.bicep --what-if --verbose
-
+    
     # Deploy the resources
     deployResources:
         runs-on: ubuntu-latest
-        environment: 'DEMO-REDCAP'
-        needs: [validateTemplates, validateResources]
+        environment: $environment
+        needs: [
+          validateDeployment
+        ]
         
         steps:
             - uses: action/checkout@v4
@@ -80,9 +63,10 @@ jobs:
             - uses: azure/login@v1
               name: Azure Login
               with:
-                client-id: ${{ secrets.AZURE_CLIENT_ID }}
-                tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-                subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+                client-id: secrets.AZURE_CLIENT_ID
+                client-secret: secrets.AZURE_CLIENT_SECRET
+                tenant-id: secrets.AZURE_TENANT_ID
+                subscription-id: secrets.AZURE_SUBSCRIPTION_ID
 
             - uses: azure/cli@v1
               name: Azure CLI
