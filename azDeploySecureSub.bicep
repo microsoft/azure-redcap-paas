@@ -24,9 +24,9 @@ param sequence int = 1
 @description('A valid Entra ID object ID, which will be assigned RBAC permissions on the deployed resources.')
 param identityObjectId string
 
-@description('The address space for the virtual network. Subnets will be carved out. Minimum IPv4 size: /24')
+@description('The address space for the virtual network. Subnets will be carved out. Minimum IPv4 size: /24.')
 param vnetAddressSpace string
-@description('recap zip file url')
+@description('If available, the public URL to download the REDCap zip file from. Used for debugging purposes. Does not need to be specified when downloading from the REDCap community using a username and password.')
 @secure()
 param redcapZipUrl string = ''
 @description('REDCap Community site username for downloading the REDCap zip file.')
