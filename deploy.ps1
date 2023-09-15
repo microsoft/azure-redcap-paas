@@ -22,11 +22,16 @@ Param(
     TemplateFile = '.\azDeploySecureSub.bicep'
 }
 
+# Convert the .bicepparam file to JSON to read values that will be used to construct the deployment name
 $JsonParamFile = [System.IO.Path]::ChangeExtension($TemplateParameterFile, 'json')
 Write-Verbose $JsonParamFile
 bicep build-params $TemplateParameterFile --outfile $JsonParamFile
 
-$CmdLetParameters.Add('TemplateParameterFile', $TemplateParameterFile)
+
+<# HACK: 2023-09-14: At this time, .bicepparam cannot be combined with inline parameters, 
+which is needed to supply a new random database password. So we're using the JSON file here too. #>
+$CmdLetParameters.Add('TemplateParameterFile', $JsonParamFile)
+
 # Read the values from the parameters file, to use when generating the $DeploymentName value
 $ParameterFileContents = (Get-Content $JsonParamFile | ConvertFrom-Json)
 [string]$WorkloadName = $ParameterFileContents.parameters.workloadName.value
