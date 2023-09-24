@@ -28,8 +28,6 @@ param redcapCommunityPassword string
 
 
 param appInsights_connectionString string
-
-@secure()
 param appInsights_instrumentationKey string
 
 

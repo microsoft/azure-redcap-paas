@@ -113,7 +113,7 @@ var Defs = {
   }
   law: {
     lowerCase: false
-    maxLength: 260
+    maxLength: 63
     alwaysRemoveSegmentSeparator: false
   }
 }

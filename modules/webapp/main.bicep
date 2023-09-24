@@ -18,8 +18,6 @@ param virtualNetworkId string
 param integrationSubnetId string
 
 param appInsights_connectionString string
-
-@secure()
 param appInsights_instrumentationKey string
 
 @secure()
@@ -52,8 +50,7 @@ module appService 'webapp.bicep' = {
     skuName: skuName
     skuTier: skuTier
     linuxFxVersion: linuxFxVersion
-    // TODO: Should we use mergeTags here? If not, rename mergeTags to rgTags?
-    tags: tags
+    tags: mergeTags
     dbHostName: dbHostName
     dbName: dbName
     dbPassword: dbPassword
@@ -78,8 +75,7 @@ module privateDns '../pdns/main.bicep' = {
   params: {
     privateDnsZoneName: privateDnsZoneName
     virtualNetworkId: virtualNetworkId
-    // TODO: Should we use mergeTags here?
-    tags: tags
+    tags: mergeTags
   }
 }
 

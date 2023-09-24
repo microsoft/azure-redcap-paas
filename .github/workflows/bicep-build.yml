@@ -1,0 +1,76 @@
+## deploy azDeploySecureSub.bicep
+
+name: Azure REDCap Deployment
+
+on:
+    workflow_dispatch:
+
+    push:
+        branches:
+            - main
+
+permissions:
+    id-token: write
+    contents: read
+
+env:
+    azCliVersion: 2.5.72
+    environment: 'DEMO-REDCAP'
+            
+jobs:
+    # Validate the Bicep templates
+    validateDeployment:
+        runs-on: ubuntu-latest
+        
+        steps:
+            - uses: action/checkout@v4
+              name: Checkout
+
+            - uses: azure/login@v1
+              name: Azure Login
+              with:
+                client-id: secrets.AZURE_CLIENT_ID
+                client-secret: secrets.AZURE_CLIENT_SECRET
+                tenant-id: secrets.AZURE_TENANT_ID
+                subscription-id: secrets.AZURE_SUBSCRIPTION_ID
+
+            - uses: azure/cli@v1
+              name: Azure CLI
+              with:
+                azcliversion: $azCliVersion
+                inlineScript: |
+                    az deployment sub validate --location westeurope --template-file ./azDeploySecureSub.bicep
+            
+            - uses: azure/cli@v1
+              name: Azure CLI
+              with:
+                azcliversion: $azCliVersion
+                inlineScript: |
+                    az deployment sub create --location westeurope --template-file ./azDeploySecureSub.bicep --what-if --verbose
+    
+    # Deploy the resources
+    deployResources:
+        runs-on: ubuntu-latest
+        environment: $environment
+        needs: [
+          validateDeployment
+        ]
+        
+        steps:
+            - uses: action/checkout@v4
+              name: Checkout
+
+            - uses: azure/login@v1
+              name: Azure Login
+              with:
+                client-id: secrets.AZURE_CLIENT_ID
+                client-secret: secrets.AZURE_CLIENT_SECRET
+                tenant-id: secrets.AZURE_TENANT_ID
+                subscription-id: secrets.AZURE_SUBSCRIPTION_ID
+
+            - uses: azure/cli@v1
+              name: Azure CLI
+              with:
+                azcliversion: ${{ env.azCliVersion }}
+                inlineScript: |
+                    az deployment sub create --location westeurope --template-file ./azDeploySecureSub.bicep --verbose
