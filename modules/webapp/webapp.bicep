@@ -8,7 +8,9 @@ param linuxFxVersion string
 
 param dbHostName string
 param dbName string
+#disable-next-line secure-secrets-in-params
 param dbUserNameSecretRef string
+#disable-next-line secure-secrets-in-params
 param dbPasswordSecretRef string
 
 param peSubnetId string

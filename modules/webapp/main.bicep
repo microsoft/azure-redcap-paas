@@ -8,6 +8,7 @@ param skuName string
 param skuTier string
 param linuxFxVersion string = 'php|8.2'
 param dbHostName string
+#disable-next-line secure-secrets-in-params
 param dbUserNameSecretRef string
 param tags object
 param customTags object
