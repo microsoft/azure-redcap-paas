@@ -351,7 +351,7 @@ module webAppModule './modules/webapp/main.bicep' = {
     webAppName: webAppName
     appServicePlanName: planName
     location: location
-    // TODO: Consider deploying as P0V3 to ensure the deployment runs on a scale unit that supports P_v3 for future upgrades
+    // TODO: Consider deploying as P0V3 to ensure the deployment runs on a scale unit that supports P_v3 for future upgrades. GH issue #50
     skuName: 'S1'
     skuTier: 'Standard'
     peSubnetId: virtualNetworkModule.outputs.subnets.ComputeSubnet.id
@@ -366,8 +366,8 @@ module webAppModule './modules/webapp/main.bicep' = {
     virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
     dbHostName: mySqlModule.outputs.fqdn
     dbName: mySqlModule.outputs.databaseName
-    dbPassword: kvSecretReferencesModule.outputs.keyVaultRefs[1]
-    dbUserName: mySqlModule.outputs.sqlAdmin
+    dbPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[1]
+    dbUserNameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[0]
     redcapZipUrl: redcapZipUrl
     redcapCommunityUsername: kvSecretReferencesModule.outputs.keyVaultRefs[4]
     redcapCommunityPassword: kvSecretReferencesModule.outputs.keyVaultRefs[5]
