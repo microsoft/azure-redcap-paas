@@ -12,6 +12,8 @@ param virtualNetworkId string
 param tags object
 param customTags object
 
+param deploymentNameStructure string
+
 var mergeTags = union(tags, customTags)
 
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
@@ -21,7 +23,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 }
 
 module storageBlob './storage.bicep' = {
-  name: 'deploy-${storageAccountName}'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'st'), 64)
   scope: resourceGroup
   params: {
     location: location
@@ -36,7 +38,7 @@ module storageBlob './storage.bicep' = {
 }
 
 module privateDns '../pdns/main.bicep' = {
-  name: 'deploy-peDns'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'st-dns'), 64)
   scope: resourceGroup
   params: {
     privateDnsZoneName: privateDnsZoneName

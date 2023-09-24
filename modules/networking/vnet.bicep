@@ -1,4 +1,3 @@
-
 targetScope = 'resourceGroup'
 
 param location string = resourceGroup().location
@@ -18,7 +17,6 @@ param customDnsIPs array
 var subnetDefsArray = items(subnets)
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
-
   name: virtualNetworkName
   location: location
   properties: {

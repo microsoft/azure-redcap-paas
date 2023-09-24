@@ -29,9 +29,10 @@ param redcapCommunityUsername string
 @secure()
 param redcapCommunityPassword string
 
-
 @secure()
 param dbPassword string
+
+param deploymentNameStructure string
 
 var mergeTags = union(tags, customTags)
 
@@ -42,7 +43,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 }
 
 module appService 'webapp.bicep' = {
-  name: 'DeployAppService'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'planAndApp'), 64)
   scope: resourceGroup
   params: {
     webAppName: webAppName
@@ -72,7 +73,7 @@ module appService 'webapp.bicep' = {
 }
 
 module privateDns '../pdns/main.bicep' = {
-  name: 'deploy-peDns'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'app-dns'), 64)
   scope: resourceGroup
   params: {
     privateDnsZoneName: privateDnsZoneName

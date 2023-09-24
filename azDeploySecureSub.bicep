@@ -19,6 +19,8 @@ param workloadName string = 'redcap'
 @description('The Azure resource naming convention. Include the following placeholders (case-sensitive): {workloadName}, {env}, {rtype}, {loc}, {seq}.')
 param namingConvention string = '{workloadName}-{env}-{rtype}-{loc}-{seq}'
 @description('A sequence number for the deployment. Used to distinguish multiple deployed versions of the same workload. Replaces {seq} in namingConvention.')
+@minValue(1)
+@maxValue(99)
 param sequence int = 1
 
 @description('A valid Entra ID object ID, which will be assigned RBAC permissions on the deployed resources.')
@@ -37,6 +39,8 @@ param redcapCommunityUsername string
 @secure()
 param redcapCommunityPassword string
 
+param deploymentTime string = utcNow()
+
 @description('The password to use for the MySQL Flexible Server admin account \'sqladmin\'.')
 @secure()
 param sqlPassword string
@@ -54,6 +58,8 @@ var planName = nameModule[5].outputs.shortName
 var uamiName = nameModule[6].outputs.shortName
 var dplscrName = nameModule[7].outputs.shortName
 var lawName = nameModule[8].outputs.shortName
+
+var deploymentNameStructure = '${workloadName}-${environment}-${sequenceFormatted}-{rtype}-${deploymentTime}'
 
 var subnets = {
   // TODO: Define securityRules
@@ -191,7 +197,7 @@ var workloads = [
 
 @batchSize(1)
 module nameModule 'modules/common/createValidAzResourceName.bicep' = [for workload in workloads: {
-  name: 'nameGeneration-${workload}'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'nameGen-${workload}'), 64)
   params: {
     location: location
     environment: environment
@@ -204,11 +210,11 @@ module nameModule 'modules/common/createValidAzResourceName.bicep' = [for worklo
 }]
 
 module rolesModule './modules/common/roles.bicep' = {
-  name: 'Roles'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'roles'), 64)
 }
 
 module kvSecretReferencesModule './modules/common/appSvcKeyVaultRefs.bicep' = {
-  name: 'secrets'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'kv-secrets'), 64)
   params: {
     keyVaultName: kvName
     secretNames: map(secrets, s => s.name)
@@ -216,7 +222,7 @@ module kvSecretReferencesModule './modules/common/appSvcKeyVaultRefs.bicep' = {
 }
 
 module virtualNetworkModule './modules/networking/main.bicep' = {
-  name: 'vnetDeploy'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'network'), 64)
   params: {
     resourceGroupName: replace(rgNamingStructure, '{rgName}', 'network')
     virtualNetworkName: vnetName
@@ -228,11 +234,13 @@ module virtualNetworkModule './modules/networking/main.bicep' = {
     customTags: {
       workloadType: 'networking'
     }
+
+    deploymentNameStructure: deploymentNameStructure
   }
 }
 
 module monitoring './modules/monitoring/main.bicep' = {
-  name: 'monitoring'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'monitoring'), 64)
   params: {
     resourceGroupName: replace(rgNamingStructure, '{rgName}', 'monitoring')
     appInsightsName: 'appInsights-${webAppName}'
@@ -244,11 +252,13 @@ module monitoring './modules/monitoring/main.bicep' = {
     customTags: {
       workloadType: 'monitoring'
     }
+
+    deploymentNameStructure: deploymentNameStructure
   }
 }
 
 module storageAccountModule './modules/storage/main.bicep' = {
-  name: 'strgDeploy'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'storage'), 64)
   params: {
     resourceGroupName: replace(rgNamingStructure, '{rgName}', 'storage')
     location: location
@@ -263,11 +273,13 @@ module storageAccountModule './modules/storage/main.bicep' = {
     customTags: {
       workloadType: 'storageAccount'
     }
+
+    deploymentNameStructure: deploymentNameStructure
   }
 }
 
 module keyVaultModule './modules/kv/main.bicep' = {
-  name: 'kvDeploy'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'keyVault'), 64)
   params: {
     resourceGroupName: replace(rgNamingStructure, '{rgName}', 'keyVault')
     keyVaultName: kvName
@@ -290,13 +302,15 @@ module keyVaultModule './modules/kv/main.bicep' = {
     ]
     privateDnsZoneName: 'privatelink.vaultcore.azure.net'
     secrets: secrets
+
+    deploymentNameStructure: deploymentNameStructure
   }
 }
 
 module mySqlModule './modules/sql/main.bicep' = {
-  name: 'DeploymySqlServer'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'mysql'), 64)
   params: {
-    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'mysql')
+    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'database')
     flexibleSqlServerName: sqlName
     location: location
     tags: tags
@@ -325,11 +339,13 @@ module mySqlModule './modules/sql/main.bicep' = {
     database_collation: 'utf8_general_ci'
 
     virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
+
+    deploymentNameStructure: deploymentNameStructure
   }
 }
 
 module webAppModule './modules/webapp/main.bicep' = {
-  name: 'webAppDeploy'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'appService'), 64)
   params: {
     resourceGroupName: replace(rgNamingStructure, '{rgName}', 'web')
     webAppName: webAppName
@@ -357,6 +373,8 @@ module webAppModule './modules/webapp/main.bicep' = {
     redcapCommunityPassword: kvSecretReferencesModule.outputs.keyVaultRefs[5]
     // Enable VNet integration
     integrationSubnetId: virtualNetworkModule.outputs.subnets.IntegrationSubnet.id
+
+    deploymentNameStructure: deploymentNameStructure
   }
 }
 

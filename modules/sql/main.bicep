@@ -46,6 +46,8 @@ param databaseName string
 param database_charset string = 'utf8'
 param database_collation string = 'utf8_general_ci'
 
+param deploymentNameStructure string
+
 var mergeTags = union(tags, customTags)
 
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
@@ -55,7 +57,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 }
 
 module mysqlDbserver './sql.bicep' = {
-  name: 'deploy-${flexibleSqlServerName}'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'mysql'), 64)
   scope: resourceGroup
   params: {
     flexibleSqlServerName: flexibleSqlServerName
@@ -81,7 +83,7 @@ module mysqlDbserver './sql.bicep' = {
 }
 
 module privateDns '../pdns/main.bicep' = {
-  name: 'deploy-peDns'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'mysql-dns'), 64)
   scope: resourceGroup
   params: {
     privateDnsZoneName: privateDnsZoneName

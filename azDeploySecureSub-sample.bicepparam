@@ -1,13 +1,18 @@
 using './azDeploySecureSub.bicep'
 
+// These parameters might have acceptable defaults.
 param location = 'eastus'
 param environment = 'demo'
 param workloadName = 'redcap'
 param namingConvention = '{workloadName}-{env}-{rtype}-{loc}-{seq}'
 param sequence = 1
 
+// These parameters should be modified for your environment
 param identityObjectId = '<Valid Entra ID object ID for permissions assignment>'
-param vnetAddressSpace = '10.230.0.0/24'
+param vnetAddressSpace = '10.0.0.0/24'
+
+// If providing redcapZipUrl, you do not need to provide REDCap community username and password.
+// redcapZipUrl should not require authentication.
 param redcapZipUrl = '<Valid Redcap Zip URL>'
 param redcapCommunityUsername = '<Valid Redcap Community Username>'
 param redcapCommunityPassword = '<Valid Redcap Community Password>'

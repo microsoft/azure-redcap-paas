@@ -9,6 +9,8 @@ param customDnsIPs array
 param tags object
 param customTags object
 
+param deploymentNameStructure string
+
 var mergeTags = union(tags, customTags)
 
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
@@ -18,7 +20,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 }
 
 module vNetModule 'vnet.bicep' = {
-  name: 'Deploy-${virtualNetworkName}'
+  name: take(replace(deploymentNameStructure, '{rtype}', 'vnet'), 64)
   scope: resourceGroup
   params: {
     virtualNetworkName: virtualNetworkName
