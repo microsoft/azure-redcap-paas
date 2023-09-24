@@ -26,9 +26,9 @@ param sequence int = 1
 @description('A valid Entra ID object ID, which will be assigned RBAC permissions on the deployed resources.')
 param identityObjectId string
 
-@description('The address space for the virtual network. Subnets will be carved out. Minimum IPv4 size: /24')
+@description('The address space for the virtual network. Subnets will be carved out. Minimum IPv4 size: /24.')
 param vnetAddressSpace string
-@description('recap zip file url')
+@description('If available, the public URL to download the REDCap zip file from. Used for debugging purposes. Does not need to be specified when downloading from the REDCap community using a username and password.')
 @secure()
 param redcapZipUrl string = ''
 @description('REDCap Community site username for downloading the REDCap zip file.')
@@ -41,6 +41,12 @@ param redcapCommunityPassword string
 
 param deploymentTime string = utcNow()
 
+@description('The password to use for the MySQL Flexible Server admin account \'sqladmin\'.')
+@secure()
+param sqlPassword string
+
+param sqlAdmin string = 'sqladmin'
+
 var sequenceFormatted = format('{0:00}', sequence)
 var rgNamingStructure = replace(replace(replace(replace(replace(namingConvention, '{rtype}', 'rg'), '{workloadName}', '${workloadName}-{rgName}'), '{loc}', location), '{seq}', sequenceFormatted), '{env}', environment)
 var vnetName = nameModule[0].outputs.shortName
@@ -49,10 +55,9 @@ var webAppName = nameModule[2].outputs.shortName
 var kvName = nameModule[3].outputs.shortName
 var sqlName = nameModule[4].outputs.shortName
 var planName = nameModule[5].outputs.shortName
-var lawName = nameModule[6].outputs.shortName
-
-var sqlAdmin = 'sqladmin'
-var sqlPassword = 'P@ssw0rd' // TODO: this should be linked to Key Vault secret.
+var uamiName = nameModule[6].outputs.shortName
+var dplscrName = nameModule[7].outputs.shortName
+var lawName = nameModule[8].outputs.shortName
 
 var deploymentNameStructure = '${workloadName}-${environment}-${sequenceFormatted}-{rtype}-${deploymentTime}'
 
@@ -177,6 +182,7 @@ var secrets = [
   }
 ]
 
+// TODO: Consider renaming to resourceTypes
 var workloads = [
   'vnet'
   'st'
@@ -184,6 +190,8 @@ var workloads = [
   'kv'
   'mysql'
   'plan'
+  'uami'
+  'dplscr'
   'law'
 ]
 
@@ -321,6 +329,10 @@ module mySqlModule './modules/sql/main.bicep' = {
     mysqlVersion: '8.0.21'
     // TODO: Consider using workloadname + 'db'
     databaseName: 'redcapdb'
+
+    roles: rolesModule.outputs.roles
+    uamiName: uamiName
+    deploymentScriptName: dplscrName
 
     // Required charset and collation for REDCap
     database_charset: 'utf8'

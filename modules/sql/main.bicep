@@ -10,6 +10,10 @@ param privateDnsZoneName string
 param sqlAdminUser string
 param virtualNetworkId string
 
+param roles object
+param uamiName string
+param deploymentScriptName string
+
 @description('MySQL version')
 @allowed([
   '5.7'
@@ -71,6 +75,10 @@ module mysqlDbserver './sql.bicep' = {
     databaseName: databaseName
     database_charset: database_charset
     database_collation: database_collation
+
+    roles: roles
+    uamiName: uamiName
+    deploymentScriptName: deploymentScriptName
   }
 }
 
