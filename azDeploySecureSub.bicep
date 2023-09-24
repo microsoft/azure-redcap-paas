@@ -182,11 +182,10 @@ var secrets = [
   }
 ]
 
-// TODO: Consider renaming to resourceTypes
-var workloads = [
+var resourceTypes = [
   'vnet'
   'st'
-  'webApp'
+  'app'
   'kv'
   'mysql'
   'plan'
@@ -196,7 +195,7 @@ var workloads = [
 ]
 
 @batchSize(1)
-module nameModule 'modules/common/createValidAzResourceName.bicep' = [for workload in workloads: {
+module nameModule 'modules/common/createValidAzResourceName.bicep' = [for workload in resourceTypes: {
   name: take(replace(deploymentNameStructure, '{rtype}', 'nameGen-${workload}'), 64)
   params: {
     location: location

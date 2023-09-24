@@ -18,7 +18,7 @@ param location string
   'pg' // PostgreSQL Flexible Server
   'ci' // Container Instance
   'mysql' // MySQL Flexible Server
-  'webApp' // Web App
+  'app' // Web App
   'plan' // App Service Plan
   'appi' // Application Insights
   'uami' // User-assigned Managed Identity
@@ -61,7 +61,7 @@ var Defs = {
     maxLength: 60
     alwaysRemoveSegmentSeparator: false
   }
-  webApp: {
+  app: {
     lowerCase: false
     maxLength: 60
     alwaysRemoveSegmentSeparator: false
