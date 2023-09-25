@@ -8,7 +8,8 @@ param skuName string
 param skuTier string
 param linuxFxVersion string = 'php|8.2'
 param dbHostName string
-param dbUserName string
+#disable-next-line secure-secrets-in-params
+param dbUserNameSecretRef string
 param tags object
 param customTags object
 param dbName string
@@ -27,8 +28,9 @@ param redcapCommunityUsername string
 @secure()
 param redcapCommunityPassword string
 
-@secure()
-param dbPassword string
+// Disabling this check because this is no longer a secret; it's a reference to Key Vault
+#disable-next-line secure-secrets-in-params
+param dbPasswordSecretRef string
 
 param deploymentNameStructure string
 
@@ -53,8 +55,8 @@ module appService 'webapp.bicep' = {
     tags: mergeTags
     dbHostName: dbHostName
     dbName: dbName
-    dbPassword: dbPassword
-    dbUserName: dbUserName
+    dbPasswordSecretRef: dbPasswordSecretRef
+    dbUserNameSecretRef: dbUserNameSecretRef
     peSubnetId: peSubnetId
     privateDnsZoneId: privateDns.outputs.privateDnsId
     integrationSubnetId: integrationSubnetId

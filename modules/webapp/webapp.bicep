@@ -5,16 +5,13 @@ param skuName string
 param skuTier string
 param tags object
 param linuxFxVersion string
+
 param dbHostName string
 param dbName string
-
-@secure()
-param dbUserName string
-
-@secure()
-param dbPassword string
-//param repoUrl string
-
+#disable-next-line secure-secrets-in-params
+param dbUserNameSecretRef string
+#disable-next-line secure-secrets-in-params
+param dbPasswordSecretRef string
 
 param peSubnetId string
 param privateDnsZoneId string
@@ -26,10 +23,8 @@ param redcapCommunityUsername string
 @secure()
 param redcapCommunityPassword string
 
-
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
-
 
 resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: appServicePlanName
@@ -77,11 +72,11 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'DBUserName'
-          value: dbUserName
+          value: dbUserNameSecretRef
         }
         {
           name: 'DBPassword'
-          value: dbPassword
+          value: dbPasswordSecretRef
         }
         {
           name: 'redcapCommunityUsername'
@@ -120,9 +115,8 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   }
   identity: {
     type: 'SystemAssigned'
-  } 
+  }
 }
-
 
 resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = {
   name: 'pe-${webAppName}'
