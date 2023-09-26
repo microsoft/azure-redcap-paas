@@ -38,6 +38,12 @@ param redcapCommunityUsername string
 @description('REDCap Community site password for downloading the REDCap zip file.')
 @secure()
 param redcapCommunityPassword string
+@description('Github Repo URL where build scripts are downloaded from')
+param scmRepoUrl string = 'https://github.com/microsoft/azure-redcap-paas'
+@description('Github Repo Branch where build scripts are downloaded from')
+param scmRepoBranch string = 'main'
+@description('The prerequsites command before build to be run on the web app with an elevated privilege. This is used to install the required packages for REDCap.')
+param preRequsitesCommand string = 'apt-get install unzip -y && apt-get install -y python3 python3-pip'
 
 param deploymentTime string = utcNow()
 
@@ -372,7 +378,9 @@ module webAppModule './modules/webapp/main.bicep' = {
     redcapCommunityPassword: kvSecretReferencesModule.outputs.keyVaultRefs[5]
     // Enable VNet integration
     integrationSubnetId: virtualNetworkModule.outputs.subnets.IntegrationSubnet.id
-
+    scmRepoUrl: scmRepoUrl
+    scmRepoBranch: scmRepoBranch
+    preRequsitesCommand: preRequsitesCommand
     deploymentNameStructure: deploymentNameStructure
   }
 }

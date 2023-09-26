@@ -1,4 +1,4 @@
-using './azDeploySecureSub.bicep'
+using './main.bicep'
 
 // These parameters might have acceptable defaults.
 param location = 'eastus'
@@ -21,3 +21,5 @@ param redcapCommunityPassword = '<Valid Redcap Community Password>'
 // This parameter is required to be here but should be blank so the password doesn't leak. 
 // A password is generated for each deployment.
 param sqlPassword = ''
+param scmRepoUrl = '<Valid Scm Repo URL where build scripts are downloaded from>'
+param scmRepoBranch = '<Valid Scm Repo Branch where build scripts are downloaded from>'

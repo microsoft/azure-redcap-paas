@@ -14,8 +14,9 @@ permissions:
     contents: read
 
 env:
-    azCliVersion: 2.5.72
-    environment: 'DEMO-REDCAP'
+    azCliVersion: 2.30.0
+    environment: 'env-redcap'
+    region: 'eastus'
             
 jobs:
     # Validate the Bicep templates
@@ -23,54 +24,53 @@ jobs:
         runs-on: ubuntu-latest
         
         steps:
-            - uses: action/checkout@v4
-              name: Checkout
+          - uses: actions/checkout@main
+            name: Checkout
 
-            - uses: azure/login@v1
-              name: Azure Login
-              with:
-                client-id: secrets.AZURE_CLIENT_ID
-                client-secret: secrets.AZURE_CLIENT_SECRET
-                tenant-id: secrets.AZURE_TENANT_ID
-                subscription-id: secrets.AZURE_SUBSCRIPTION_ID
+          - uses: azure/login@v1
+            name: Azure Login
+            with:
+              creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-            - uses: azure/cli@v1
-              name: Azure CLI
-              with:
-                azcliversion: $azCliVersion
-                inlineScript: |
-                    az deployment sub validate --location westeurope --template-file ./azDeploySecureSub.bicep
-            
-            - uses: azure/cli@v1
-              name: Azure CLI
-              with:
-                azcliversion: $azCliVersion
-                inlineScript: |
-                    az deployment sub create --location westeurope --template-file ./azDeploySecureSub.bicep --what-if --verbose
+          # Deploy Bicep file
+          - name: validateTemplates
+            uses: azure/arm-deploy@v1
+            with:
+              scope: 'subscription'
+              template: ./main.bicep
+              deploymentMode: 'Validate'
+              region: ${{ env.region }}
+
+          - name: planDeployment
+            uses: azure/arm-deploy@v1
+            with:
+              scope: 'subscription'
+              template: ./main.bicep
+              additionalArguments: "--what-if"
+              region: ${{ env.region }}
     
     # Deploy the resources
     deployResources:
-        runs-on: ubuntu-latest
-        environment: $environment
-        needs: [
-          validateDeployment
-        ]
-        
-        steps:
-            - uses: action/checkout@v4
-              name: Checkout
+      if: ( github.ref == 'refs/heads/main' )
+      runs-on: ubuntu-latest
+      environment: 'nonProduction' ## Replce with your environment name
+      needs: [
+        validateDeployment
+      ]
+      
+      steps:
+          - uses: actions/checkout@main
+            name: Checkout
 
-            - uses: azure/login@v1
-              name: Azure Login
-              with:
-                client-id: secrets.AZURE_CLIENT_ID
-                client-secret: secrets.AZURE_CLIENT_SECRET
-                tenant-id: secrets.AZURE_TENANT_ID
-                subscription-id: secrets.AZURE_SUBSCRIPTION_ID
+          - uses: azure/login@v1
+            name: Azure Login
+            with:
+              creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-            - uses: azure/cli@v1
-              name: Azure CLI
-              with:
-                azcliversion: ${{ env.azCliVersion }}
-                inlineScript: |
-                    az deployment sub create --location westeurope --template-file ./azDeploySecureSub.bicep --verbose
+          # Deploy Bicep file
+          - name: deploy
+            uses: azure/arm-deploy@v1
+            with:
+              scope: 'subscription'
+              template: ./main.bicep
+              region: ${{ env.region }}

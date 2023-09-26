@@ -21,12 +21,15 @@ param integrationSubnetId string
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
 
+param scmRepoUrl string
+param scmRepoBranch string
 @secure()
 param redcapZipUrl string
 @secure()
 param redcapCommunityUsername string
 @secure()
 param redcapCommunityPassword string
+param preRequsitesCommand string
 
 // Disabling this check because this is no longer a secret; it's a reference to Key Vault
 #disable-next-line secure-secrets-in-params
@@ -68,6 +71,9 @@ module appService 'webapp.bicep' = {
     redcapCommunityUsername: redcapCommunityUsername
     redcapCommunityPassword: redcapCommunityPassword
 
+    scmRepoUrl: scmRepoUrl
+    scmRepoBranch: scmRepoBranch
+    preRequsitesCommand: preRequsitesCommand
   }
 }
 

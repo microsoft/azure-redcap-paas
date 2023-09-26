@@ -22,6 +22,9 @@ param redcapZipUrl string
 param redcapCommunityUsername string
 @secure()
 param redcapCommunityPassword string
+param scmRepoUrl string
+param scmRepoBranch string = 'main'
+param preRequsitesCommand string
 
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
@@ -57,6 +60,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'
+      appCommandLine: preRequsitesCommand
       appSettings: [
         {
           name: 'redcapAppZip'
@@ -110,11 +114,29 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
           value: appInsights_connectionString
         }
+        {
+          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+          value: '1'
+        } 
       ]
     }
   }
   identity: {
     type: 'SystemAssigned'
+  }
+}
+
+resource webSiteName_web 'Microsoft.Web/sites/sourcecontrols@2022-09-01' = {
+  parent: webApp
+  name: 'web'
+  location: location
+  tags: {
+    displayName: 'CodeDeploy'
+  }
+  properties: {
+    repoUrl: scmRepoUrl
+    branch: scmRepoBranch
+    isManualIntegration: true
   }
 }
 

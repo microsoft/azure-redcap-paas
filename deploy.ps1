@@ -10,7 +10,7 @@ Param(
     [Parameter()]
     [string]$Location = 'eastus',
     [Parameter(Position = 1)]
-    [string]$TemplateParameterFile = "./azDeploySecureSub-sample.bicepparam",
+    [string]$TemplateParameterFile = "./main-sample.bicepparam",
     [Parameter(Position = 2)]
     [string]$SubscriptionId
 )
@@ -19,7 +19,7 @@ Param(
 [hashtable]$CmdLetParameters = @{
     Location     = $Location
     # TODO: Rename to main.bicep?
-    TemplateFile = '.\azDeploySecureSub.bicep'
+    TemplateFile = '.\main.bicep'
 }
 
 # Convert the .bicepparam file to JSON to read values that will be used to construct the deployment name
