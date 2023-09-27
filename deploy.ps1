@@ -6,19 +6,17 @@
 # Use these parameters to customize the deployment instead of modifying the default parameter values
 [CmdletBinding()]
 Param(
-    [ValidateSet('eastus2', 'eastus')]
-    [Parameter()]
-    [string]$Location = 'eastus',
     [Parameter(Position = 1)]
-    [string]$TemplateParameterFile = "./main-sample.bicepparam",
+    [string]$Location,
     [Parameter(Position = 2)]
+    [string]$TemplateParameterFile = "./main-sample.bicepparam",
+    [Parameter(Position = 3)]
     [string]$SubscriptionId
 )
 
 # Define common parameters for the New-AzDeployment cmdlet
 [hashtable]$CmdLetParameters = @{
     Location     = $Location
-    # TODO: Rename to main.bicep?
     TemplateFile = '.\main.bicep'
 }
 

@@ -1,10 +1,6 @@
 targetScope = 'subscription'
 
 @description('The Azure region to target for the deployment. Replaces {loc} in namingConvention.')
-@allowed([
-  'eastus'
-  'westus'
-])
 param location string = 'eastus'
 
 @description('The environment designator for the deployment. Replaces {env} in namingConvention.')
