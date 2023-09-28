@@ -28,7 +28,8 @@ param privateDnsZoneId string
 param adminUserName string
 
 param roles object
-param uamiName string
+param uamiId string
+param uamiPrincipalId string
 param deploymentScriptName string
 
 @description('Database administrator password')
@@ -113,17 +114,11 @@ resource database 'Microsoft.DBforMySQL/flexibleServers/databases@2021-12-01-pre
   }
 }
 
-resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
-  name: uamiName
-  location: location
-  tags: tags
-}
-
 module uamiMySqlRoleAssignmentModule '../common/roleAssignment-mySql.bicep' = {
   name: 'mySqlRole'
   params: {
     mySqlFlexServerName: server.name
-    principalId: uami.properties.principalId
+    principalId: uamiPrincipalId
     roleDefinitionId: roles.Contributor
   }
 }
@@ -134,7 +129,7 @@ resource dbConfigDeploymentScript 'Microsoft.Resources/deploymentScripts@2020-10
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${uami.id}': {}
+      '${uamiId}': {}
     }
   }
   kind: 'AzureCLI'

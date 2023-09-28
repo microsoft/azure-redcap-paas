@@ -1,6 +1,4 @@
-targetScope = 'subscription'
-param resourceGroupName string
-param location string
+param location string = resourceGroup().location
 
 param webAppName string
 param appServicePlanName string
@@ -18,6 +16,11 @@ param privateDnsZoneName string
 param virtualNetworkId string
 param integrationSubnetId string
 
+#disable-next-line secure-secrets-in-params
+param storageAccountKeySecretRef string
+param storageAccountName string
+param storageAccountContainerName string
+
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
 
@@ -31,6 +34,8 @@ param redcapCommunityUsername string
 param redcapCommunityPassword string
 param preRequsitesCommand string
 
+param uamiId string
+
 // Disabling this check because this is no longer a secret; it's a reference to Key Vault
 #disable-next-line secure-secrets-in-params
 param dbPasswordSecretRef string
@@ -39,15 +44,8 @@ param deploymentNameStructure string
 
 var mergeTags = union(tags, customTags)
 
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
-  name: resourceGroupName
-  location: location
-  tags: mergeTags
-}
-
 module appService 'webapp.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'planAndApp'), 64)
-  scope: resourceGroup
   params: {
     webAppName: webAppName
     appServicePlanName: appServicePlanName
@@ -74,19 +72,22 @@ module appService 'webapp.bicep' = {
     scmRepoUrl: scmRepoUrl
     scmRepoBranch: scmRepoBranch
     preRequsitesCommand: preRequsitesCommand
+
+    storageAccountContainerName: storageAccountContainerName
+    storageAccountKeySecretRef: storageAccountKeySecretRef
+    storageAccountName: storageAccountName
+
+    uamiId: uamiId
   }
 }
 
 module privateDns '../pdns/main.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'app-dns'), 64)
-  scope: resourceGroup
   params: {
     privateDnsZoneName: privateDnsZoneName
     virtualNetworkId: virtualNetworkId
     tags: mergeTags
   }
 }
-
-output webAppIdentity string = appService.outputs.webAppIdentity
 
 output webAppUrl string = appService.outputs.webAppUrl

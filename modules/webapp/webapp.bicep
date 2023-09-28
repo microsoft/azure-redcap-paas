@@ -29,6 +29,13 @@ param preRequsitesCommand string
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
 
+#disable-next-line secure-secrets-in-params
+param storageAccountKeySecretRef string
+param storageAccountName string
+param storageAccountContainerName string
+
+param uamiId string
+
 resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: appServicePlanName
   location: location
@@ -53,6 +60,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
     httpsOnly: true
     serverFarmId: appSrvcPlan.id
     virtualNetworkSubnetId: integrationSubnetId
+    keyVaultReferenceIdentity: uamiId
     siteConfig: {
       alwaysOn: true
       http20Enabled: true
@@ -117,22 +125,33 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
         {
           name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
           value: '1'
-        } 
+        }
+        {
+          name: 'storageKey'
+          value: storageAccountKeySecretRef
+        }
+        {
+          name: 'storageAccount'
+          value: storageAccountName
+        }
+        {
+          name: 'storageContainerName'
+          value: storageAccountContainerName
+        }
       ]
     }
   }
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${uamiId}': {}
+    }
   }
 }
 
 resource webSiteName_web 'Microsoft.Web/sites/sourcecontrols@2022-09-01' = {
   parent: webApp
   name: 'web'
-  location: location
-  tags: {
-    displayName: 'CodeDeploy'
-  }
   properties: {
     repoUrl: scmRepoUrl
     branch: scmRepoBranch
@@ -141,7 +160,7 @@ resource webSiteName_web 'Microsoft.Web/sites/sourcecontrols@2022-09-01' = {
 }
 
 resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = {
-  name: 'pe-${webAppName}'
+  name: 'pe-${webApp.name}'
   location: location
   properties: {
     subnet: {
@@ -149,7 +168,7 @@ resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = {
     }
     privateLinkServiceConnections: [
       {
-        name: 'pe-${webAppName}'
+        name: 'pe-${webApp.name}'
         properties: {
           privateLinkServiceId: webApp.id
           groupIds: [
@@ -176,5 +195,4 @@ resource privateDnsZoneGroupsWebApp 'Microsoft.Network/privateEndpoints/privateD
   }
 }
 
-output webAppIdentity string = webApp.identity.principalId
 output webAppUrl string = webApp.properties.defaultHostName

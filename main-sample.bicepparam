@@ -17,9 +17,10 @@ param redcapZipUrl = '<Valid Redcap Zip URL>'
 param redcapCommunityUsername = '<Valid Redcap Community Username>'
 param redcapCommunityPassword = '<Valid Redcap Community Password>'
 
+param scmRepoUrl = '<Valid Scm Repo URL where build scripts are downloaded from>'
+param scmRepoBranch = '<Valid Scm Repo Branch where build scripts are downloaded from>'
+
 // ** Do not specify anything here! **
 // This parameter is required to be here but should be blank so the password doesn't leak. 
 // A password is generated for each deployment.
 param sqlPassword = ''
-param scmRepoUrl = '<Valid Scm Repo URL where build scripts are downloaded from>'
-param scmRepoBranch = '<Valid Scm Repo Branch where build scripts are downloaded from>'

@@ -9,22 +9,20 @@ param enableRbacAuthorization bool = true
 param enablePurgeProtection bool = true
 param peSubnetId string
 
+param deploymentNameStructure string
+
 param roleAssignments array = [ {
     RoleDefinitionId: ''
     objectId: ''
   } ]
 param privateDnsZoneId string
 
-param secrets array = [
-  // {
-  //   testSecret: 'testValue'
-  // }
-]
+@secure()
+param secrets object
 
 @allowed([
   'disabled'
   'enabled'
-
 ])
 param publicNetworkAccess string = 'disabled'
 
@@ -54,13 +52,13 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   }
 }
 
-resource keyVaultSecrets 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = [for secret in secrets: {
-  parent: keyVault
-  name: secret.name
-  properties: {
-    value: secret.value
+module keyVaultSecretsModule 'kvSecrets.bicep' = {
+  name: take(replace(deploymentNameStructure, '{rtype}', 'kv-secrets'), 64)
+  params: {
+    keyVaultName: keyVault.name
+    secrets: secrets
   }
-}]
+}
 
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for roleAssignment in roleAssignments: {
   scope: keyVault
@@ -108,3 +106,4 @@ resource privateDnsZoneGroupsKeyVault 'Microsoft.Network/privateEndpoints/privat
 }
 
 output keyVaultName string = keyVault.name
+output id string = keyVault.id
