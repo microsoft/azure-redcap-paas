@@ -4,7 +4,7 @@ function New-RandomPassword {
         [int]$Length
     )
 
-    $charSet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#@_-?=+/*&^$;:~'.ToCharArray()
+    $charSet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#@_-?=+*&^$;:~'.ToCharArray()
 
     $rng = New-Object System.Security.Cryptography.RNGCryptoServiceProvider
     $bytes = New-Object byte[]($length)
