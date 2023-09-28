@@ -25,7 +25,7 @@ $JsonParamFile = [System.IO.Path]::ChangeExtension($TemplateParameterFile, 'json
 Write-Verbose $JsonParamFile
 bicep build-params $TemplateParameterFile --outfile $JsonParamFile
 
-<# HACK: 2023-09-14: At this time, .bicepparam cannot be combined with inline parameters, 
+<# HACK: 2023-09-14: At this time, .bicepparam cannot be combined with inline parameters,
 which is needed to supply a new random database password. So we're using the JSON file here too. #>
 $CmdLetParameters.Add('TemplateParameterFile', $JsonParamFile)
 
@@ -49,9 +49,14 @@ else {
     Write-Verbose "Current Subscription: '$($AzContext.Subscription.Name)'. No switch needed."
 }
 
+# Import the Generate-Password module
 Import-Module .\scripts\PowerShell\Generate-Password.psm1
+
 # Generate a 25 character random password for the MySQL admin user
 [securestring]$SqlPassword = New-RandomPassword 25
+
+# Remove the Generate-Password module from the session
+Remove-module Generate-Password
 
 $CmdLetParameters.Add('sqlPassword', $SqlPassword)
 
