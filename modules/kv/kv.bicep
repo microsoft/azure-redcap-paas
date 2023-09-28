@@ -17,8 +17,8 @@ param roleAssignments array = [ {
   } ]
 param privateDnsZoneId string
 
-//@secure()
-param secrets array
+@secure()
+param secrets object
 
 @allowed([
   'disabled'

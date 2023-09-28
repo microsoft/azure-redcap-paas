@@ -109,10 +109,9 @@ module keyVaultSecretsModule '../kv/kvSecrets.bicep' = {
   scope: keyVaultResourceGroup
   params: {
     keyVaultName: keyVaultName
-    secrets: [ {
-        name: keyVaultSecretName
-        value: storageAccount.listKeys().keys[0].value
-      } ]
+    secrets: {
+      '${keyVaultSecretName}': storageAccount.listKeys().keys[0].value
+    }
   }
 }
 

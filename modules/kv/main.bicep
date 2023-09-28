@@ -10,8 +10,8 @@ param roleAssignments array = [ {
     RoleDefinitionId: ''
     objectId: ''
   } ]
-//@secure()
-param secrets array
+@secure()
+param secrets object
 param privateDnsZoneName string
 param virtualNetworkId string
 

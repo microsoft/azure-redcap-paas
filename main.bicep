@@ -157,34 +157,12 @@ var tags = {
   environment: environment
 }
 
-var secrets = [
-  {
-    name: 'sqlAdminName'
-    value: mySqlModule.outputs.sqlAdmin
-  }
-  {
-    name: 'sqlPassword'
-    value: sqlPassword
-  }
-  // LATER: These secrets are not used
-  {
-    name: 'dbHostName'
-    value: mySqlModule.outputs.mySqlServerName
-  }
-  {
-    name: 'dbName'
-    value: mySqlModule.outputs.databaseName
-  }
-  // END SECRET
-  {
-    name: 'redcapCommunityUsername'
-    value: redcapCommunityUsername
-  }
-  {
-    name: 'redcapCommunityPassword'
-    value: redcapCommunityPassword
-  }
-]
+var secrets = {
+  sqlAdminName: mySqlModule.outputs.sqlAdmin
+  sqlPassword: sqlPassword
+  redcapCommunityUsername: redcapCommunityUsername
+  redcapCommunityPassword: redcapCommunityPassword
+}
 
 var resourceTypes = [
   'vnet'
@@ -217,10 +195,12 @@ module rolesModule './modules/common/roles.bicep' = {
 }
 
 var storageAccountKeySecretName = 'storageKey'
-var defaultSecretNames = map(secrets, s => s.name)
+var defaultSecretNames = map(items(secrets), s => s.key)
 var additionalSecretNames = [ storageAccountKeySecretName ]
 var secretNames = concat(defaultSecretNames, additionalSecretNames)
 
+// The output will be in alphabetical order
+// LATER: Output an object instead
 module kvSecretReferencesModule './modules/common/appSvcKeyVaultRefs.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'kv-secrets'), 64)
   params: {
@@ -387,15 +367,15 @@ module webAppModule './modules/webapp/main.bicep' = {
     dbHostName: mySqlModule.outputs.fqdn
     dbName: mySqlModule.outputs.databaseName
 
-    dbPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[1]
-    dbUserNameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[0]
+    dbPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[2]
+    dbUserNameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[3]
 
     // LATER: Suffix with "SecretRef"
-    redcapCommunityUsername: kvSecretReferencesModule.outputs.keyVaultRefs[4]
-    redcapCommunityPassword: kvSecretReferencesModule.outputs.keyVaultRefs[5]
+    redcapCommunityUsername: kvSecretReferencesModule.outputs.keyVaultRefs[1]
+    redcapCommunityPassword: kvSecretReferencesModule.outputs.keyVaultRefs[0]
     // End LATER
 
-    storageAccountKeySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[6]
+    storageAccountKeySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[4]
     storageAccountContainerName: storageAccountModule.outputs.containerName
     storageAccountName: storageAccountModule.outputs.name
 
