@@ -132,7 +132,7 @@ var subnets = {
   }
   MySQLFlexSubnet: {
     // TODO: /29 seems very small
-    // Two /26 have been allocated; that's equivalent to sixteen /29s. 
+    // Two /26 have been allocated; that's equivalent to sixteen /29s.
     addressPrefix: cidrSubnet(vnetAddressSpace, 29, 16)
     serviceEndpoints: [
       {
@@ -367,8 +367,8 @@ module webAppModule './modules/webapp/main.bicep' = {
     dbHostName: mySqlModule.outputs.fqdn
     dbName: mySqlModule.outputs.databaseName
 
-    dbPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[2]
-    dbUserNameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[3]
+    dbUserNameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[2]
+    dbPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[3]
 
     // LATER: Suffix with "SecretRef"
     redcapCommunityUsername: kvSecretReferencesModule.outputs.keyVaultRefs[1]
