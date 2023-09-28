@@ -1,46 +1,24 @@
-# Azure Bicep Template for REDCap automated deployment in Azure
+# REDCap Deployment on Azure
 
-## Quick Start
+### Overview
+This repository provides you with the necessary resources and guidance to deploy the REDCap application on Microsoft’s Azure cloud platform. This allows you to leverage the power of cloud computing for your research data management needs.
 
-### Manual deployment
+This template automates the deployment of the REDCap solution into Azure using managed PaaS resources. The template assumes you are deploying a version of REDCap that supports direct connection to Azure Blob Storage. If you deploy an older version, deployment will succeed but you will need to manually provision NFS storage in Azure, and delete the new storage account. For NFS, consider:
 
-Prerequisites
 
-- [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell?view=powershell-7.3)
-- [Az PowerShell module](https://learn.microsoft.com/powershell/azure/new-azureps-module-az?view=azps-10.3.0)
 
-To perform a manual deployment:
+### Deployment Options
+  - ### Manual deployment
 
-- Fork this repo to your own account and clone it, or simply clone this repo to an admin workstation.
-- Open the folder where you cloned the repo.
-- Copy `main-sample.bicepparam` to a new file with a descriptive name, such as `main-*yourorg*.bicepparam`.
-- Review and modify the parameter values.
-- Execute `deploy.ps1` as shown below.
+    - For manual deployment process, please navigate [***here***](manual.md)
 
-```PowerShell
-./deploy.ps1 -Location 'eastus' -TemplateParameterFile 'main-yourorg.bicepparam' -SubscriptionId 'subscription-id'
-```
+  - ### CI/CD Deployment with GitHub
 
-You may omit the parameter names and use them in the order `Location`, `TemplateParameterFile`, and `SubscriptionId`
+    - Information pending
 
-```PowerShell
-./deploy.ps1 'eastus' 'main-yourorg.bicepparam' 'subscription-id'
-```
+  - ### CI/CD Deployment with Azure DevOps
 
-### CI/CD Deployment with GitHub
-
-Information pending
-
-### CI/CD Deployment with Azure DevOps
-
-Information pending
-
-<!--
-| Description | Link  | Azure US Gov Link |
-| --- | --- | --- |
-| Deploy with your SMTP Relay | [![Deploy To Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fazure-redcap-paas%2Fmain%2Fazuredeploy.json)               | [![Deploy To Azure US Gov](https://aka.ms/deploytoazuregovbutton)](https://portal.azure.us/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fazure-redcap-paas%2Fmain%2Fazuredeploy.json) |
-| Deploy using SendGrid       | [![Deploy To Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fazure-redcap-paas%2Fmain%2Fazuredeploy_with_SendGrid.json) | [![Deploy To Azure US Gov](https://aka.ms/deploytoazuregovbutton)](https://portal.azure.us/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fazure-redcap-paas%2Fmain%2Fazuredeploy_with_SendGrid.json) |
--->
+    - Information pending
 
 ### Details
 
