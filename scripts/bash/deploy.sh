@@ -65,10 +65,10 @@ else
   wget -q -O /tmp/redcap.zip $APPSETTING_redcapAppZip
 fi
 
-
+rm -f /home/site/wwwroot/hostingstart.html
 unzip -oq /tmp/redcap.zip -d /tmp/wwwroot 
 mv /tmp/wwwroot/redcap/* /home/site/wwwroot/
-rm -Rf /tmp/wwwroot
+rm -rf /tmp/wwwroot
 rm /tmp/redcap.zip
 
 ####################################################################################
