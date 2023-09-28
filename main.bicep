@@ -166,6 +166,7 @@ var secrets = [
     name: 'sqlPassword'
     value: sqlPassword
   }
+  // LATER: These secrets are not used
   {
     name: 'dbHostName'
     value: mySqlModule.outputs.mySqlServerName
@@ -174,6 +175,7 @@ var secrets = [
     name: 'dbName'
     value: mySqlModule.outputs.databaseName
   }
+  // END SECRET
   {
     name: 'redcapCommunityUsername'
     value: redcapCommunityUsername
@@ -214,11 +216,16 @@ module rolesModule './modules/common/roles.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'roles'), 64)
 }
 
+var storageAccountKeySecretName = 'storageKey'
+var defaultSecretNames = map(secrets, s => s.name)
+var additionalSecretNames = [ storageAccountKeySecretName ]
+var secretNames = concat(defaultSecretNames, additionalSecretNames)
+
 module kvSecretReferencesModule './modules/common/appSvcKeyVaultRefs.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'kv-secrets'), 64)
   params: {
     keyVaultName: kvName
-    secretNames: map(secrets, s => s.name)
+    secretNames: secretNames
   }
 }
 
@@ -276,6 +283,9 @@ module storageAccountModule './modules/storage/main.bicep' = {
     }
 
     deploymentNameStructure: deploymentNameStructure
+
+    keyVaultSecretName: storageAccountKeySecretName
+    keyVaultId: keyVaultModule.outputs.id
   }
 }
 
@@ -298,7 +308,7 @@ module keyVaultModule './modules/kv/main.bicep' = {
       }
       {
         RoleDefinitionId: rolesModule.outputs.roles['Key Vault Secrets User']
-        objectId: webAppModule.outputs.webAppIdentity
+        objectId: uamiModule.outputs.principalId
       }
     ]
     privateDnsZoneName: 'privatelink.vaultcore.azure.net'
@@ -332,7 +342,10 @@ module mySqlModule './modules/sql/main.bicep' = {
     databaseName: 'redcapdb'
 
     roles: rolesModule.outputs.roles
-    uamiName: uamiName
+
+    uamiId: uamiModule.outputs.id
+    uamiPrincipalId: uamiModule.outputs.principalId
+
     deploymentScriptName: dplscrName
 
     // Required charset and collation for REDCap
@@ -345,10 +358,15 @@ module mySqlModule './modules/sql/main.bicep' = {
   }
 }
 
+resource webAppResourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' = {
+  name: replace(rgNamingStructure, '{rgName}', 'web')
+  location: location
+}
+
 module webAppModule './modules/webapp/main.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'appService'), 64)
+  scope: webAppResourceGroup
   params: {
-    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'web')
     webAppName: webAppName
     appServicePlanName: planName
     location: location
@@ -365,19 +383,42 @@ module webAppModule './modules/webapp/main.bicep' = {
     }
     privateDnsZoneName: 'privatelink.azurewebsites.net'
     virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
+    redcapZipUrl: redcapZipUrl
     dbHostName: mySqlModule.outputs.fqdn
     dbName: mySqlModule.outputs.databaseName
+
     dbPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[1]
     dbUserNameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[0]
-    redcapZipUrl: redcapZipUrl
+
+    // LATER: Suffix with "SecretRef"
     redcapCommunityUsername: kvSecretReferencesModule.outputs.keyVaultRefs[4]
     redcapCommunityPassword: kvSecretReferencesModule.outputs.keyVaultRefs[5]
+    // End LATER
+
+    storageAccountKeySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[6]
+    storageAccountContainerName: storageAccountModule.outputs.containerName
+    storageAccountName: storageAccountModule.outputs.name
+
     // Enable VNet integration
     integrationSubnetId: virtualNetworkModule.outputs.subnets.IntegrationSubnet.id
+
     scmRepoUrl: scmRepoUrl
     scmRepoBranch: scmRepoBranch
     preRequsitesCommand: preRequsitesCommand
+
     deploymentNameStructure: deploymentNameStructure
+
+    uamiId: uamiModule.outputs.id
+  }
+}
+
+module uamiModule 'modules/uami/main.bicep' = {
+  name: take(replace(deploymentNameStructure, '{rtype}', 'uami'), 64)
+  scope: webAppResourceGroup
+  params: {
+    tags: tags
+    location: location
+    uamiName: uamiName
   }
 }
 

@@ -14,6 +14,11 @@ param customTags object
 
 param deploymentNameStructure string
 
+@description('Resource ID of the Key Vault where the storage key secret should be created.')
+param keyVaultId string
+@description('Name of the secret in Key Vault.')
+param keyVaultSecretName string
+
 var mergeTags = union(tags, customTags)
 
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
@@ -22,7 +27,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   tags: mergeTags
 }
 
-module storageBlob './storage.bicep' = {
+module storageAccount './storage.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'st'), 64)
   scope: resourceGroup
   params: {
@@ -34,6 +39,9 @@ module storageBlob './storage.bicep' = {
     kind: kind
     storageAccountSku: storageAccountSku
     privateDnsZoneId: privateDns.outputs.privateDnsId
+    keyVaultId: keyVaultId
+    keyVaultSecretName: keyVaultSecretName
+    deploymentNameStructure: deploymentNameStructure
   }
 }
 
@@ -49,4 +57,7 @@ module privateDns '../pdns/main.bicep' = {
 
 // TODO: Add lock to storage account to avoid accidental deletion
 
-// TODO: Output storage account name, id
+output id string = storageAccount.outputs.id
+output name string = storageAccount.outputs.name
+output resourceGroupName string = resourceGroup.name
+output containerName string = storageAccount.outputs.containerName

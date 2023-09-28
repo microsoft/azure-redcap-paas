@@ -11,7 +11,6 @@ param sqlAdminUser string
 param virtualNetworkId string
 
 param roles object
-param uamiName string
 param deploymentScriptName string
 
 @description('MySQL version')
@@ -46,6 +45,9 @@ param databaseName string
 param database_charset string = 'utf8'
 param database_collation string = 'utf8_general_ci'
 
+param uamiId string
+param uamiPrincipalId string
+
 param deploymentNameStructure string
 
 var mergeTags = union(tags, customTags)
@@ -77,7 +79,8 @@ module mysqlDbserver './sql.bicep' = {
     database_collation: database_collation
 
     roles: roles
-    uamiName: uamiName
+    uamiId: uamiId
+    uamiPrincipalId: uamiPrincipalId
     deploymentScriptName: deploymentScriptName
   }
 }

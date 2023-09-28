@@ -10,7 +10,8 @@ param roleAssignments array = [ {
     RoleDefinitionId: ''
     objectId: ''
   } ]
-param secrets array = []
+//@secure()
+param secrets array
 param privateDnsZoneName string
 param virtualNetworkId string
 
@@ -24,7 +25,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   tags: mergeTags
 }
 
-module keyvault './kv.bicep' = {
+module keyVaultModule './kv.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'kv'), 64)
   scope: resourceGroup
   params: {
@@ -32,13 +33,14 @@ module keyvault './kv.bicep' = {
     location: location
     tags: tags
     peSubnetId: peSubnetId
-    privateDnsZoneId: privateDns.outputs.privateDnsId
+    privateDnsZoneId: keyVaultPrivateDnsModule.outputs.privateDnsId
     secrets: secrets
     roleAssignments: roleAssignments
+    deploymentNameStructure: deploymentNameStructure
   }
 }
 
-module privateDns '../pdns/main.bicep' = {
+module keyVaultPrivateDnsModule '../pdns/main.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'kv-dns'), 64)
   scope: resourceGroup
   params: {
@@ -48,4 +50,5 @@ module privateDns '../pdns/main.bicep' = {
   }
 }
 
-output keyVaultName string = keyvault.outputs.keyVaultName
+output keyVaultName string = keyVaultModule.outputs.keyVaultName
+output id string = keyVaultModule.outputs.id

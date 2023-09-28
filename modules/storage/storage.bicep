@@ -9,7 +9,13 @@ param privateDnsZoneId string
 @description('storageAccountSku')
 param storageAccountSku string
 
+@description('Resource ID of the Key Vault where the storage key secret should be created.')
+param keyVaultId string
+@description('Name of the secret in Key Vault.')
+param keyVaultSecretName string
+
 param tags object
+param deploymentNameStructure string
 param kind string
 
 var storageType = kind == 'FileStorage' ? 'file' : 'blob'
@@ -87,3 +93,29 @@ resource privateDnsZoneGroupsStorage 'Microsoft.Network/privateEndpoints/private
     ]
   }
 }
+
+// Create a secret with the storage account's primary key in the specified Key Vault
+var keyVaultIdSplit = split(keyVaultId, '/')
+var keyVaultResourceGroupName = keyVaultIdSplit[4]
+var keyVaultName = keyVaultIdSplit[8]
+
+resource keyVaultResourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' existing = {
+  name: keyVaultResourceGroupName
+  scope: subscription()
+}
+
+module keyVaultSecretsModule '../kv/kvSecrets.bicep' = {
+  name: take(replace(deploymentNameStructure, '{rtype}', 'kv-st-secret'), 64)
+  scope: keyVaultResourceGroup
+  params: {
+    keyVaultName: keyVaultName
+    secrets: [ {
+        name: keyVaultSecretName
+        value: storageAccount.listKeys().keys[0].value
+      } ]
+  }
+}
+
+output name string = storageAccount.name
+output id string = storageAccount.id
+output containerName string = storageContainer.name
