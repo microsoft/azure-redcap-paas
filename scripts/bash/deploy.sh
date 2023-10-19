@@ -35,12 +35,12 @@ cd /tmp
 if [ -z "$APPSETTING_redcapAppZip" ]; then
   echo "Downloading REDCap zip file from REDCap Community site" >> /home/site/log-$stamp.txt
 
-  if [ -z "$APPSETTING_zipUsername" ]; then
+  if [ -z "$APPSETTING_redcapCommunityUsername" ]; then
     echo "Missing REDCap Community site username." >> /home/site/log-$stamp.txt
     exit 1
   fi
 
-  if [ -z "$APPSETTING_zipPassword" ]; then
+  if [ -z "$APPSETTING_redcapCommunityPassword" ]; then
     echo "Missing REDCap Community site password." >> /home/site/log-$stamp.txt
     exit 1
   fi
@@ -50,7 +50,7 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
     export APPSETTING_zipVersion="latest"
   fi
   
-  wget --method=post -O /tmp/redcap.zip -q --body-data="username=$APPSETTING_zipUsername&password=$APPSETTING_zipPassword&version=$APPSETTING_zipVersion&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php
+  wget --method=post -O /tmp/redcap.zip -q --body-data="username=$APPSETTING_redcapCommunityUsername&password=$APPSETTING_redcapCommunityPassword&version=$APPSETTING_zipVersion&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php
 
   # check to see if the redcap.zip file contains the word error
   if [ -z "$(grep -i error redcap.zip)" ]; then
