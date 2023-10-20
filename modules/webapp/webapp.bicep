@@ -18,10 +18,10 @@ param privateDnsZoneId string
 param integrationSubnetId string
 @secure()
 param redcapZipUrl string
-@secure()
-param redcapCommunityUsername string
-@secure()
-param redcapCommunityPassword string
+#disable-next-line secure-secrets-in-params
+param redcapCommunityUsernameSecretRef string
+#disable-next-line secure-secrets-in-params
+param redcapCommunityPasswordSecretRef string
 param scmRepoUrl string
 param scmRepoBranch string = 'main'
 param preRequsitesCommand string
@@ -92,11 +92,11 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'redcapCommunityUsername'
-          value: redcapCommunityUsername
+          value: redcapCommunityUsernameSecretRef
         }
         {
           name: 'redcapCommunityPassword'
-          value: redcapCommunityPassword
+          value: redcapCommunityPasswordSecretRef
         }
         {
           name: 'DBSslCa'

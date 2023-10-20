@@ -28,10 +28,10 @@ param scmRepoUrl string
 param scmRepoBranch string
 @secure()
 param redcapZipUrl string
-@secure()
-param redcapCommunityUsername string
-@secure()
-param redcapCommunityPassword string
+#disable-next-line secure-secrets-in-params
+param redcapCommunityUsernameSecretRef string
+#disable-next-line secure-secrets-in-params
+param redcapCommunityPasswordSecretRef string
 param preRequsitesCommand string
 
 param uamiId string
@@ -66,8 +66,8 @@ module appService 'webapp.bicep' = {
     appInsights_instrumentationKey: appInsights_instrumentationKey
 
     redcapZipUrl: redcapZipUrl
-    redcapCommunityUsername: redcapCommunityUsername
-    redcapCommunityPassword: redcapCommunityPassword
+    redcapCommunityUsernameSecretRef: redcapCommunityUsernameSecretRef
+    redcapCommunityPasswordSecretRef: redcapCommunityPasswordSecretRef
 
     scmRepoUrl: scmRepoUrl
     scmRepoBranch: scmRepoBranch

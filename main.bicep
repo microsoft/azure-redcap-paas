@@ -195,6 +195,7 @@ module rolesModule './modules/common/roles.bicep' = {
 }
 
 var storageAccountKeySecretName = 'storageKey'
+// The secrets object is converted to an array using the items() function, which alphabetically sorts it
 var defaultSecretNames = map(items(secrets), s => s.key)
 var additionalSecretNames = [ storageAccountKeySecretName ]
 var secretNames = concat(defaultSecretNames, additionalSecretNames)
@@ -370,10 +371,8 @@ module webAppModule './modules/webapp/main.bicep' = {
     dbUserNameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[2]
     dbPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[3]
 
-    // LATER: Suffix with "SecretRef"
-    redcapCommunityUsername: kvSecretReferencesModule.outputs.keyVaultRefs[1]
-    redcapCommunityPassword: kvSecretReferencesModule.outputs.keyVaultRefs[0]
-    // End LATER
+    redcapCommunityUsernameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[1]
+    redcapCommunityPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[0]
 
     storageAccountKeySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[4]
     storageAccountContainerName: storageAccountModule.outputs.containerName
