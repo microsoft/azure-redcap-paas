@@ -10,7 +10,6 @@
 # Timestamp for log file
 #
 ####################################################################################
-
 stamp=$(date +%Y-%m-%d-%H-%M)
 
 ####################################################################################
@@ -36,12 +35,12 @@ cd /tmp
 if [ -z "$APPSETTING_redcapAppZip" ]; then
   echo "Downloading REDCap zip file from REDCap Community site" >> /home/site/log-$stamp.txt
 
-  if [ -z "$APPSETTING_zipUsername" ]; then
+  if [ -z "$APPSETTING_redcapCommunityUsername" ]; then
     echo "Missing REDCap Community site username." >> /home/site/log-$stamp.txt
     exit 1
   fi
 
-  if [ -z "$APPSETTING_zipPassword" ]; then
+  if [ -z "$APPSETTING_redcapCommunityPassword" ]; then
     echo "Missing REDCap Community site password." >> /home/site/log-$stamp.txt
     exit 1
   fi
@@ -51,7 +50,7 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
     export APPSETTING_zipVersion="latest"
   fi
   
-  wget --method=post -O redcap.zip -q --body-data="username=$APPSETTING_zipUsername&password=$APPSETTING_zipPassword&version=$APPSETTING_zipVersion&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php
+  wget --method=post -O /tmp/redcap.zip -q --body-data="username=$APPSETTING_redcapCommunityUsername&password=$APPSETTING_redcapCommunityPassword&version=$APPSETTING_zipVersion&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php
 
   # check to see if the redcap.zip file contains the word error
   if [ -z "$(grep -i error redcap.zip)" ]; then
@@ -63,13 +62,14 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
 
 else
   echo "Downloading REDCap zip file from storage" >> /home/site/log-$stamp.txt
-  wget -q -O redcap.zip $APPSETTING_redcapAppZip
+  wget -q -O /tmp/redcap.zip $APPSETTING_redcapAppZip
 fi
 
-rm /home/site/wwwroot/hostingstart.html
-unzip -oq redcap.zip -d /home/site/wwwroot
-mv /home/site/wwwroot/redcap/* /home/site/wwwroot/
-rm -Rf /home/site/wwwroot/redcap
+rm -f /home/site/wwwroot/hostingstart.html
+unzip -oq /tmp/redcap.zip -d /tmp/wwwroot 
+mv /tmp/wwwroot/redcap/* /home/site/wwwroot/
+rm -rf /tmp/wwwroot
+rm /tmp/redcap.zip
 
 ####################################################################################
 #
@@ -83,10 +83,10 @@ cd /home/site/wwwroot
 
 wget --no-check-certificate https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem
 
-sed -i "s/'your_mysql_host_name'/'$APPSETTING_DBHostName'/" database.php
-sed -i "s/'your_mysql_db_name'/'$APPSETTING_DBName'/" database.php
-sed -i "s/'your_mysql_db_username'/'$APPSETTING_DBUserName'/" database.php
-sed -i "s/'your_mysql_db_password'/'$APPSETTING_DBPassword'/" database.php
+sed -i "s|hostname[[:space:]]*= '';|hostname = '$APPSETTING_DBHostName';|" database.php
+sed -i "s|db[[:space:]]*= '';|db = '$APPSETTING_DBName';|" database.php
+sed -i "s|username[[:space:]]*= '';|username = '$APPSETTING_DBUserName';|" database.php
+sed -i "s|password[[:space:]]*= '';|password = '$APPSETTING_DBPassword';|" database.php
 sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = '$APPSETTING_DBSslCa';|" database.php
 
 sed -i "s/db_ssl_verify_server_cert = false;/db_ssl_verify_server_cert = true;/" database.php
@@ -99,10 +99,10 @@ sed -i "s/$salt = '';/$salt = '$(echo $RANDOM | md5sum | head -c 20; echo;)';/" 
 ####################################################################################
 
 echo "Configuring REDCap recommended settings" >> /home/site/log-$stamp.txt
-sed -i "s/replace_smtp_server_name/$APPSETTING_smtpFQDN/" /home/site/repository/Files/settings.ini
-sed -i "s/replace_smtp_port/$APPSETTING_smtpPort/" /home/site/repository/Files/settings.ini
-sed -i "s/replace_sendmail_from/$APPSETTING_fromEmailAddress/" /home/site/repository/Files/settings.ini
-sed -i "s:replace_sendmail_path:/usr/sbin/sendmail -t -i:" /home/site/repository/Files/settings.ini
+sed -i "s|SMTP[[:space:]]*= ''|SMTP = '$APPSETTING_smtpFQDN'|" /home/site/repository/Files/settings.ini
+sed -i "s|smtp_port[[:space:]]*= |smtp_port = $APPSETTING_smtpPort|" /home/site/repository/Files/settings.ini
+sed -i "s|sendmail_from[[:space:]]*= ''|sendmail_from = '$APPSETTING_fromEmailAddress'|" /home/site/repository/Files/settings.ini
+sed -i "s|sendmail_path[[:space:]]*= ''|sendmail_path = '/usr/sbin/sendmail -t -i'|" /home/site/repository/Files/settings.ini
 cp /home/site/repository/Files/settings.ini /home/site/redcap.ini
 
 ####################################################################################
@@ -122,7 +122,7 @@ echo "session.cookie_secure = On" >> /home/site/redcap.ini
 ####################################################################################
 
 mkdir -p /home/site/deployments/tools/PostDeploymentActions
-cp /home/site/repository/postbuild.sh /home/site/deployments/tools/PostDeploymentActions/postbuild.sh
+cp /home/site/repository/scripts/bash/postbuild.sh /home/site/deployments/tools/PostDeploymentActions/postbuild.sh
 
 ####################################################################################
 #
@@ -130,4 +130,4 @@ cp /home/site/repository/postbuild.sh /home/site/deployments/tools/PostDeploymen
 #
 ####################################################################################
 
-cp /home/site/repository/startup.sh /home/startup.sh
+cp /home/site/repository/scripts/bash/startup.sh /home/startup.sh

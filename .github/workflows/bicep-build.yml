@@ -1,0 +1,76 @@
+## deploy azDeploySecureSub.bicep
+
+name: Azure REDCap Deployment
+
+on:
+    workflow_dispatch:
+
+    push:
+        branches:
+            - main
+
+permissions:
+    id-token: write
+    contents: read
+
+env:
+    azCliVersion: 2.30.0
+    environment: 'env-redcap'
+    region: 'eastus'
+            
+jobs:
+    # Validate the Bicep templates
+    validateDeployment:
+        runs-on: ubuntu-latest
+        
+        steps:
+          - uses: actions/checkout@main
+            name: Checkout
+
+          - uses: azure/login@v1
+            name: Azure Login
+            with:
+              creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+          # Deploy Bicep file
+          - name: validateTemplates
+            uses: azure/arm-deploy@v1
+            with:
+              scope: 'subscription'
+              template: ./main.bicep
+              deploymentMode: 'Validate'
+              region: ${{ env.region }}
+
+          - name: planDeployment
+            uses: azure/arm-deploy@v1
+            with:
+              scope: 'subscription'
+              template: ./main.bicep
+              additionalArguments: "--what-if"
+              region: ${{ env.region }}
+    
+    # Deploy the resources
+    deployResources:
+      if: ( github.ref == 'refs/heads/main' )
+      runs-on: ubuntu-latest
+      environment: 'nonProduction' ## Replce with your environment name
+      needs: [
+        validateDeployment
+      ]
+      
+      steps:
+          - uses: actions/checkout@main
+            name: Checkout
+
+          - uses: azure/login@v1
+            name: Azure Login
+            with:
+              creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+          # Deploy Bicep file
+          - name: deploy
+            uses: azure/arm-deploy@v1
+            with:
+              scope: 'subscription'
+              template: ./main.bicep
+              region: ${{ env.region }}
