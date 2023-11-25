@@ -16,6 +16,8 @@ echo "Hello from postbuild.sh"
 
 curl -sS https://$WEBSITE_HOSTNAME/install.php?auto=1
 
+echo -e "\nFinished running install.php"
+
 ####################################################################################
 #
 # Update additional configuration settings including

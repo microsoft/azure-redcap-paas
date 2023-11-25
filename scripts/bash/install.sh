@@ -5,7 +5,7 @@
 #
 # MIT License
 
-echo "Hello from install.sh"
+echo -e "\nHello from install.sh"
 
 ####################################################################################
 #
