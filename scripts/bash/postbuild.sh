@@ -5,7 +5,7 @@
 #
 # MIT License
 
-echo "hello from postbuild.sh"
+echo "Hello from postbuild.sh"
 
 ####################################################################################
 #
