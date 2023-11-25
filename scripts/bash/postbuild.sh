@@ -9,7 +9,8 @@ echo "Hello from postbuild.sh"
 
 ####################################################################################
 #
-# Call the install.php file with the option to deploy the database schema
+# Call the install.php file with the option to deploy the database schema.
+# This runs synchronously and will take a few seconds to complete.
 #
 ####################################################################################
 
