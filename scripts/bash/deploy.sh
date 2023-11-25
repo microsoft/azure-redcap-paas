@@ -117,7 +117,7 @@ echo "session.cookie_secure = On" >> /home/site/redcap.ini
 
 ####################################################################################
 #
-# Move postbuild.sh to PostDeploymentActions for execution after deployment
+# Copy postbuild.sh to PostDeploymentActions for execution after deployment
 #
 ####################################################################################
 
@@ -126,7 +126,7 @@ cp /home/site/repository/scripts/bash/postbuild.sh /home/site/deployments/tools/
 
 ####################################################################################
 #
-# Move startup.sh /home for a custom startup
+# Copy startup.sh /home for a custom startup
 #
 ####################################################################################
 
