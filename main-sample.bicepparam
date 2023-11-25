@@ -22,8 +22,9 @@ param redcapCommunityUsername = '<Valid Redcap Community Username>'
 param redcapCommunityPassword = '<Valid Redcap Community Password>'
 
 // These values are used to configure the App Service Deployment Center.
-// The defaults are the Microsoft-maintained Azure REDCap PaaS repository.
+// The defaults below are the Microsoft-maintained Azure REDCap PaaS repository.
 // However, you should consider forking that repository and referencing your fork.
+// If not specified, the deployment will use the Microsoft-maintained Azure REDCap PaaS repository.
 param scmRepoUrl = 'https://github.com/Microsoft/azure-redcap-paas'
 param scmRepoBranch = 'main'
 
