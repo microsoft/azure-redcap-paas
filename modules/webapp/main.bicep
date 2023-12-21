@@ -32,7 +32,7 @@ param redcapZipUrl string
 param redcapCommunityUsernameSecretRef string
 #disable-next-line secure-secrets-in-params
 param redcapCommunityPasswordSecretRef string
-param preRequsitesCommand string
+param prerequisiteCommand string
 
 param uamiId string
 
@@ -71,7 +71,7 @@ module appService 'webapp.bicep' = {
 
     scmRepoUrl: scmRepoUrl
     scmRepoBranch: scmRepoBranch
-    preRequsitesCommand: preRequsitesCommand
+    prerequisiteCommand: prerequisiteCommand
 
     storageAccountContainerName: storageAccountContainerName
     storageAccountKeySecretRef: storageAccountKeySecretRef
