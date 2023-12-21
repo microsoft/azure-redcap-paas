@@ -1,15 +1,17 @@
 # Manually deploy Redcap using PowerShell
 
-### Prerequisites:
+## Prerequisites
 
 Install the following prerequisites on your local machine:
+
 - **[PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell?view=powershell-7.3)**
 - **[Az PowerShell module](https://learn.microsoft.com/powershell/azure/new-azureps-module-az?view=azps-10.3.0)**
 - **[Bicep tools](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/install)**
 - **[Git](https://git-scm.com/downloads)**
 - **[Visual Studio Code](https://code.visualstudio.com/download)**
 
-### Deployment Steps:
+## Deployment Steps
+
 Perform the following steps to deploy the solution using PowerShell:
 
 - Fork this repository and clone it to your administrative workstation or alternatively you can just clone the repository and work with it directly:
@@ -18,6 +20,7 @@ Perform the following steps to deploy the solution using PowerShell:
     ```powershell
     git clone https://github.com/kalalvishal/azure-redcap-paas.git
     ```
+
 - Open the `azure-redcap-paas` folder in VSCode
 
 - Copy `main-sample.bicepparam` to a new file with a descriptive name, such as `main-*yourorg*.bicepparam`
@@ -34,6 +37,7 @@ Perform the following steps to deploy the solution using PowerShell:
   - ***redcapCommunityPassword***: This is not required if redcapZipUrl is provided. Else The password for the Redcap community site.
   - ***scmRepoUrl***: If you have fork the repo, provide the URL to your forked repo. Else provide the URL to the original repo.
   - ***scmRepoBranch***: The branch of the repo to deploy from. The example of this parameter is `main`
+
 - Execute `deploy.ps1` as shown below.
 
     ```PowerShell
