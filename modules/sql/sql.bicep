@@ -114,6 +114,7 @@ resource database 'Microsoft.DBforMySQL/flexibleServers/databases@2021-12-01-pre
   }
 }
 
+// Assign the Contributor role to the UAMI on the MySQL server to enable setting the "invisible primary key" parameter
 module uamiMySqlRoleAssignmentModule '../common/roleAssignment-mySql.bicep' = {
   name: 'mySqlRole'
   params: {
@@ -123,6 +124,7 @@ module uamiMySqlRoleAssignmentModule '../common/roleAssignment-mySql.bicep' = {
   }
 }
 
+// Turn off the "invisible primary key" parameter on the server
 resource dbConfigDeploymentScript 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
   name: deploymentScriptName
   location: location
