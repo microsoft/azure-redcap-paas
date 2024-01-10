@@ -16,7 +16,7 @@ Perform the following steps to deploy the solution using PowerShell:
   - To clone the repository and work with it directly, run the following command:
 
     ```powershell
-    git clone https://github.com/kalalvishal/azure-redcap-paas.git
+    git clone https://github.com/Microsoft/azure-redcap-paas.git
     ```
 - Open the `azure-redcap-paas` folder in VSCode
 
