@@ -5,6 +5,7 @@ param location string
 param tags object
 param customTags object
 param flexibleSqlServerName string
+// TODO: Rename to integrationSubNetId
 param peSubnetId string
 param privateDnsZoneName string
 param sqlAdminUser string
@@ -15,6 +16,7 @@ param deploymentScriptName string
 
 @description('MySQL version')
 @allowed([
+  // TODO: Remove 5.7
   '5.7'
   '8.0.21'
   //'8.0.32'

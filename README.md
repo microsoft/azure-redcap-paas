@@ -1,26 +1,26 @@
 # REDCap Deployment on Azure
 
-### Overview
+## Overview
+
 This repository provides you with the necessary resources and guidance to deploy the REDCap application on Microsoft’s Azure cloud platform. This allows you to leverage the power of cloud computing for your research data management needs.
 
 This template automates the deployment of the REDCap solution into Azure using managed PaaS resources. The template assumes you are deploying a version of REDCap that supports direct connection to Azure Blob Storage. If you deploy an older version, deployment will succeed but you will need to manually provision NFS storage in Azure, and delete the new storage account. For NFS, consider:
 
+## Deployment Options
 
+- ### Manual deployment
 
-### Deployment Options
-  - ### Manual deployment
+  - For manual deployment process, please navigate [***here***](manual.md)
 
-    - For manual deployment process, please navigate [***here***](manual.md)
+- ### CI/CD Deployment with GitHub
 
-  - ### CI/CD Deployment with GitHub
+  - Information pending
 
-    - Information pending
+- ### CI/CD Deployment with Azure DevOps
 
-  - ### CI/CD Deployment with Azure DevOps
+  - Information pending
 
-    - Information pending
-
-### Details
+## Details
 
 This template automates the deployment of the REDCap solution into Azure using managed PaaS resources. The template assumes you are deploying a version of REDCap that supports direct connection to Azure Blob Storage. If you deploy an older version, deployment will succeed but you will need to manually provision NFS storage in Azure, and delete the new storage account. For NFS, consider:
 
@@ -54,11 +54,11 @@ If after deployment, you would instead like to use a different SMTP relay, edit 
 
 If you use Exchange Online (part of the Microsoft 365 Suite), you can follow these steps to set it up and use it as an SMTP relay for this service: <https://learn.microsoft.com/Exchange/mail-flow-best-practices/how-to-set-up-a-multifunction-device-or-application-to-send-email-using-microsoft-365-or-office-365> -->
 
-### Setup
+## Setup
 
 This template will automatically deploy the resources necessary to run REDCap in Azure using PaaS (Platform-as-a-Service) features.
 
-**IMPORTANT**: _The "Workload Name" you choose will be re-used as part of the storage, website, and MySQL database name. Make sure you don't use characters that will be rejected by MySQL._
+**IMPORTANT**: *The "Workload Name" you choose will be re-used as part of the storage, website, and MySQL database name. Make sure you don't use characters that will be rejected.*
 
 After the template is deployed, deployment automation will download the REDCap ZIP file you specify, and install it in your web app. It will then automatically update the database connection information in the app.
 
@@ -70,9 +70,9 @@ If you need to connect to the MySQL database using the MySQL client, you will ne
 
 The database user name defaults to `sqladmin` and the password is a random string of 25 characters. The password is stored in Key Vault.
 
-### Post-Setup
+## Post-Setup
 
-After the deployment and installation of REDCap has completed, you will need to initialize the database manually. The application gets deployed via Kudu which calls the `deploy.sh` script. After deployment, the `postbuild.sh` script extracts the MySQL commands from REDCap's installation page (`install.php`) and drops the output into a file called `install.sql`. Both `install.sh` and `install.sql` files will be dropped into `/home` directory.
+After the deployment and installation of REDCap has completed, you will need to configure some database settings manually. The application gets deployed via Kudu which calls the `deploy.sh` script. After deployment, the `postbuild.sh` script will call REDCap's built-in capability to deploy the database schema. However, the configuration of the attachment storage to Azure Storage requires executing SQL statements that cannot be automated at this time. There is an `install.sh` file that contains the statements to be executed.
 
 Once the source control deployment of REDCap has completed, you will need to SSH into the running container:
 
@@ -81,12 +81,10 @@ Once the source control deployment of REDCap has completed, you will need to SSH
 Execute the following command from the `/home` directory:
 
 ```sh
-bash install.sh
+bash ./site/repository/scripts/bash/install.sh
 ```
 
 ![ssh](images/install.png)
-
-It will take a few minutes to execute the SQL.
 
 Once you regain access to the console, you can navigate to the root of your app service and confirm everything shows green on the REDCap Configuration Check page - with the exception of CronJob status which you may have to manually invoke. If anything displays on that page in red or yellow, it is recommended that you perform a "Restart" of the Azure "App Service". This needs to be done due to the fact that some necessary server environment settings get changed after the initial deployment, but restarting the App Service will load the service with the intended settings.
 
@@ -112,8 +110,8 @@ The "Easy Upgrade" feature in REDCap 8.11.0 and later is currently _not_ support
   <https://learn.microsoft.com/azure/app-service/configure-ssl-certificate>
 - Updating PHP configurations
   <https://learn.microsoft.com/azure/app-service/configure-language-php?pivots=platform-linux#customize-phpini-settings>
-- Managed MySQL overview
-  <https://learn.microsoft.com/azure/mysql/single-server/overview>
+- MySQL Flexible Server overview
+  <https://learn.microsoft.com/azure/mysql/flexible-server/overview>
 - SendGrid overview
   <https://docs.sendgrid.com/for-developers/partners/microsoft-azure-2021>
 - Blob storage overview

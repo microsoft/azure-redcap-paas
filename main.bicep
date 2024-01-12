@@ -38,8 +38,8 @@ param redcapCommunityPassword string
 param scmRepoUrl string = 'https://github.com/microsoft/azure-redcap-paas'
 @description('Github Repo Branch where build scripts are downloaded from')
 param scmRepoBranch string = 'main'
-@description('The prerequsites command before build to be run on the web app with an elevated privilege. This is used to install the required packages for REDCap.')
-param preRequsitesCommand string = 'apt-get install unzip -y && apt-get install -y python3 python3-pip'
+@description('The command before build to be run on the web app with an elevated privilege. This is used to install the required packages for REDCap deployment and operation.')
+param prerequisiteCommand string = 'apt-get install unzip sendmail cron -y'
 
 param deploymentTime string = utcNow()
 
@@ -342,6 +342,9 @@ module mySqlModule './modules/sql/main.bicep' = {
 resource webAppResourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   name: replace(rgNamingStructure, '{rgName}', 'web')
   location: location
+  tags: union(tags, {
+      workloadType: 'web'
+    })
 }
 
 module webAppModule './modules/webapp/main.bicep' = {
@@ -383,7 +386,7 @@ module webAppModule './modules/webapp/main.bicep' = {
 
     scmRepoUrl: scmRepoUrl
     scmRepoBranch: scmRepoBranch
-    preRequsitesCommand: preRequsitesCommand
+    prerequisiteCommand: prerequisiteCommand
 
     deploymentNameStructure: deploymentNameStructure
 

@@ -24,7 +24,7 @@ param redcapCommunityUsernameSecretRef string
 param redcapCommunityPasswordSecretRef string
 param scmRepoUrl string
 param scmRepoBranch string = 'main'
-param preRequsitesCommand string
+param prerequisiteCommand string
 
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
@@ -68,7 +68,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'
-      appCommandLine: preRequsitesCommand
+      appCommandLine: prerequisiteCommand
       appSettings: [
         {
           name: 'redcapAppZip'
@@ -127,16 +127,20 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           value: '1'
         }
         {
-          name: 'storageKey'
+          name: 'StorageKey'
           value: storageAccountKeySecretRef
         }
         {
-          name: 'storageAccount'
+          name: 'StorageAccount'
           value: storageAccountName
         }
         {
-          name: 'storageContainerName'
+          name: 'StorageContainerName'
           value: storageAccountContainerName
+        }
+        {
+          name: 'ENABLE_DYNAMIC_INSTALL'
+          value: 'true'
         }
       ]
     }

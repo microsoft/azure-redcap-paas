@@ -10,6 +10,7 @@
 # Timestamp for log file
 #
 ####################################################################################
+
 stamp=$(date +%Y-%m-%d-%H-%M)
 
 ####################################################################################
@@ -20,8 +21,9 @@ stamp=$(date +%Y-%m-%d-%H-%M)
 
 echo "Configuring mysqli extension" >> /home/site/log-$stamp.txt
 cd /home/site
-echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20190902/mysqlnd_azure.so
-extension=/usr/local/lib/php/extensions/no-debug-non-zts-20190902/mysqli.so" >> extensions.ini
+# echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20190902/mysqlnd_azure.so
+# extension=/usr/local/lib/php/extensions/no-debug-non-zts-20190902/mysqli.so" >> extensions.ini
+echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20220829/mysqli.so" >> extensions.ini
 
 ####################################################################################
 #
@@ -117,7 +119,7 @@ echo "session.cookie_secure = On" >> /home/site/redcap.ini
 
 ####################################################################################
 #
-# Move postbuild.sh to PostDeploymentActions for execution after deployment
+# Copy postbuild.sh to PostDeploymentActions for execution after deployment
 #
 ####################################################################################
 
@@ -126,7 +128,7 @@ cp /home/site/repository/scripts/bash/postbuild.sh /home/site/deployments/tools/
 
 ####################################################################################
 #
-# Move startup.sh /home for a custom startup
+# Copy startup.sh /home for a custom startup
 #
 ####################################################################################
 
