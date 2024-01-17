@@ -17,6 +17,7 @@ param keyVaultSecretName string
 param tags object
 param deploymentNameStructure string
 param kind string
+param minTlsVersion string = 'TLS1_2'
 
 var storageType = kind == 'FileStorage' ? 'file' : 'blob'
 
@@ -31,6 +32,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   properties: {
     allowBlobPublicAccess: false
     publicNetworkAccess: 'Disabled'
+    minimumTlsVersion: minTlsVersion
   }
 }
 
