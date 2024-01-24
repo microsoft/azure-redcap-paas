@@ -28,6 +28,7 @@ param location string
 param resourceType string
 param environment string
 param workloadName string
+param subWorkloadName string = ''
 param sequence int
 
 @description('If true, the name will always use short versions of placeholders. If false, it will only be shortened when needed to fit in the maxLength.')
@@ -41,7 +42,7 @@ param removeSegmentSeparator bool = false
 ])
 param segmentSeparator string = '-'
 
-@description('If true, when creating a short name, vowels will be removed first from the workload name.')
+@description('If true, when creating a short name, vowels will first be removed from the workload name.')
 param useRemoveVowelStrategy bool = false
 
 @maxValue(13)
@@ -119,8 +120,142 @@ var Defs = {
 }
 
 var shortLocations = {
+  australiacentral: 'acl'
+  'Australia Central': 'acl'
+  australiacentral2: 'acl2'
+  'Australia Central 2': 'acl2'
+  australiaeast: 'ae'
+  'Australia East': 'ae'
+  australiasoutheast: 'ase'
+  'Australia Southeast': 'ase'
+  brazilsouth: 'brs'
+  'Brazil South': 'brs'
+  brazilsoutheast: 'bse'
+  'Brazil Southeast': 'bse'
+  centraluseuap: 'ccy'
+  'Central US EUAP': 'ccy'
+  canadacentral: 'cnc'
+  'Canada Central': 'cnc'
+  canadaeast: 'cne'
+  'Canada East': 'cne'
+  centralus: 'cus'
+  'Central US': 'cus'
+  eastasia: 'ea'
+  'East Asia': 'ea'
+  eastus2euap: 'ecy'
+  'East US 2 EUAP': 'ecy'
   eastus: 'eus'
+  'East US': 'eus'
   eastus2: 'eus2'
+  'East US 2': 'eus2'
+  francecentral: 'frc'
+  'France Central': 'frc'
+  francesouth: 'frs'
+  'France South': 'frs'
+  germanynorth: 'gn'
+  'Germany North': 'gn'
+  germanywestcentral: 'gwc'
+  'Germany West Central': 'gwc'
+  centralindia: 'inc'
+  'Central India': 'inc'
+  southindia: 'ins'
+  'South India': 'ins'
+  westindia: 'inw'
+  'West India': 'inw'
+  italynorth: 'itn'
+  'Italy North': 'itn'
+  japaneast: 'jpe'
+  'Japan East': 'jpe'
+  japanwest: 'jpw'
+  'Japan West': 'jpw'
+  jioindiacentral: 'jic'
+  'Jio India Central': 'jic'
+  jioindiawest: 'jiw'
+  'Jio India West': 'jiw'
+  koreacentral: 'krc'
+  'Korea Central': 'krc'
+  koreasouth: 'krs'
+  'Korea South': 'krs'
+  northcentralus: 'ncus'
+  'North Central US': 'ncus'
+  northeurope: 'ne'
+  'North Europe': 'ne'
+  norwayeast: 'nwe'
+  'Norway East': 'nwe'
+  norwaywest: 'nww'
+  'Norway West': 'nww'
+  qatarcentral: 'qac'
+  'Qatar Central': 'qac'
+  southafricanorth: 'san'
+  'South Africa North': 'san'
+  southafricawest: 'saw'
+  'South Africa West': 'saw'
+  southcentralus: 'scus'
+  'South Central US': 'scus'
+  swedencentral: 'sdc'
+  'Sweden Central': 'sdc'
+  swedensouth: 'sds'
+  'Sweden South': 'sds'
+  southeastasia: 'sea'
+  'Southeast Asia': 'sea'
+  switzerlandnorth: 'szn'
+  'Switzerland North': 'szn'
+  switzerlandwest: 'szw'
+  'Switzerland West': 'szw'
+  uaecentral: 'uac'
+  'UAE Central': 'uac'
+  uaenorth: 'uan'
+  'UAE North': 'uan'
+  uksouth: 'uks'
+  'UK South': 'uks'
+  ukwest: 'ukw'
+  'UK West': 'ukw'
+  westcentralus: 'wcus'
+  'West Central US': 'wcus'
+  westeurope: 'we'
+  'West Europe': 'we'
+  westus: 'wus'
+  'West US': 'wus'
+  westus2: 'wus2'
+  'West US 2': 'wus2'
+  westus3: 'wus3'
+  'West US 3': 'wus3'
+  usdodcentral: 'udc'
+  'USDoD Central': 'udc'
+  usdodeast: 'ude'
+  'USDoD East': 'ude'
+  usgovarizona: 'uga'
+  'USGov Arizona': 'uga'
+  usgoviowa: 'ugi'
+  'USGov Iowa': 'ugi'
+  usgovtexas: 'ugt'
+  'USGov Texas': 'ugt'
+  usgovvirginia: 'ugv'
+  'USGov Virginia': 'ugv'
+  usnateast: 'exe'
+  'USNat East': 'exe'
+  usnatwest: 'exw'
+  'USNat West': 'exw'
+  usseceast: 'rxe'
+  'USSec East': 'rxe'
+  ussecwest: 'rxw'
+  'USSec West': 'rxw'
+  chinanorth: 'bjb'
+  'China North': 'bjb'
+  chinanorth2: 'bjb2'
+  'China North 2': 'bjb2'
+  chinanorth3: 'bjb3'
+  'China North 3': 'bjb3'
+  chinaeast: 'sha'
+  'China East': 'sha'
+  chinaeast2: 'sha2'
+  'China East 2': 'sha2'
+  chinaeast3: 'sha3'
+  'China East 3': 'sha3'
+  germanycentral: 'gec'
+  'Germany Central': 'gec'
+  germanynortheast: 'gne'
+  'Germany North East': 'gne'
 }
 
 var maxLength = Defs[resourceType].maxLength
@@ -138,16 +273,20 @@ var sequenceFormatted = format('{0:00}', sequence)
 // For idempotency, deployments of the same type, workload, environment, sequence, and resource group will yield the same resource name
 var randomChars = addRandomChars > 0 ? take(uniqueString(subscription().subscriptionId, workloadName, location, environment, string(sequence), resourceType, additionalRandomInitializer), addRandomChars) : ''
 
-// Remove hyphens from the naming convention if needed
-var namingConventionSegmentSeparatorProcessed = doRemoveSegmentSeparator ? replace(namingConvention, segmentSeparator, '') : namingConvention
+// Remove {subWorkloadName} if not needed
+var namingConventionSubProcessed = empty(subWorkloadName) ? replace(namingConvention, '-{subWorkloadName}', '') : namingConvention
+
+// Remove segment separators (usually dash/hyphens (-)) from the naming convention if needed
+var namingConventionSegmentSeparatorProcessed = doRemoveSegmentSeparator ? replace(namingConventionSubProcessed, segmentSeparator, '') : namingConventionSubProcessed
 
 var workloadNameSegmentSeparatorProcessed = doRemoveSegmentSeparator ? replace(workloadName, segmentSeparator, '') : workloadName
+var subWorkloadNameSegmentSeparatorProcessed = doRemoveSegmentSeparator ? replace(subWorkloadName, segmentSeparator, '') : subWorkloadName
 var randomizedWorkloadName = '${workloadNameSegmentSeparatorProcessed}${randomChars}'
 
 // Use the naming convention to create two names: one shortened, one regular
-var regularName = replace(replace(replace(replace(replace(namingConventionSegmentSeparatorProcessed, '{env}', toLower(environment)), '{loc}', location), '{seq}', sequenceFormatted), '{workloadName}', randomizedWorkloadName), '{rtype}', resourceType)
+var regularName = replace(replace(replace(replace(replace(replace(namingConventionSegmentSeparatorProcessed, '{env}', toLower(environment)), '{loc}', location), '{seq}', sequenceFormatted), '{workloadName}', randomizedWorkloadName), '{rtype}', resourceType), '{subWorkloadName}', subWorkloadNameSegmentSeparatorProcessed)
 // The short name uses one character for the environment, a shorter location name, and the minimum number of digits for the sequence
-var shortName = replace(replace(replace(replace(replace(namingConventionSegmentSeparatorProcessed, '{env}', toLower(take(environment, 1))), '{loc}', shortLocationValue), '{seq}', string(sequence)), '{workloadName}', randomizedWorkloadName), '{rtype}', resourceType)
+var shortName = replace(replace(replace(replace(replace(replace(namingConventionSegmentSeparatorProcessed, '{env}', toLower(take(environment, 1))), '{loc}', shortLocationValue), '{seq}', string(sequence)), '{workloadName}', randomizedWorkloadName), '{rtype}', resourceType), '{subWorkloadName}', subWorkloadNameSegmentSeparatorProcessed)
 
 // Based on the length of the workload name, the short name could still be too long
 var mustTryVowelRemoval = length(shortName) > maxLength
@@ -156,6 +295,7 @@ var minEffectiveVowelRemovalCount = length(shortName) - maxLength
 
 // If allowed, try removing vowels
 var workloadNameVowelsProcessed = mustTryVowelRemoval && useRemoveVowelStrategy ? replace(replace(replace(replace(replace(workloadNameSegmentSeparatorProcessed, 'a', ''), 'e', ''), 'i', ''), 'o', ''), 'u', '') : workloadNameSegmentSeparatorProcessed
+var subWorkloadNameVowelsProcessed = mustTryVowelRemoval && useRemoveVowelStrategy ? replace(replace(replace(replace(replace(subWorkloadNameSegmentSeparatorProcessed, 'a', ''), 'e', ''), 'i', ''), 'o', ''), 'u', '') : subWorkloadNameSegmentSeparatorProcessed
 
 var mustShortenWorkloadName = (length(randomizedWorkloadName) - length('${workloadNameVowelsProcessed}${randomChars}')) < minEffectiveVowelRemovalCount
 
@@ -166,7 +306,7 @@ var workloadNameCharsToKeep = mustShortenWorkloadName ? length(workloadNameVowel
 var shortWorkloadName = '${take(workloadNameVowelsProcessed, workloadNameCharsToKeep)}${randomChars}'
 
 // Recreate a proposed short name for the resource
-var actualShortName = replace(replace(replace(replace(replace(namingConventionSegmentSeparatorProcessed, '{env}', toLower(take(environment, 1))), '{loc}', shortLocationValue), '{seq}', string(sequence)), '{workloadName}', shortWorkloadName), '{rtype}', resourceType)
+var actualShortName = replace(replace(replace(replace(replace(replace(namingConventionSegmentSeparatorProcessed, '{env}', toLower(take(environment, 1))), '{loc}', shortLocationValue), '{seq}', string(sequence)), '{workloadName}', shortWorkloadName), '{rtype}', resourceType), '{subWorkloadName}', subWorkloadNameVowelsProcessed)
 
 // The actual name of the resource depends on whether shortening is required or the length of the regular name exceeds the maximum length allowed for the resource type
 var actualName = (requireShorten || length(regularName) > maxLength) ? actualShortName : regularName
@@ -175,3 +315,11 @@ var actualNameCased = lowerCase ? toLower(actualName) : actualName
 
 // This take() function shouldn't actually remove any characters, just here for safety
 output shortName string = take(actualNameCased, maxLength)
+
+// For debugging only
+output workloadNameCharsKept int = workloadNameCharsToKeep
+output originalShortNameLength int = length(shortName)
+output actualNameCased string = actualNameCased
+output workloadNameVowelsProcessed string = workloadNameVowelsProcessed
+output triedVowelRemoval bool = mustTryVowelRemoval
+output minEffectiveVowelRemovalCount int = minEffectiveVowelRemovalCount
