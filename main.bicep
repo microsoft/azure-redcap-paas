@@ -357,7 +357,7 @@ module webAppModule './modules/webapp/main.bicep' = {
     // TODO: Consider deploying as P0V3 to ensure the deployment runs on a scale unit that supports P_v3 for future upgrades. GH issue #50
     skuName: 'S1'
     skuTier: 'Standard'
-    peSubnetId: virtualNetworkModule.outputs.subnets.ComputeSubnet.id
+    peSubnetId: virtualNetworkModule.outputs.subnets.PrivateLinkSubnet.id
     appInsights_connectionString: monitoring.outputs.appInsightsResourceId
     appInsights_instrumentationKey: monitoring.outputs.appInsightsInstrumentationKey
     linuxFxVersion: 'php|8.2'

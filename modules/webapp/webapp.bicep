@@ -33,6 +33,7 @@ param appInsights_instrumentationKey string
 param storageAccountKeySecretRef string
 param storageAccountName string
 param storageAccountContainerName string
+param minTlsVersion string = '1.2'
 
 param uamiId string
 
@@ -66,7 +67,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
       http20Enabled: true
 
       linuxFxVersion: linuxFxVersion
-      minTlsVersion: '1.2'
+      minTlsVersion: minTlsVersion
       ftpsState: 'FtpsOnly'
       appCommandLine: prerequisiteCommand
       appSettings: [
