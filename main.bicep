@@ -38,7 +38,7 @@ param redcapCommunityPassword string
 param scmRepoUrl string = 'https://github.com/microsoft/azure-redcap-paas'
 @description('Github Repo Branch where build scripts are downloaded from')
 param scmRepoBranch string = 'main'
-@description('The command before build to be run on the web app with an elevated privilege. This is used to install the required packages for REDCap deployment and operation.')
+@description('The command before build to be run on the web app with an elevated privilege. This is used to install the required packages for REDCap operation.')
 param prerequisiteCommand string = 'apt-get install unzip sendmail cron -y'
 
 param deploymentTime string = utcNow()
