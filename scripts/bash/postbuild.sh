@@ -25,4 +25,4 @@ echo -e "\nFinished running install.php"
 # 
 ####################################################################################
 
-bash /home/site/repository/scripts/bash/install.sh
+#bash /home/site/repository/scripts/bash/install.sh
