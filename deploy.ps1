@@ -17,7 +17,7 @@ Param(
 # Define common parameters for the New-AzDeployment cmdlet
 [hashtable]$CmdLetParameters = @{
     Location     = $Location
-    TemplateFile = '.\main.bicep'
+    TemplateFile = './main.bicep'
 }
 
 # Convert the .bicepparam file to JSON to read values that will be used to construct the deployment name
@@ -56,7 +56,7 @@ Import-Module .\scripts\PowerShell\Generate-Password.psm1
 [securestring]$SqlPassword = New-RandomPassword 25
 
 # Remove the Generate-Password module from the session
-Remove-module Generate-Password
+Remove-Module Generate-Password
 
 $CmdLetParameters.Add('sqlPassword', $SqlPassword)
 
@@ -66,6 +66,8 @@ $DeploymentResult = New-AzDeployment @CmdLetParameters
 # Evaluate the deployment results
 if ($DeploymentResult.ProvisioningState -eq 'Succeeded') {
     Write-Host "🔥 Deployment succeeded."
+
+    $DeploymentResult.Outputs
 }
 else {
     $DeploymentResult
