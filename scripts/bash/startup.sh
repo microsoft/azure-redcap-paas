@@ -1,5 +1,14 @@
 #!/bin/bash
-	
+
+echo "Custom container startup"
+
+####################################################################################
+#
+# Install required packages in container
+#
+####################################################################################
+
+apt-get update -qq && apt-get install sendmail cron -yqq
 
 ####################################################################################
 #
@@ -7,5 +16,6 @@
 #
 ####################################################################################
 
-echo "* * * * * /usr/local/bin/php /home/site/wwwroot/cron.php > /dev/null" >> /etc/crontab
+#echo "* * * * * /usr/local/bin/php /home/site/wwwroot/cron.php > /dev/null" >> /etc/crontab
 service cron start
+(crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/php /home/site/wwwroot/cron.php > /dev/null")|crontab 
