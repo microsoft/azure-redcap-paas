@@ -47,7 +47,15 @@ param deploymentTime string = utcNow()
 @secure()
 param sqlPassword string
 
+@description('The MySQL Flexible Server admin user account name. Defaults to \'sqladmin\'.')
 param sqlAdmin string = 'sqladmin'
+
+@description('The outgoing SMTP server FQDN or IP address.')
+param smtpFQDN string = ''
+@description('The outgoing SMTP server port.')
+param smtpPort string = ''
+@description('The email address to use as the sender for outgoing emails.')
+param smtpFromEmailAddress string = ''
 
 var sequenceFormatted = format('{0:00}', sequence)
 var rgNamingStructure = replace(replace(replace(replace(replace(namingConvention, '{rtype}', 'rg'), '{workloadName}', '${workloadName}-{rgName}'), '{loc}', location), '{seq}', sequenceFormatted), '{env}', environment)
@@ -387,6 +395,10 @@ module webAppModule './modules/webapp/main.bicep' = {
     scmRepoUrl: scmRepoUrl
     scmRepoBranch: scmRepoBranch
     prerequisiteCommand: prerequisiteCommand
+
+    smtpFQDN: smtpFQDN
+    smtpFromEmailAddress: smtpFromEmailAddress
+    smtpPort: smtpPort
 
     deploymentNameStructure: deploymentNameStructure
 

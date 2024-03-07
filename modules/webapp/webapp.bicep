@@ -23,12 +23,17 @@ param redcapCommunityUsernameSecretRef string
 #disable-next-line secure-secrets-in-params
 param redcapCommunityPasswordSecretRef string
 param scmRepoUrl string
-param scmRepoBranch string = 'main'
+param scmRepoBranch string
 param prerequisiteCommand string
 
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
 
+param smtpFQDN string = ''
+param smtpPort string = ''
+param smtpFromEmailAddress string = ''
+
+// This is not a secret, it's a Key Vault reference
 #disable-next-line secure-secrets-in-params
 param storageAccountKeySecretRef string
 param storageAccountName string
@@ -105,15 +110,15 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'smtpFQDN'
-          value: ''
+          value: smtpFQDN
         }
         {
           name: 'smtpPort'
-          value: ''
+          value: smtpPort
         }
         {
           name: 'fromEmailAddress'
-          value: ''
+          value: smtpFromEmailAddress
         }
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'

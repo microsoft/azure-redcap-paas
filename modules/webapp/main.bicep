@@ -16,6 +16,10 @@ param privateDnsZoneName string
 param virtualNetworkId string
 param integrationSubnetId string
 
+param smtpFQDN string = ''
+param smtpPort string = ''
+param smtpFromEmailAddress string = ''
+
 #disable-next-line secure-secrets-in-params
 param storageAccountKeySecretRef string
 param storageAccountName string
@@ -36,7 +40,7 @@ param prerequisiteCommand string
 
 param uamiId string
 
-// Disabling this check because this is no longer a secret; it's a reference to Key Vault
+// Disabling this check because this is not a secret; it's a reference to Key Vault
 #disable-next-line secure-secrets-in-params
 param dbPasswordSecretRef string
 
@@ -76,6 +80,10 @@ module appService 'webapp.bicep' = {
     storageAccountContainerName: storageAccountContainerName
     storageAccountKeySecretRef: storageAccountKeySecretRef
     storageAccountName: storageAccountName
+
+    smtpFQDN: smtpFQDN
+    smtpFromEmailAddress: smtpFromEmailAddress
+    smtpPort: smtpPort
 
     uamiId: uamiId
   }
