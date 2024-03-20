@@ -67,7 +67,7 @@ var sqlName = nameModule[4].outputs.shortName
 var planName = nameModule[5].outputs.shortName
 var uamiName = nameModule[6].outputs.shortName
 var dplscrName = nameModule[7].outputs.shortName
-var lawName = nameModule[8].outputs.shortName
+var logName = nameModule[8].outputs.shortName
 
 var deploymentNameStructure = '${workloadName}-${environment}-${sequenceFormatted}-{rtype}-${deploymentTime}'
 
@@ -181,7 +181,7 @@ var resourceTypes = [
   'plan'
   'uami'
   'dplscr'
-  'law'
+  'log'
 ]
 
 @batchSize(1)
@@ -241,7 +241,7 @@ module monitoring './modules/monitoring/main.bicep' = {
   params: {
     resourceGroupName: replace(rgNamingStructure, '{rgName}', 'monitoring')
     appInsightsName: 'appInsights-${webAppName}'
-    logAnalyticsWorkspaceName: lawName
+    logAnalyticsWorkspaceName: logName
     logAnalyticsWorkspaceSku: 'PerGB2018'
     retentionInDays: 30
     location: location
