@@ -23,12 +23,17 @@ param redcapCommunityUsernameSecretRef string
 #disable-next-line secure-secrets-in-params
 param redcapCommunityPasswordSecretRef string
 param scmRepoUrl string
-param scmRepoBranch string = 'main'
+param scmRepoBranch string
 param prerequisiteCommand string
 
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
 
+param smtpFQDN string = ''
+param smtpPort string = ''
+param smtpFromEmailAddress string = ''
+
+// This is not a secret, it's a Key Vault reference
 #disable-next-line secure-secrets-in-params
 param storageAccountKeySecretRef string
 param storageAccountName string
@@ -105,15 +110,15 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'smtpFQDN'
-          value: ''
+          value: smtpFQDN
         }
         {
           name: 'smtpPort'
-          value: ''
+          value: smtpPort
         }
         {
           name: 'fromEmailAddress'
-          value: ''
+          value: smtpFromEmailAddress
         }
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
@@ -154,7 +159,17 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
-resource webSiteName_web 'Microsoft.Web/sites/sourcecontrols@2022-09-01' = {
+// SCM Basic Authentication is required when using the App Service Build Service
+// Per https://learn.microsoft.com/en-us/azure/app-service/deploy-continuous-deployment?tabs=github%2Cappservice#what-are-the-build-providers
+resource basicScmCredentials 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-01-01' = {
+  parent: webApp
+  name: 'scm'
+  properties: {
+    allow: true
+  }
+}
+
+resource sourcecontrol 'Microsoft.Web/sites/sourcecontrols@2022-09-01' = {
   parent: webApp
   name: 'web'
   properties: {
@@ -162,6 +177,7 @@ resource webSiteName_web 'Microsoft.Web/sites/sourcecontrols@2022-09-01' = {
     branch: scmRepoBranch
     isManualIntegration: true
   }
+  dependsOn: [ privateDnsZoneGroupsWebApp ]
 }
 
 resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = {

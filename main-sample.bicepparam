@@ -28,6 +28,14 @@ param redcapCommunityPassword = '<Valid Redcap Community Password>'
 param scmRepoUrl = 'https://github.com/Microsoft/azure-redcap-paas'
 param scmRepoBranch = 'main'
 
+// Specify the values for the SMTP host REDCap will use to send emails.
+// These values may be left blank if you will not use SMTP for email notifications.
+param smtpFQDN = '<Specify valid SMTP FQDN>'
+// Be aware of possible restrictions to using SMTP port 25 in Azure.
+// See https://learn.microsoft.com/azure/virtual-network/troubleshoot-outbound-smtp-connectivity
+param smtpPort = '587'
+param smtpFromEmailAddress = '<Specify valid SMTP From Email Address>'
+
 // ** Do not specify anything here! **
 // This parameter is required to ensure the parameter file is valid, but should be blank so the password doesn't leak. 
 // A new password is generated for each deployment and stored in Key Vault.
