@@ -186,12 +186,12 @@ var tags = {
   environment: environment
 }
 
-// var secrets = {
-//   sqlAdminName: mySqlModule.outputs.sqlAdmin
-//   sqlPassword: sqlPassword
-//   redcapCommunityUsername: redcapCommunityUsername
-//   redcapCommunityPassword: redcapCommunityPassword
-// }
+var secrets = {
+  sqlAdminName: mySqlModule.outputs.sqlAdmin
+  sqlPassword: sqlPassword
+  redcapCommunityUsername: redcapCommunityUsername
+  redcapCommunityPassword: redcapCommunityPassword
+}
 
 var resourceTypes = [
   'vnet'
@@ -227,19 +227,19 @@ module rolesModule './modules/common/roles.bicep' = {
 
 var storageAccountKeySecretName = 'storageKey'
 // The secrets object is converted to an array using the items() function, which alphabetically sorts it
-// var defaultSecretNames = map(items(secrets), s => s.key)
-// var additionalSecretNames = [storageAccountKeySecretName]
-// var secretNames = concat(defaultSecretNames, additionalSecretNames)
+var defaultSecretNames = map(items(secrets), s => s.key)
+var additionalSecretNames = [storageAccountKeySecretName]
+var secretNames = concat(defaultSecretNames, additionalSecretNames)
 
 // The output will be in alphabetical order
 // LATER: Output an object instead
-// module kvSecretReferencesModule './modules/common/appSvcKeyVaultRefs.bicep' = {
-//   name: take(replace(deploymentNameStructure, '{rtype}', 'kv-secrets'), 64)
-//   params: {
-//     keyVaultName: kvName
-//     secretNames: secretNames
-//   }
-// }
+module kvSecretReferencesModule './modules/common/appSvcKeyVaultRefs.bicep' = {
+  name: take(replace(deploymentNameStructure, '{rtype}', 'kv-secrets'), 64)
+  params: {
+    keyVaultName: kvName
+    secretNames: secretNames
+  }
+}
 
 module virtualNetworkModule './modules/networking/main.bicep' = if (empty(existingVirtualNetworkId)) {
   name: take(replace(deploymentNameStructure, '{rtype}', 'network'), 64)
@@ -396,56 +396,61 @@ resource webAppResourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   })
 }
 
-// module webAppModule './modules/webapp/main.bicep' = {
-//   name: take(replace(deploymentNameStructure, '{rtype}', 'appService'), 64)
-//   scope: webAppResourceGroup
-//   params: {
-//     webAppName: webAppName
-//     appServicePlanName: planName
-//     location: location
-//     // TODO: Consider deploying as P0V3 to ensure the deployment runs on a scale unit that supports P_v3 for future upgrades. GH issue #50
-//     skuName: 'S1'
-//     skuTier: 'Standard'
-//     peSubnetId: virtualNetworkModule.outputs.subnets.PrivateLinkSubnet.id
-//     appInsights_connectionString: monitoring.outputs.appInsightsResourceId
-//     appInsights_instrumentationKey: monitoring.outputs.appInsightsInstrumentationKey
-//     linuxFxVersion: 'php|8.2'
-//     tags: tags
-//     customTags: {
-//       workloadType: 'webApp'
-//     }
-//     privateDnsZoneName: 'privatelink.azurewebsites.net'
-//     virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
-//     redcapZipUrl: redcapZipUrl
-//     dbHostName: mySqlModule.outputs.fqdn
-//     dbName: mySqlModule.outputs.databaseName
+module webAppModule './modules/webapp/main.bicep' = {
+  name: take(replace(deploymentNameStructure, '{rtype}', 'appService'), 64)
+  scope: webAppResourceGroup
+  params: {
+    webAppName: webAppName
+    appServicePlanName: planName
+    location: location
+    // TODO: Consider deploying as P0V3 to ensure the deployment runs on a scale unit that supports P_v3 for future upgrades. GH issue #50
+    skuName: 'S1'
+    skuTier: 'Standard'
+    peSubnetId: privateEndpointSubnetId
+    appInsights_connectionString: monitoring.outputs.appInsightsResourceId
+    appInsights_instrumentationKey: monitoring.outputs.appInsightsInstrumentationKey
+    linuxFxVersion: 'php|8.2'
+    tags: tags
+    customTags: {
+      workloadType: 'webApp'
+    }
 
-//     dbUserNameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[2]
-//     dbPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[3]
+    existingPrivateDnsZonesResourceGroupId: existingPrivateDnsZonesResourceGroupId
+    privateDnsZoneName: 'privatelink.azurewebsites.net'
+    virtualNetworkId: virtualNetworkId
 
-//     redcapCommunityUsernameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[1]
-//     redcapCommunityPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[0]
+    redcapZipUrl: redcapZipUrl
+    dbHostName: mySqlModule.outputs.fqdn
+    dbName: mySqlModule.outputs.databaseName
 
-//     storageAccountKeySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[4]
-//     storageAccountContainerName: storageAccountModule.outputs.containerName
-//     storageAccountName: storageAccountModule.outputs.name
+    dbUserNameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[2]
+    dbPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[3]
 
-//     // Enable VNet integration
-//     integrationSubnetId: virtualNetworkModule.outputs.subnets.IntegrationSubnet.id
+    redcapCommunityUsernameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[1]
+    redcapCommunityPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[0]
 
-//     scmRepoUrl: scmRepoUrl
-//     scmRepoBranch: scmRepoBranch
-//     prerequisiteCommand: prerequisiteCommand
+    storageAccountKeySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[4]
+    storageAccountContainerName: storageAccountModule.outputs.containerName
+    storageAccountName: storageAccountModule.outputs.name
 
-//     smtpFQDN: smtpFQDN
-//     smtpFromEmailAddress: smtpFromEmailAddress
-//     smtpPort: smtpPort
+    // Enable VNet integration
+    integrationSubnetId: empty(existingVirtualNetworkId)
+      ? virtualNetworkModule.outputs.subnets.IntegrationSubnet.id
+      : '${existingVirtualNetworkId}/subnets/${subnets.IntegrationSubnet.existingSubnetName}'
 
-//     deploymentNameStructure: deploymentNameStructure
+    scmRepoUrl: scmRepoUrl
+    scmRepoBranch: scmRepoBranch
+    prerequisiteCommand: prerequisiteCommand
 
-//     uamiId: uamiModule.outputs.id
-//   }
-// }
+    smtpFQDN: smtpFQDN
+    smtpFromEmailAddress: smtpFromEmailAddress
+    smtpPort: smtpPort
+
+    deploymentNameStructure: deploymentNameStructure
+
+    uamiId: uamiModule.outputs.id
+  }
+}
 
 module uamiModule 'modules/uami/main.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'uami'), 64)
@@ -458,4 +463,4 @@ module uamiModule 'modules/uami/main.bicep' = {
 }
 
 // // The web app URL
-// output webAppUrl string = webAppModule.outputs.webAppUrl
+output webAppUrl string = webAppModule.outputs.webAppUrl

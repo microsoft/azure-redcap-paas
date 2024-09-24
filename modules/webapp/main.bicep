@@ -38,6 +38,8 @@ param redcapCommunityUsernameSecretRef string
 param redcapCommunityPasswordSecretRef string
 param prerequisiteCommand string
 
+param existingPrivateDnsZonesResourceGroupId string = ''
+
 param uamiId string
 
 // Disabling this check because this is not a secret; it's a reference to Key Vault
@@ -63,7 +65,9 @@ module appService 'webapp.bicep' = {
     dbPasswordSecretRef: dbPasswordSecretRef
     dbUserNameSecretRef: dbUserNameSecretRef
     peSubnetId: peSubnetId
-    privateDnsZoneId: privateDns.outputs.privateDnsId
+    privateDnsZoneId: empty(existingPrivateDnsZonesResourceGroupId)
+      ? privateDns.outputs.privateDnsId
+      : '${existingPrivateDnsZonesResourceGroupId}/providers/Microsoft.Network/privateDnsZones/${privateDnsZoneName}'
     integrationSubnetId: integrationSubnetId
 
     appInsights_connectionString: appInsights_connectionString
@@ -89,7 +93,7 @@ module appService 'webapp.bicep' = {
   }
 }
 
-module privateDns '../pdns/main.bicep' = {
+module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
   name: take(replace(deploymentNameStructure, '{rtype}', 'app-dns'), 64)
   params: {
     privateDnsZoneName: privateDnsZoneName
