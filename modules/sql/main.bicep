@@ -11,6 +11,8 @@ param privateDnsZoneName string
 param sqlAdminUser string
 param virtualNetworkId string
 
+param existingPrivateDnsZonesResourceGroupId string = ''
+
 param roles object
 param deploymentScriptName string
 
@@ -72,7 +74,9 @@ module mysqlDbserver './sql.bicep' = {
     StorageSizeGB: StorageSizeGB
     StorageIops: StorageIops
     peSubnetId: peSubnetId
-    privateDnsZoneId: privateDns.outputs.privateDnsId
+    privateDnsZoneId: empty(existingPrivateDnsZonesResourceGroupId)
+      ? privateDns.outputs.privateDnsId
+      : '${existingPrivateDnsZonesResourceGroupId}/providers/Microsoft.Network/privateDnsZones/${privateDnsZoneName}'
     adminUserName: sqlAdminUser
     adminPassword: sqlAdminPasword
     mysqlVersion: mysqlVersion
@@ -87,7 +91,7 @@ module mysqlDbserver './sql.bicep' = {
   }
 }
 
-module privateDns '../pdns/main.bicep' = {
+module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
   name: take(replace(deploymentNameStructure, '{rtype}', 'mysql-dns'), 64)
   scope: resourceGroup
   params: {

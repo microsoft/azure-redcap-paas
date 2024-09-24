@@ -12,6 +12,8 @@ param virtualNetworkId string
 param tags object
 param customTags object
 
+param existingPrivateDnsZonesResourceGroupId string
+
 param deploymentNameStructure string
 
 @description('Resource ID of the Key Vault where the storage key secret should be created.')
@@ -38,14 +40,16 @@ module storageAccount './storage.bicep' = {
     storageContainerName: storageContainerName
     kind: kind
     storageAccountSku: storageAccountSku
-    privateDnsZoneId: privateDns.outputs.privateDnsId
+    privateDnsZoneId: empty(existingPrivateDnsZonesResourceGroupId)
+      ? privateDns.outputs.privateDnsId
+      : '${existingPrivateDnsZonesResourceGroupId}/providers/Microsoft.Network/privateDnsZones/${privateDnsZoneName}'
     keyVaultId: keyVaultId
     keyVaultSecretName: keyVaultSecretName
     deploymentNameStructure: deploymentNameStructure
   }
 }
 
-module privateDns '../pdns/main.bicep' = {
+module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
   name: take(replace(deploymentNameStructure, '{rtype}', 'st-dns'), 64)
   scope: resourceGroup
   params: {

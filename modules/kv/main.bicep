@@ -6,14 +6,18 @@ param tags object
 param customTags object
 param keyVaultName string
 param peSubnetId string
-param roleAssignments array = [ {
+param roleAssignments array = [
+  {
     RoleDefinitionId: ''
     objectId: ''
-  } ]
+  }
+]
 @secure()
 param secrets object
 param privateDnsZoneName string
 param virtualNetworkId string
+
+param existingPrivateDnsZonesResourceGroupId string = ''
 
 param deploymentNameStructure string
 
@@ -33,14 +37,16 @@ module keyVaultModule './kv.bicep' = {
     location: location
     tags: tags
     peSubnetId: peSubnetId
-    privateDnsZoneId: keyVaultPrivateDnsModule.outputs.privateDnsId
+    privateDnsZoneId: empty(existingPrivateDnsZonesResourceGroupId)
+      ? keyVaultPrivateDnsModule.outputs.privateDnsId
+      : '${existingPrivateDnsZonesResourceGroupId}/providers/Microsoft.Network/privateDnsZones/${privateDnsZoneName}'
     secrets: secrets
     roleAssignments: roleAssignments
     deploymentNameStructure: deploymentNameStructure
   }
 }
 
-module keyVaultPrivateDnsModule '../pdns/main.bicep' = {
+module keyVaultPrivateDnsModule '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
   name: take(replace(deploymentNameStructure, '{rtype}', 'kv-dns'), 64)
   scope: resourceGroup
   params: {
