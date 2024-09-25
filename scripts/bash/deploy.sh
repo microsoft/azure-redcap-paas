@@ -67,7 +67,7 @@ fi
 
 rm -f /home/site/wwwroot/hostingstart.html
 unzip -oq /tmp/redcap.zip -d /tmp/wwwroot 
-mv /tmp/wwwroot/redcap/* /home/site/wwwroot/
+mv -f /tmp/wwwroot/redcap/* /home/site/wwwroot/
 rm -rf /tmp/wwwroot
 rm /tmp/redcap.zip
 
@@ -83,11 +83,11 @@ cd /home/site/wwwroot
 
 wget --no-check-certificate https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem
 
-sed -i "s|hostname[[:space:]]*= '';|hostname = \$_ENV['\$APPSETTING_DBHostName'];|" database.php
-sed -i "s|db[[:space:]]*= '';|db = \$_ENV['\$APPSETTING_DBName'];|" database.php
-sed -i "s|username[[:space:]]*= '';|username = \$_ENV['\$APPSETTING_DBUserName'];|" database.php
-sed -i "s|password[[:space:]]*= '';|password = \$_ENV['\$APPSETTING_DBPassword'];|" database.php
-sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = \$_ENV['\$APPSETTING_DBSslCa'];|" database.php
+sed -i "s|hostname[[:space:]]*= '';|hostname = getenv('APPSETTING_DBHostName');|" database.php
+sed -i "s|db[[:space:]]*= '';|db = getenv('APPSETTING_DBName');|" database.php
+sed -i "s|username[[:space:]]*= '';|username = getenv('APPSETTING_DBUserName');|" database.php
+sed -i "s|password[[:space:]]*= '';|password = getenv('APPSETTING_DBPassword');|" database.php
+sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = getenv('APPSETTING_DBSslCa');|" database.php
 
 sed -i "s/db_ssl_verify_server_cert = false;/db_ssl_verify_server_cert = true;/" database.php
 sed -i "s/$salt = '';/$salt = '$(echo $RANDOM | md5sum | head -c 20; echo;)';/" database.php
