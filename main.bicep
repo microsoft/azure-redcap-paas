@@ -337,9 +337,7 @@ module keyVaultModule './modules/kv/main.bicep' = {
       }
     ]
     privateDnsZoneName: 'privatelink.vaultcore.azure.net'
-    // TODO: Enable
-    //secrets: secrets
-    secrets: {}
+    secrets: secrets
 
     deploymentNameStructure: deploymentNameStructure
   }
