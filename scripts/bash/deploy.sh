@@ -20,10 +20,8 @@ stamp=$(date +%Y-%m-%d-%H-%M)
 ####################################################################################
 
 echo "Configuring mysqli extension" >> /home/site/log-$stamp.txt
-cd /home/site
-# echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20190902/mysqlnd_azure.so
-# extension=/usr/local/lib/php/extensions/no-debug-non-zts-20190902/mysqli.so" >> extensions.ini
-echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20220829/mysqli.so" >> extensions.ini
+mkdir /home/site/ini
+echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20220829/mysqli.so" >> /home/site/ini/extensions.ini
 
 ####################################################################################
 #
@@ -85,11 +83,11 @@ cd /home/site/wwwroot
 
 wget --no-check-certificate https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem
 
-sed -i "s|hostname[[:space:]]*= '';|hostname = '$APPSETTING_DBHostName';|" database.php
-sed -i "s|db[[:space:]]*= '';|db = '$APPSETTING_DBName';|" database.php
-sed -i "s|username[[:space:]]*= '';|username = '$APPSETTING_DBUserName';|" database.php
-sed -i "s|password[[:space:]]*= '';|password = '$APPSETTING_DBPassword';|" database.php
-sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = '$APPSETTING_DBSslCa';|" database.php
+sed -i "s|hostname[[:space:]]*= '';|hostname = $_ENV['$APPSETTING_DBHostName'];|" database.php
+sed -i "s|db[[:space:]]*= '';|db = $_ENV['$APPSETTING_DBName'];|" database.php
+sed -i "s|username[[:space:]]*= '';|username = $_ENV['$APPSETTING_DBUserName'];|" database.php
+sed -i "s|password[[:space:]]*= '';|password = $_ENV['$APPSETTING_DBPassword'];|" database.php
+sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = $_ENV['$APPSETTING_DBSslCa'];|" database.php
 
 sed -i "s/db_ssl_verify_server_cert = false;/db_ssl_verify_server_cert = true;/" database.php
 sed -i "s/$salt = '';/$salt = '$(echo $RANDOM | md5sum | head -c 20; echo;)';/" database.php
@@ -101,11 +99,13 @@ sed -i "s/$salt = '';/$salt = '$(echo $RANDOM | md5sum | head -c 20; echo;)';/" 
 ####################################################################################
 
 echo "Configuring REDCap recommended settings" >> /home/site/log-$stamp.txt
+
 sed -i "s|SMTP[[:space:]]*= ''|SMTP = '$APPSETTING_smtpFQDN'|" /home/site/repository/Files/settings.ini
 sed -i "s|smtp_port[[:space:]]*= |smtp_port = $APPSETTING_smtpPort|" /home/site/repository/Files/settings.ini
 sed -i "s|sendmail_from[[:space:]]*= ''|sendmail_from = '$APPSETTING_fromEmailAddress'|" /home/site/repository/Files/settings.ini
 sed -i "s|sendmail_path[[:space:]]*= ''|sendmail_path = '/usr/sbin/sendmail -t -i'|" /home/site/repository/Files/settings.ini
-cp /home/site/repository/Files/settings.ini /home/site/redcap.ini
+
+cp /home/site/repository/Files/settings.ini /home/site/ini/redcap.ini
 
 ####################################################################################
 #
@@ -115,7 +115,7 @@ cp /home/site/repository/Files/settings.ini /home/site/redcap.ini
 ####################################################################################
 
 echo "For better security, it is recommended that you enable the session.cookie_secure option in your web server's PHP.INI file" >> /home/site/log-$stamp.txt
-echo "session.cookie_secure = On" >> /home/site/redcap.ini
+echo "session.cookie_secure = On" >> /home/site/ini/redcap.ini
 
 ####################################################################################
 #
