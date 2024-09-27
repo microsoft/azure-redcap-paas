@@ -135,6 +135,17 @@ cp /home/site/repository/scripts/bash/postbuild.sh /home/site/deployments/tools/
 
 ####################################################################################
 #
+# Configure REDCap cronjob to run every minute
+#
+####################################################################################
+
+echo "Configuring REDCap cronjob to run every minute" >> /home/site/log-$stamp.txt
+
+service cron start
+(crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/php /home/site/wwwroot/cron.php > /dev/null")|crontab 
+
+####################################################################################
+#
 # Copy startup.sh /home for a custom startup
 #
 ####################################################################################
