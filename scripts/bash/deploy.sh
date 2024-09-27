@@ -20,7 +20,7 @@ stamp=$(date +%Y-%m-%d-%H-%M)
 ####################################################################################
 
 echo "Configuring mysqli extension" >> /home/site/log-$stamp.txt
-mkdir /home/site/ini
+mkdir -p /home/site/ini
 echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20220829/mysqli.so" >> /home/site/ini/extensions.ini
 
 ####################################################################################
@@ -30,6 +30,8 @@ echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20220829/mysqli.s
 # make a call # to REDCap community site and download it
 #
 ####################################################################################
+
+redcapZipPath="/tmp/redcap.zip"
 
 cd /tmp
 if [ -z "$APPSETTING_redcapAppZip" ]; then
@@ -50,7 +52,7 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
     export APPSETTING_zipVersion="latest"
   fi
   
-  wget --method=post -O /tmp/redcap.zip -q --body-data="username=$APPSETTING_redcapCommunityUsername&password=$APPSETTING_redcapCommunityPassword&version=$APPSETTING_zipVersion&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php
+  wget --method=post -O $redcapZipPath -q --body-data="username=$APPSETTING_redcapCommunityUsername&password=$APPSETTING_redcapCommunityPassword&version=$APPSETTING_zipVersion&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php
 
   # check to see if the redcap.zip file contains the word error
   if [ -z "$(grep -i error redcap.zip)" ]; then
@@ -62,14 +64,14 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
 
 else
   echo "Downloading REDCap zip file from storage" >> /home/site/log-$stamp.txt
-  wget -q -O /tmp/redcap.zip $APPSETTING_redcapAppZip
+  wget -q -O $redcapZipPath $APPSETTING_redcapAppZip
 fi
 
-rm -f /home/site/wwwroot/hostingstart.html
-unzip -oq /tmp/redcap.zip -d /tmp/wwwroot 
+rm -rf /home/site/wwwroot/*
+unzip -oq $redcapZipPath -d /tmp/wwwroot 
 mv -f /tmp/wwwroot/redcap/* /home/site/wwwroot/
 rm -rf /tmp/wwwroot
-rm /tmp/redcap.zip
+rm -f $redcapZipPath
 
 ####################################################################################
 #

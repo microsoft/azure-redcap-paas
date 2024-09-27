@@ -7,7 +7,7 @@
 
 echo -e "\nHello from install.sh"
 
-which mysql
+echo "mysql: $(which mysql)"
 
 ####################################################################################
 #
