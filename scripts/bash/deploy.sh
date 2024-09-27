@@ -67,8 +67,13 @@ else
   wget -q -O $redcapZipPath $APPSETTING_redcapAppZip
 fi
 
+echo "Unzipping redcap.zip" >> /home/site/log-$stamp.txt
+
 rm -rf /home/site/wwwroot/*
 unzip -oq $redcapZipPath -d /tmp/wwwroot 
+
+echo "Moving REDCap files to wwwroot" >> /home/site/log-$stamp.txt
+
 mv -f /tmp/wwwroot/redcap/* /home/site/wwwroot/
 rm -rf /tmp/wwwroot
 rm -f $redcapZipPath
