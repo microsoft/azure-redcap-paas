@@ -134,4 +134,4 @@ cp /home/site/repository/scripts/bash/postbuild.sh /home/site/deployments/tools/
 
 cp /home/site/repository/scripts/bash/startup.sh /home/startup.sh
 
-which mysql >> /home/site/log-$stamp.txt
+echo "mysql: $(which mysql)" >> /home/site/log-$stamp.txt
