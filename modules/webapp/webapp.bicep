@@ -2,7 +2,6 @@ param webAppName string
 param appServicePlanName string
 param location string
 param skuName string
-param skuTier string
 param tags object
 param linuxFxVersion string
 
@@ -29,6 +28,8 @@ param prerequisiteCommand string
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
 
+param enablePrivateEndpoint bool
+
 param smtpFQDN string = ''
 param smtpPort string = ''
 param smtpFromEmailAddress string = ''
@@ -48,7 +49,7 @@ resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   tags: tags
   sku: {
     name: skuName
-    tier: skuTier
+    //tier: skuTier
   }
   kind: 'linux'
   properties: {
@@ -76,10 +77,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
       ftpsState: 'FtpsOnly'
       appCommandLine: prerequisiteCommand
       appSettings: [
-        {
-          name: 'redcapAppZip'
-          value: redcapZipUrl
-        }
+        // REDCap runtime settings
         {
           name: 'DBHostName'
           value: dbHostName
@@ -96,6 +94,11 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'DBPassword'
           value: dbPasswordSecretRef
         }
+        // REDCap deployment settings
+        {
+          name: 'redcapAppZip'
+          value: redcapZipUrl
+        }
         {
           name: 'redcapCommunityUsername'
           value: redcapCommunityUsernameSecretRef
@@ -108,6 +111,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'DBSslCa'
           value: DBSslCa
         }
+        // SMTP, possibly legacy settings
         {
           name: 'smtpFQDN'
           value: smtpFQDN
@@ -120,6 +124,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'fromEmailAddress'
           value: smtpFromEmailAddress
         }
+        // END SMTP
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
           value: appInsights_instrumentationKey
@@ -132,6 +137,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
           value: '1'
         }
+        // EDOC configuration, used during deployment only
         {
           name: 'StorageKey'
           value: storageAccountKeySecretRef
@@ -144,9 +150,19 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'StorageContainerName'
           value: storageAccountContainerName
         }
+        // END EDOC
         {
           name: 'ENABLE_DYNAMIC_INSTALL'
           value: 'true'
+        }
+        {
+          name: 'PRE_BUILD_COMMAND'
+          value: 'apt-get update -qq && apt-get install default-mysql-client -yqq'
+        }
+        {
+          // HACK: 2024-09-24: svaelter: Re-added to ensure /home/site/ini/redcap.ini and /home/site/ini/extensions.ini gets processed
+          name: 'PHP_INI_SCAN_DIR'
+          value: '/usr/local/etc/php/conf.d:/home/site/ini'
         }
       ]
     }
@@ -177,10 +193,10 @@ resource sourcecontrol 'Microsoft.Web/sites/sourcecontrols@2022-09-01' = {
     branch: scmRepoBranch
     isManualIntegration: true
   }
-  dependsOn: [ privateDnsZoneGroupsWebApp ]
+  dependsOn: [privateDnsZoneGroupsWebApp]
 }
 
-resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = if (enablePrivateEndpoint) {
   name: 'pe-${webApp.name}'
   location: location
   properties: {
@@ -201,7 +217,7 @@ resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = {
   }
 }
 
-resource privateDnsZoneGroupsWebApp 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
+resource privateDnsZoneGroupsWebApp 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = if (enablePrivateEndpoint) {
   name: 'privatednszonegroup'
   parent: peWebApp
   properties: {

@@ -43,6 +43,8 @@ param prerequisiteCommand string = '/home/startup.sh'
 
 param deploymentTime string = utcNow()
 
+param enableAppServicePrivateEndpoint bool = true
+
 @description('The password to use for the MySQL Flexible Server admin account \'sqladmin\'.')
 @secure()
 param sqlPassword string
@@ -401,9 +403,8 @@ module webAppModule './modules/webapp/main.bicep' = {
     webAppName: webAppName
     appServicePlanName: planName
     location: location
-    // TODO: Consider deploying as P0V3 to ensure the deployment runs on a scale unit that supports P_v3 for future upgrades. GH issue #50
-    skuName: 'S1'
-    skuTier: 'Standard'
+    // Deploy as P0V3 to ensure the deployment runs on a scale unit that supports P_v3 for future upgrades. GH issue #50
+    skuName: 'P0V3'
     peSubnetId: privateEndpointSubnetId
     appInsights_connectionString: monitoring.outputs.appInsightsResourceId
     appInsights_instrumentationKey: monitoring.outputs.appInsightsInstrumentationKey
@@ -447,6 +448,8 @@ module webAppModule './modules/webapp/main.bicep' = {
     deploymentNameStructure: deploymentNameStructure
 
     uamiId: uamiModule.outputs.id
+
+    enablePrivateEndpoint: enableAppServicePrivateEndpoint
   }
 }
 
