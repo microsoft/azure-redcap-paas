@@ -47,6 +47,25 @@ param deploymentTime string = utcNow()
 @secure()
 param sqlPassword string
 
+@description('Whether High Availability is enabled for the MySQL Flexible Server. Zone redundant or same zone HA is determined by the value of availabilityZonesEnabled.')
+@allowed([
+  'Enabled'
+  'Disabled'
+])
+param mySqlHighAvailability string = 'Disabled'
+
+param mySqlSkuName string = 'Standard_B1s'
+
+@allowed([
+  'GeneralPurpose'
+  'MemoryOptimized'
+  'Burstable'
+])
+param mySqlSkuTier string = 'Burstable'
+@description('The size of the MySQL Flexible Server storage in GB. This cannot be scaled down after server creation.')
+param mySqlStorageSizeGB int = 20
+param mySqlStorageIops int = 396
+
 @description('The MySQL Flexible Server admin user account name. Defaults to \'sqladmin\'.')
 param sqlAdmin string = 'sqladmin'
 
@@ -57,8 +76,25 @@ param smtpPort string = ''
 @description('The email address to use as the sender for outgoing emails.')
 param smtpFromEmailAddress string = ''
 
+param appServiceSkuName string = 'P0v3'
+
+@description('Determines whether availability zone redundancy is enabled for the MySQL Flexible Server and the app service. The region must support availability zones.')
+param availabilityZonesEnabled bool = false
+
 var sequenceFormatted = format('{0:00}', sequence)
-var rgNamingStructure = replace(replace(replace(replace(replace(namingConvention, '{rtype}', 'rg'), '{workloadName}', '${workloadName}-{rgName}'), '{loc}', location), '{seq}', sequenceFormatted), '{env}', environment)
+var rgNamingStructure = replace(
+  replace(
+    replace(
+      replace(replace(namingConvention, '{rtype}', 'rg'), '{workloadName}', '${workloadName}-{rgName}'),
+      '{loc}',
+      location
+    ),
+    '{seq}',
+    sequenceFormatted
+  ),
+  '{env}',
+  environment
+)
 var vnetName = nameModule[0].outputs.shortName
 var strgName = nameModule[1].outputs.shortName
 var webAppName = nameModule[2].outputs.shortName
@@ -185,18 +221,20 @@ var resourceTypes = [
 ]
 
 @batchSize(1)
-module nameModule 'modules/common/createValidAzResourceName.bicep' = [for workload in resourceTypes: {
-  name: take(replace(deploymentNameStructure, '{rtype}', 'nameGen-${workload}'), 64)
-  params: {
-    location: location
-    environment: environment
-    namingConvention: namingConvention
-    resourceType: workload
-    sequence: sequence
-    workloadName: workloadName
-    addRandomChars: 4
+module nameModule 'modules/common/createValidAzResourceName.bicep' = [
+  for workload in resourceTypes: {
+    name: take(replace(deploymentNameStructure, '{rtype}', 'nameGen-${workload}'), 64)
+    params: {
+      location: location
+      environment: environment
+      namingConvention: namingConvention
+      resourceType: workload
+      sequence: sequence
+      workloadName: workloadName
+      addRandomChars: 4
+    }
   }
-}]
+]
 
 module rolesModule './modules/common/roles.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'roles'), 64)
@@ -205,7 +243,7 @@ module rolesModule './modules/common/roles.bicep' = {
 var storageAccountKeySecretName = 'storageKey'
 // The secrets object is converted to an array using the items() function, which alphabetically sorts it
 var defaultSecretNames = map(items(secrets), s => s.key)
-var additionalSecretNames = [ storageAccountKeySecretName ]
+var additionalSecretNames = [storageAccountKeySecretName]
 var secretNames = concat(defaultSecretNames, additionalSecretNames)
 
 // The output will be in alphabetical order
@@ -318,10 +356,10 @@ module mySqlModule './modules/sql/main.bicep' = {
     customTags: {
       workloadType: 'mySqlFlexibleServer'
     }
-    skuName: 'Standard_B1s'
-    SkuTier: 'Burstable'
-    StorageSizeGB: 20
-    StorageIops: 396
+    skuName: mySqlSkuName
+    SkuTier: mySqlSkuTier
+    StorageSizeGB: mySqlStorageSizeGB
+    StorageIops: mySqlStorageIops
     peSubnetId: virtualNetworkModule.outputs.subnets.MySQLFlexSubnet.id
     privateDnsZoneName: 'privatelink.mysql.database.azure.com'
     sqlAdminUser: sqlAdmin
@@ -329,6 +367,9 @@ module mySqlModule './modules/sql/main.bicep' = {
     mysqlVersion: '8.0.21'
     // TODO: Consider using workloadname + 'db'
     databaseName: 'redcapdb'
+
+    highAvailability: mySqlHighAvailability
+    availabilityZonesEnabled: availabilityZonesEnabled
 
     roles: rolesModule.outputs.roles
 
@@ -351,8 +392,8 @@ resource webAppResourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   name: replace(rgNamingStructure, '{rgName}', 'web')
   location: location
   tags: union(tags, {
-      workloadType: 'web'
-    })
+    workloadType: 'web'
+  })
 }
 
 module webAppModule './modules/webapp/main.bicep' = {
@@ -362,9 +403,7 @@ module webAppModule './modules/webapp/main.bicep' = {
     webAppName: webAppName
     appServicePlanName: planName
     location: location
-    // TODO: Consider deploying as P0V3 to ensure the deployment runs on a scale unit that supports P_v3 for future upgrades. GH issue #50
-    skuName: 'S1'
-    skuTier: 'Standard'
+    skuName: appServiceSkuName
     peSubnetId: virtualNetworkModule.outputs.subnets.PrivateLinkSubnet.id
     appInsights_connectionString: monitoring.outputs.appInsightsResourceId
     appInsights_instrumentationKey: monitoring.outputs.appInsightsInstrumentationKey
@@ -403,6 +442,8 @@ module webAppModule './modules/webapp/main.bicep' = {
     deploymentNameStructure: deploymentNameStructure
 
     uamiId: uamiModule.outputs.id
+
+    availabilityZonesEnabled: availabilityZonesEnabled
   }
 }
 

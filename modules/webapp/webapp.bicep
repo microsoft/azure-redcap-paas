@@ -2,7 +2,6 @@ param webAppName string
 param appServicePlanName string
 param location string
 param skuName string
-param skuTier string
 param tags object
 param linuxFxVersion string
 
@@ -29,6 +28,8 @@ param prerequisiteCommand string
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
 
+param availabiltyZonesEnabled bool = false
+
 param smtpFQDN string = ''
 param smtpPort string = ''
 param smtpFromEmailAddress string = ''
@@ -48,11 +49,11 @@ resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   tags: tags
   sku: {
     name: skuName
-    tier: skuTier
   }
   kind: 'linux'
   properties: {
     reserved: true
+    zoneRedundant: availabiltyZonesEnabled
   }
 }
 
@@ -177,7 +178,7 @@ resource sourcecontrol 'Microsoft.Web/sites/sourcecontrols@2022-09-01' = {
     branch: scmRepoBranch
     isManualIntegration: true
   }
-  dependsOn: [ privateDnsZoneGroupsWebApp ]
+  dependsOn: [privateDnsZoneGroupsWebApp]
 }
 
 resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = {

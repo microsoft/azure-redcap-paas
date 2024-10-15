@@ -16,10 +16,7 @@ param deploymentScriptName string
 
 @description('MySQL version')
 @allowed([
-  // TODO: Remove 5.7
-  '5.7'
   '8.0.21'
-  //'8.0.32'
 ])
 param mysqlVersion string = '8.0.21'
 
@@ -36,6 +33,14 @@ param skuName string = 'Standard_B1s'
   'Burstable'
 ])
 param SkuTier string
+
+@allowed([
+  'Enabled'
+  'Disabled'
+])
+param highAvailability string = 'Disabled'
+
+param availabilityZonesEnabled bool = false
 
 @description('Azure database for MySQL storage Size ')
 param StorageSizeGB int = 20
@@ -79,6 +84,9 @@ module mysqlDbserver './sql.bicep' = {
     databaseName: databaseName
     database_charset: database_charset
     database_collation: database_collation
+
+    highAvailability: (highAvailability == 'Enabled') ? true : false
+    availabilityZonesEnabled: availabilityZonesEnabled
 
     roles: roles
     uamiId: uamiId
