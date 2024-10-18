@@ -36,7 +36,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
             ? {
                 id: networkSecurityGroupId
               }
-            : {}
+            : null
           delegations: contains(subnet.value, 'delegation') && !empty(subnet.value.delegation)
             ? [
                 {
