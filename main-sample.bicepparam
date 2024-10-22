@@ -18,8 +18,8 @@ param vnetAddressSpace = '10.0.0.0/24'
 //    Do not specify a URL if you are using this option. The deployment script will download the zip file from the REDCap community.
 param redcapZipUrl = '<Valid Redcap Zip URL>'
 // -- OR --
-param redcapCommunityUsername = '<Valid Redcap Community Username>'
-param redcapCommunityPassword = '<Valid Redcap Community Password>'
+param redcapCommunityUsername = '<Valid REDCap Community Username>'
+param redcapCommunityPassword = '<Valid REDCap Community Password>'
 
 // These values are used to configure the App Service Deployment Center.
 // The defaults below are the Microsoft-maintained Azure REDCap PaaS repository.
