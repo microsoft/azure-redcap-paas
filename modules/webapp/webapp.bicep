@@ -43,7 +43,7 @@ param minTlsVersion string = '1.2'
 
 param uamiId string
 
-resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+resource appSrvcPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: appServicePlanName
   location: location
   tags: tags
@@ -59,7 +59,7 @@ resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
 
 var DBSslCa = '/home/site/wwwroot/DigiCertGlobalRootCA.crt.pem'
 
-resource webApp 'Microsoft.Web/sites@2022-03-01' = {
+resource webApp 'Microsoft.Web/sites@2023-12-01' = {
   name: webAppName
   location: location
   tags: tags
@@ -162,7 +162,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
 
 // SCM Basic Authentication is required when using the App Service Build Service
 // Per https://learn.microsoft.com/en-us/azure/app-service/deploy-continuous-deployment?tabs=github%2Cappservice#what-are-the-build-providers
-resource basicScmCredentials 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-01-01' = {
+resource basicScmCredentials 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-12-01' = {
   parent: webApp
   name: 'scm'
   properties: {
@@ -170,7 +170,7 @@ resource basicScmCredentials 'Microsoft.Web/sites/basicPublishingCredentialsPoli
   }
 }
 
-resource sourcecontrol 'Microsoft.Web/sites/sourcecontrols@2022-09-01' = {
+resource sourcecontrol 'Microsoft.Web/sites/sourcecontrols@2023-12-01' = {
   parent: webApp
   name: 'web'
   properties: {
