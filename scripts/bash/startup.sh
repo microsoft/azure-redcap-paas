@@ -16,5 +16,5 @@ apt-get update -qq && apt-get install sendmail -yqq
 #
 ####################################################################################
 
-# service cron start
-# (crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/php /home/site/wwwroot/cron.php > /dev/null")|crontab 
+service cron start
+(crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/php /home/site/wwwroot/cron.php > /dev/null")|crontab 
