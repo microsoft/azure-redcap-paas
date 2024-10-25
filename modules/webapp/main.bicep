@@ -33,6 +33,7 @@ param scmRepoUrl string
 param scmRepoBranch string
 @secure()
 param redcapZipUrl string
+param redcapVersion string = ''
 #disable-next-line secure-secrets-in-params
 param redcapCommunityUsernameSecretRef string
 #disable-next-line secure-secrets-in-params
@@ -72,6 +73,7 @@ module appService 'webapp.bicep' = {
     redcapZipUrl: redcapZipUrl
     redcapCommunityUsernameSecretRef: redcapCommunityUsernameSecretRef
     redcapCommunityPasswordSecretRef: redcapCommunityPasswordSecretRef
+    redcapVersion: redcapVersion
 
     scmRepoUrl: scmRepoUrl
     scmRepoBranch: scmRepoBranch

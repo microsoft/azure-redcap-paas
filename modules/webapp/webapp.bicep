@@ -21,6 +21,7 @@ param redcapZipUrl string
 param redcapCommunityUsernameSecretRef string
 #disable-next-line secure-secrets-in-params
 param redcapCommunityPasswordSecretRef string
+param redcapVersion string = ''
 param scmRepoUrl string
 param scmRepoBranch string
 param prerequisiteCommand string
@@ -96,6 +97,10 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'DBPassword'
           value: dbPasswordSecretRef
+        }
+        {
+          name: 'zipVersion'
+          value: redcapVersion
         }
         {
           name: 'redcapCommunityUsername'

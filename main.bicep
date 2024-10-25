@@ -34,6 +34,8 @@ param redcapCommunityUsername string
 @description('REDCap Community site password for downloading the REDCap zip file.')
 @secure()
 param redcapCommunityPassword string
+@description('The version of REDCap to download from the REDCap Community. This is not used when specifying a ZIP URL.')
+param redcapVersion string = ''
 @description('Github Repo URL where build scripts are downloaded from')
 param scmRepoUrl string = 'https://github.com/microsoft/azure-redcap-paas'
 @description('Github Repo Branch where build scripts are downloaded from')
@@ -423,6 +425,7 @@ module webAppModule './modules/webapp/main.bicep' = {
 
     redcapCommunityUsernameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[1]
     redcapCommunityPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[0]
+    redcapVersion: redcapVersion
 
     storageAccountKeySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[4]
     storageAccountContainerName: storageAccountModule.outputs.containerName
