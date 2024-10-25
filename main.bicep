@@ -4,11 +4,11 @@ targetScope = 'subscription'
 param location string = 'eastus'
 
 @description('The environment designator for the deployment. Replaces {env} in namingConvention.')
-@allowed([
-  'test'
-  'demo'
-  'prod'
-])
+// @allowed([
+//   'test'
+//   'demo'
+//   'prod'
+// ])
 param environment string = 'demo'
 @description('The workload name. Replaces {workloadName} in namingConvention.')
 param workloadName string = 'redcap'
