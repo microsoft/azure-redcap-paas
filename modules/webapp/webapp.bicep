@@ -156,10 +156,6 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           value: 'true'
         }
         {
-          name: 'PRE_BUILD_COMMAND'
-          value: 'apt-get update -qq && apt-get install default-mysql-client -yqq'
-        }
-        {
           // HACK: 2024-09-24: svaelter: Re-added to ensure /home/site/ini/redcap.ini and /home/site/ini/extensions.ini gets processed
           name: 'PHP_INI_SCAN_DIR'
           value: '/usr/local/etc/php/conf.d:/home/site/ini'
