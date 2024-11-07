@@ -59,8 +59,8 @@ param smtpPort string = ''
 @description('The email address to use as the sender for outgoing emails.')
 param smtpFromEmailAddress string = ''
 
-param existingPrivateDnsZonesResourceGroupId string
-param existingVirtualNetworkId string
+param existingPrivateDnsZonesResourceGroupId string = ''
+param existingVirtualNetworkId string = ''
 
 var sequenceFormatted = format('{0:00}', sequence)
 var rgNamingStructure = replace(
@@ -356,7 +356,7 @@ module mySqlModule './modules/sql/main.bicep' = {
     customTags: {
       workloadType: 'mySqlFlexibleServer'
     }
-    skuName: 'Standard_B1s'
+    skuName: 'Standard_B1ms'
     SkuTier: 'Burstable'
     StorageSizeGB: 20
     StorageIops: 396
