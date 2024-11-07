@@ -18,10 +18,7 @@ param deploymentScriptName string
 
 @description('MySQL version')
 @allowed([
-  // TODO: Remove 5.7
-  '5.7'
   '8.0.21'
-  //'8.0.32'
 ])
 param mysqlVersion string = '8.0.21'
 
@@ -29,7 +26,7 @@ param mysqlVersion string = '8.0.21'
 param sqlAdminPasword string
 
 @description('Azure database for MySQL sku name ')
-param skuName string = 'Standard_B1s'
+param skuName string = 'Standard_B1ms'
 
 @description('Azure database for MySQL pricing tier')
 @allowed([
