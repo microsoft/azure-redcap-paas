@@ -19,8 +19,8 @@ apt-get update -qq && apt-get install cron sendmail -yqq
 # Export the database connection environment variables to /etc/environment so cron can use them
 # We do this in startup.sh so that each container instance will get this file (it's outside of /home so not persisted)
 # and also because then updates to the environment variables will be picked up by cron
-echo "DBHostName=$DBHostName" >> /etc/environment
-echo "DBName=$DBName" >> /etc/environment
+echo "DBHostName=$DBHostName" > /etc/environment # Overwrite the file with the first statement
+echo "DBName=$DBName" >> /etc/environment # Append all the other lines
 echo "DBUserName=$DBUserName" >> /etc/environment
 echo "DBPassword=$DBPassword" >> /etc/environment
 echo "DBSslCa=$DBSslCa" >> /etc/environment
