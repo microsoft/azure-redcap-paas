@@ -16,12 +16,14 @@ apt-get update -qq && apt-get install cron sendmail -yqq
 #
 ####################################################################################
 
-# Export environment variables so cron can run cron.php successfully
-export APPSETTING_DBUserName=$APPSETTING_DBUserName
-export APPSETTING_DBHostName=$APPSETTING_DBHostName
-export APPSETTING_DBPassword=$APPSETTING_DBPassword
-export APPSETTING_DBName=$APPSETTING_DBName
-export APPSETTING_DBSslCa=$APPSETTING_DBSslCa
+# Export the database connection environment variables to /etc/environment so cron can use them
+# We do this in startup.sh so that each container instance will get this file (it's outside of /home so not persisted)
+# and also because then updates to the environment variables will be picked up by cron
+echo "DBHostName=$DBHostName" >> /etc/environment
+echo "DBName=$DBName" >> /etc/environment
+echo "DBUserName=$DBUserName" >> /etc/environment
+echo "DBPassword=$DBPassword" >> /etc/environment
+echo "DBSslCa=$DBSslCa" >> /etc/environment
 
 service cron start
 (crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/php /home/site/wwwroot/cron.php > /dev/null")|crontab 
