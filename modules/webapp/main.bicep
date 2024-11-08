@@ -41,6 +41,8 @@ param prerequisiteCommand string
 
 param existingPrivateDnsZonesResourceGroupId string = ''
 
+param timeZone string = 'UTC'
+
 param uamiId string
 
 // Disabling this check because this is not a secret; it's a reference to Key Vault
@@ -92,6 +94,8 @@ module appService 'webapp.bicep' = {
     uamiId: uamiId
 
     enablePrivateEndpoint: enablePrivateEndpoint
+
+    timeZone: timeZone
   }
 }
 

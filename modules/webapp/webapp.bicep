@@ -34,6 +34,8 @@ param smtpFQDN string = ''
 param smtpPort string = ''
 param smtpFromEmailAddress string = ''
 
+param timeZone string = 'UTC'
+
 // This is not a secret, it's a Key Vault reference
 #disable-next-line secure-secrets-in-params
 param storageAccountKeySecretRef string
@@ -159,6 +161,10 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           // Ensure /home/site/ini/redcap.ini and /home/site/ini/extensions.ini gets processed
           name: 'PHP_INI_SCAN_DIR'
           value: '/usr/local/etc/php/conf.d:/home/site/ini'
+        }
+        {
+          name: 'WEBSITE_TIME_ZONE'
+          value: timeZone
         }
       ]
     }

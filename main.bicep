@@ -62,6 +62,8 @@ param smtpFromEmailAddress string = ''
 param existingPrivateDnsZonesResourceGroupId string = ''
 param existingVirtualNetworkId string = ''
 
+param appServiceTimeZone string = 'UTC'
+
 var sequenceFormatted = format('{0:00}', sequence)
 var rgNamingStructure = replace(
   replace(
@@ -450,6 +452,8 @@ module webAppModule './modules/webapp/main.bicep' = {
     uamiId: uamiModule.outputs.id
 
     enablePrivateEndpoint: enableAppServicePrivateEndpoint
+
+    timeZone: appServiceTimeZone
   }
 }
 
