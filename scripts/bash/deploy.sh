@@ -90,11 +90,11 @@ cd /home/site/wwwroot
 
 wget --no-check-certificate https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem
 
-sed -i "s|hostname[[:space:]]*= '';|hostname = getenv('APPSETTING_DBHostName');|" database.php
-sed -i "s|db[[:space:]]*= '';|db = getenv('APPSETTING_DBName');|" database.php
-sed -i "s|username[[:space:]]*= '';|username = getenv('APPSETTING_DBUserName');|" database.php
-sed -i "s|password[[:space:]]*= '';|password = getenv('APPSETTING_DBPassword');|" database.php
-sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = getenv('APPSETTING_DBSslCa');|" database.php
+sed -i "s|hostname[[:space:]]*= '';|hostname = getenv('DBHostName');|" database.php
+sed -i "s|db[[:space:]]*= '';|db = getenv('DBName');|" database.php
+sed -i "s|username[[:space:]]*= '';|username = getenv('DBUserName');|" database.php
+sed -i "s|password[[:space:]]*= '';|password = getenv('DBPassword');|" database.php
+sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = getenv('DBSslCa');|" database.php
 
 sed -i "s/db_ssl_verify_server_cert = false;/db_ssl_verify_server_cert = true;/" database.php
 sed -i "s/$salt = '';/$salt = '$(echo $RANDOM | md5sum | head -c 20; echo;)';/" database.php
@@ -141,4 +141,4 @@ cp /home/site/repository/scripts/bash/postbuild.sh /home/site/deployments/tools/
 
 cp /home/site/repository/scripts/bash/startup.sh /home/startup.sh
 
-echo "mysql: $(which mysql)" >> /home/site/log-$stamp.txt
+#echo "mysql: $(which mysql)" >> /home/site/log-$stamp.txt
