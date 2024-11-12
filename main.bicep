@@ -4,11 +4,11 @@ targetScope = 'subscription'
 param location string = 'eastus'
 
 @description('The environment designator for the deployment. Replaces {env} in namingConvention.')
-@allowed([
-  'test'
-  'demo'
-  'prod'
-])
+// @allowed([
+//   'test'
+//   'demo'
+//   'prod'
+// ])
 param environment string = 'demo'
 @description('The workload name. Replaces {workloadName} in namingConvention.')
 param workloadName string = 'redcap'
@@ -34,6 +34,8 @@ param redcapCommunityUsername string
 @description('REDCap Community site password for downloading the REDCap zip file.')
 @secure()
 param redcapCommunityPassword string
+@description('The version of REDCap to download from the REDCap Community. This is not used when specifying a ZIP URL.')
+param redcapVersion string = ''
 @description('Github Repo URL where build scripts are downloaded from')
 param scmRepoUrl string = 'https://github.com/microsoft/azure-redcap-paas'
 @description('Github Repo Branch where build scripts are downloaded from')
@@ -49,6 +51,25 @@ param enableAppServicePrivateEndpoint bool = true
 @secure()
 param sqlPassword string
 
+@description('Whether High Availability is enabled for the MySQL Flexible Server. Zone redundant or same zone HA is determined by the value of availabilityZonesEnabled.')
+@allowed([
+  'Enabled'
+  'Disabled'
+])
+param mySqlHighAvailability string = 'Disabled'
+
+param mySqlSkuName string = 'Standard_B1ms'
+
+@allowed([
+  'GeneralPurpose'
+  'MemoryOptimized'
+  'Burstable'
+])
+param mySqlSkuTier string = 'Burstable'
+@description('The size of the MySQL Flexible Server storage in GB. This cannot be scaled down after server creation.')
+param mySqlStorageSizeGB int = 20
+param mySqlStorageIops int = 396
+
 @description('The MySQL Flexible Server admin user account name. Defaults to \'sqladmin\'.')
 param sqlAdmin string = 'sqladmin'
 
@@ -59,6 +80,10 @@ param smtpPort string = ''
 @description('The email address to use as the sender for outgoing emails.')
 param smtpFromEmailAddress string = ''
 
+param appServiceSkuName string = 'P0v3'
+
+@description('Determines whether availability zone redundancy is enabled for the MySQL Flexible Server and the app service. The region must support availability zones.')
+param availabilityZonesEnabled bool = false
 param existingPrivateDnsZonesResourceGroupId string = ''
 param existingVirtualNetworkId string = ''
 
@@ -358,10 +383,10 @@ module mySqlModule './modules/sql/main.bicep' = {
     customTags: {
       workloadType: 'mySqlFlexibleServer'
     }
-    skuName: 'Standard_B1ms'
-    SkuTier: 'Burstable'
-    StorageSizeGB: 20
-    StorageIops: 396
+    skuName: mySqlSkuName
+    SkuTier: mySqlSkuTier
+    StorageSizeGB: mySqlStorageSizeGB
+    StorageIops: mySqlStorageIops
     peSubnetId: empty(existingVirtualNetworkId)
       ? virtualNetworkModule.outputs.subnets.MySQLFlexSubnet.id
       : '${existingVirtualNetworkId}/subnets/${subnets.MySQLFlexSubnet.existingSubnetName}'
@@ -372,6 +397,9 @@ module mySqlModule './modules/sql/main.bicep' = {
     mysqlVersion: '8.0.21'
     // TODO: Consider using workloadname + 'db'
     databaseName: 'redcapdb'
+
+    highAvailability: mySqlHighAvailability
+    availabilityZonesEnabled: availabilityZonesEnabled
 
     roles: rolesModule.outputs.roles
 
@@ -405,8 +433,7 @@ module webAppModule './modules/webapp/main.bicep' = {
     webAppName: webAppName
     appServicePlanName: planName
     location: location
-    // Deploy as P0V3 to ensure the deployment runs on a scale unit that supports P_v3 for future upgrades. GH issue #50
-    skuName: 'P0V3'
+    skuName: appServiceSkuName
     peSubnetId: privateEndpointSubnetId
     appInsights_connectionString: monitoring.outputs.appInsightsResourceId
     appInsights_instrumentationKey: monitoring.outputs.appInsightsInstrumentationKey
@@ -429,6 +456,7 @@ module webAppModule './modules/webapp/main.bicep' = {
 
     redcapCommunityUsernameSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[1]
     redcapCommunityPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[0]
+    redcapVersion: redcapVersion
 
     storageAccountKeySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[4]
     storageAccountContainerName: storageAccountModule.outputs.containerName
@@ -451,6 +479,7 @@ module webAppModule './modules/webapp/main.bicep' = {
 
     uamiId: uamiModule.outputs.id
 
+    availabilityZonesEnabled: availabilityZonesEnabled
     enablePrivateEndpoint: enableAppServicePrivateEndpoint
 
     timeZone: appServiceTimeZone

@@ -15,6 +15,8 @@ param privateDnsZoneName string
 param virtualNetworkId string
 param integrationSubnetId string
 
+param availabilityZonesEnabled bool = false
+
 param smtpFQDN string = ''
 param smtpPort string = ''
 param smtpFromEmailAddress string = ''
@@ -33,6 +35,7 @@ param scmRepoUrl string
 param scmRepoBranch string
 @secure()
 param redcapZipUrl string
+param redcapVersion string = ''
 #disable-next-line secure-secrets-in-params
 param redcapCommunityUsernameSecretRef string
 #disable-next-line secure-secrets-in-params
@@ -78,6 +81,7 @@ module appService 'webapp.bicep' = {
     redcapZipUrl: redcapZipUrl
     redcapCommunityUsernameSecretRef: redcapCommunityUsernameSecretRef
     redcapCommunityPasswordSecretRef: redcapCommunityPasswordSecretRef
+    redcapVersion: redcapVersion
 
     scmRepoUrl: scmRepoUrl
     scmRepoBranch: scmRepoBranch
@@ -93,6 +97,7 @@ module appService 'webapp.bicep' = {
 
     uamiId: uamiId
 
+    availabiltyZonesEnabled: availabilityZonesEnabled
     enablePrivateEndpoint: enablePrivateEndpoint
 
     timeZone: timeZone

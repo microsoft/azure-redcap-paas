@@ -18,8 +18,8 @@ param vnetAddressSpace = '10.0.0.0/24'
 //    Do not specify a URL if you are using this option. The deployment script will download the zip file from the REDCap community.
 param redcapZipUrl = '<Valid Redcap Zip URL>'
 // -- OR --
-param redcapCommunityUsername = '<Valid Redcap Community Username>'
-param redcapCommunityPassword = '<Valid Redcap Community Password>'
+param redcapCommunityUsername = '<Valid REDCap Community Username>'
+param redcapCommunityPassword = '<Valid REDCap Community Password>'
 
 // These values are used to configure the App Service Deployment Center.
 // The defaults below are the Microsoft-maintained Azure REDCap PaaS repository.
@@ -41,4 +41,26 @@ param smtpFromEmailAddress = '<Specify valid SMTP From Email Address>'
 // A new password is generated for each deployment and stored in Key Vault.
 param sqlPassword = ''
 
-param appServiceTimeZone = 'UTC'
+// param existingVirtualNetworkId = '/subscriptions/c236b7b3-dec1-47a6-856c-8c1f45d88575/resourceGroups/redcap-networkexisting-test-rg-cnc-01/providers/Microsoft.Network/virtualNetworks/redcap-existing-demo-vnet-cnc-01'
+// param existingPrivateDnsZonesResourceGroupId = '/subscriptions/c236b7b3-dec1-47a6-856c-8c1f45d88575/resourceGroups/redcap-networkexisting-test-rg-cnc-01'
+
+// param subnets = {
+//   PrivateLinkSubnet: {
+//     existingSubnetName: 'PlSubnet'
+//   }
+//   MySQLFlexSubnet: {
+//     existingSubnetName: 'SqlSubnet'
+//   }
+//   IntegrationSubnet: {
+//     existingSubnetName: 'WebAppSubnet'
+//   }
+// }
+
+// param mySqlSkuTier = 'GeneralPurpose'
+// param mySqlHighAvailability = 'Enabled'
+// param mySqlSkuName = 'Standard_D4ds_v4'
+// param availabilityZonesEnabled = true
+// param mySqlStorageSizeGB = 200
+// param mySqlStorageIops = 1200
+
+// param appServiceTimeZone = 'UTC'

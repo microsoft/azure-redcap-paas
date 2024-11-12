@@ -6,7 +6,7 @@ param tags object
 
 // TODO: skuName and SkuTier are related; should be specified as a single object param, IMHO
 @description('Azure database for MySQL sku name ')
-param skuName string = 'Standard_B1s'
+param skuName string = 'Standard_B1ms'
 
 @description('Azure database for MySQL pricing tier')
 @allowed([
@@ -53,11 +53,9 @@ param geoRedundantBackup string = 'Disabled'
 
 param backupRetentionDays int = 7
 
-@allowed([
-  'Enabled'
-  'Disabled'
-])
-param highAvailability string = 'Disabled'
+param highAvailability bool = false
+
+param availabilityZonesEnabled bool = false
 
 @allowed([
   'Enabled'
@@ -90,7 +88,9 @@ resource server 'Microsoft.DBforMySQL/flexibleServers@2022-09-30-preview' = {
       geoRedundantBackup: geoRedundantBackup
     }
     highAvailability: {
-      mode: highAvailability
+      mode: (highAvailability && availabilityZonesEnabled)
+        ? 'ZoneRedundant'
+        : (highAvailability) ? 'SameZone' : 'Disabled'
     }
     network: {
       delegatedSubnetResourceId: peSubnetId
@@ -143,7 +143,7 @@ resource dbConfigDeploymentScript 'Microsoft.Resources/deploymentScripts@2020-10
     scriptContent: 'az mysql flexible-server parameter set -g ${resourceGroup().name} --server-name ${server.name} --name sql_generate_invisible_primary_key --value OFF'
   }
   tags: tags
-  dependsOn: [ uamiMySqlRoleAssignmentModule ]
+  dependsOn: [uamiMySqlRoleAssignmentModule]
 }
 
 output mySqlServerName string = server.name

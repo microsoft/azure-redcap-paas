@@ -21,6 +21,7 @@ param redcapZipUrl string
 param redcapCommunityUsernameSecretRef string
 #disable-next-line secure-secrets-in-params
 param redcapCommunityPasswordSecretRef string
+param redcapVersion string = ''
 param scmRepoUrl string
 param scmRepoBranch string
 param prerequisiteCommand string
@@ -28,6 +29,7 @@ param prerequisiteCommand string
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
 
+param availabiltyZonesEnabled bool = false
 param enablePrivateEndpoint bool
 
 param smtpFQDN string = ''
@@ -45,23 +47,23 @@ param minTlsVersion string = '1.2'
 
 param uamiId string
 
-resource appSrvcPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+resource appSrvcPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: appServicePlanName
   location: location
   tags: tags
   sku: {
     name: skuName
-    //tier: skuTier
   }
   kind: 'linux'
   properties: {
     reserved: true
+    zoneRedundant: availabiltyZonesEnabled
   }
 }
 
 var DBSslCa = '/home/site/wwwroot/DigiCertGlobalRootCA.crt.pem'
 
-resource webApp 'Microsoft.Web/sites@2022-03-01' = {
+resource webApp 'Microsoft.Web/sites@2023-12-01' = {
   name: webAppName
   location: location
   tags: tags
@@ -100,6 +102,10 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
         {
           name: 'redcapAppZip'
           value: redcapZipUrl
+        }
+        {
+          name: 'zipVersion'
+          value: redcapVersion
         }
         {
           name: 'redcapCommunityUsername'
@@ -179,7 +185,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
 
 // SCM Basic Authentication is required when using the App Service Build Service
 // Per https://learn.microsoft.com/en-us/azure/app-service/deploy-continuous-deployment?tabs=github%2Cappservice#what-are-the-build-providers
-resource basicScmCredentials 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-01-01' = {
+resource basicScmCredentials 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-12-01' = {
   parent: webApp
   name: 'scm'
   properties: {
@@ -187,7 +193,7 @@ resource basicScmCredentials 'Microsoft.Web/sites/basicPublishingCredentialsPoli
   }
 }
 
-resource sourcecontrol 'Microsoft.Web/sites/sourcecontrols@2022-09-01' = {
+resource sourcecontrol 'Microsoft.Web/sites/sourcecontrols@2023-12-01' = {
   parent: webApp
   name: 'web'
   properties: {

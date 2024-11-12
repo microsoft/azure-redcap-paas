@@ -48,6 +48,8 @@ To deploy the REDCap source to Azure App Service, you must supply your REDCap Co
 
 (1) Review <https://learn.microsoft.com/azure/mysql/flexible-server/concepts-service-tiers-storage> for details on available features, regions, and pricing models for Azure DB for MySQL.
 
+Advanced deployments can enable high availability for the MySQL Flexible Server and availability zone redundancy for the MySQL Flexible Server and web app. These capabilities can be controlled using parameters for the Bicep deployment.
+
 <!--(2) SendGrid is a paid service with a free tier offering 25k messages per month, with additional paid tiers offering more volume, whitelisting, custom domains, etc. There is a limit of two instances per subscription using the free tier. For more information see <https://docs.microsoft.com/en-us/azure/store-sendgrid-php-how-to-send-email#create-a-sendgrid-account>. The service will be accessed initially using the password you enter in the deployment template. You can click "Manage" on the SendGrid service after deployment to administrate the service in their portal, including options to create an API key that can be used for access instead of the password.
 
 If after deployment, you would instead like to use a different SMTP relay, edit the values "smtp_fqdn_name", "smtp_port", "smtp_user_name", and "smtp_password" to point to your preferred endpoint. You can then delete the SendGrid service from this resource group.

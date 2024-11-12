@@ -13,6 +13,7 @@ param subnets object
 param tags object
 
 param customDnsIPs array
+param networkSecurityGroupId string = ''
 
 var subnetDefsArray = items(subnets)
 
@@ -30,6 +31,11 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
         name: subnet.key
         properties: {
           addressPrefix: subnet.value.addressPrefix
+          networkSecurityGroup: !empty(networkSecurityGroupId)
+            ? {
+                id: networkSecurityGroupId
+              }
+            : null
           serviceEndpoints: subnet.value.?serviceEndpoints
           delegations: contains(subnet.value, 'delegation') && !empty(subnet.value.delegation)
             ? [
