@@ -58,7 +58,7 @@ param sqlPassword string
 ])
 param mySqlHighAvailability string = 'Disabled'
 
-param mySqlSkuName string = 'Standard_B1s'
+param mySqlSkuName string = 'Standard_B1ms'
 
 @allowed([
   'GeneralPurpose'

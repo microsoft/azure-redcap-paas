@@ -6,7 +6,7 @@ param tags object
 
 // TODO: skuName and SkuTier are related; should be specified as a single object param, IMHO
 @description('Azure database for MySQL sku name ')
-param skuName string = 'Standard_B1s'
+param skuName string = 'Standard_B1ms'
 
 @description('Azure database for MySQL pricing tier')
 @allowed([
