@@ -67,7 +67,7 @@ $DeploymentResult = New-AzDeployment @CmdLetParameters
 if ($DeploymentResult.ProvisioningState -eq 'Succeeded') {
     Write-Host "🔥 Deployment succeeded."
 
-    $DeploymentResult.Outputs
+    $DeploymentResult.Outputs | Format-Table -Property Key, @{Name = 'Value'; Expression = { $_.Value.Value } }
 }
 else {
     $DeploymentResult

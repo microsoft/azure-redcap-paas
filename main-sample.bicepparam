@@ -40,3 +40,5 @@ param smtpFromEmailAddress = '<Specify valid SMTP From Email Address>'
 // This parameter is required to ensure the parameter file is valid, but should be blank so the password doesn't leak. 
 // A new password is generated for each deployment and stored in Key Vault.
 param sqlPassword = ''
+
+param appServiceTimeZone = 'UTC'

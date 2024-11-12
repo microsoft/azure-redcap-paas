@@ -34,3 +34,4 @@ module vNetModule 'vnet.bicep' = {
 
 output virtualNetworkId string = vNetModule.outputs.virtualNetworkId
 output subnets object = reduce(vNetModule.outputs.subnets, {}, (cur, next) => union(cur, next))
+output resourceGroupId string = resourceGroup.id
