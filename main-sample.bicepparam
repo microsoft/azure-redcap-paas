@@ -56,10 +56,11 @@ param sqlPassword = ''
 //   }
 // }
 
-param mySqlSkuTier = 'GeneralPurpose'
-param mySqlHighAvailability = 'Enabled'
-param mySqlSkuName = 'Standard_D4ds_v4'
-param availabilityZonesEnabled = true
-param mySqlStorageSizeGB = 200
-param mySqlStorageIops = 1200
-param appServiceTimeZone = 'UTC'
+// param mySqlSkuTier = 'GeneralPurpose'
+// param mySqlHighAvailability = 'Enabled'
+// param mySqlSkuName = 'Standard_D4ds_v4'
+// param availabilityZonesEnabled = true
+// param mySqlStorageSizeGB = 200
+// param mySqlStorageIops = 1200
+
+// param appServiceTimeZone = 'UTC'
