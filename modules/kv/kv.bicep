@@ -11,10 +11,12 @@ param peSubnetId string
 
 param deploymentNameStructure string
 
-param roleAssignments array = [ {
+param roleAssignments array = [
+  {
     RoleDefinitionId: ''
     objectId: ''
-  } ]
+  }
+]
 param privateDnsZoneId string
 
 @secure()
@@ -60,14 +62,19 @@ module keyVaultSecretsModule 'kvSecrets.bicep' = {
   }
 }
 
-resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for roleAssignment in roleAssignments: {
-  scope: keyVault
-  name: guid(keyVault.id, roleAssignment.objectId, roleAssignment.RoleDefinitionId)
-  properties: {
-    roleDefinitionId: roleAssignment.RoleDefinitionId
-    principalId: roleAssignment.objectId
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = [
+  for roleAssignment in roleAssignments: {
+    scope: keyVault
+    name: guid(keyVault.id, roleAssignment.objectId, roleAssignment.RoleDefinitionId)
+    properties: {
+      roleDefinitionId: roleAssignment.RoleDefinitionId
+      principalId: roleAssignment.objectId
+      principalType: contains(roleAssignment, 'principalType') && !empty(roleAssignment.principalType)
+        ? roleAssignment.principalType
+        : null
+    }
   }
-}]
+]
 
 resource pekeyVault 'Microsoft.Network/privateEndpoints@2022-07-01' = {
   name: 'pe-${keyVaultName}'

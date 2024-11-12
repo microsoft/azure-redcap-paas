@@ -29,6 +29,8 @@ param storageAccountContainerName string
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
 
+param enablePrivateEndpoint bool
+
 param scmRepoUrl string
 param scmRepoBranch string
 @secure()
@@ -39,6 +41,10 @@ param redcapCommunityUsernameSecretRef string
 #disable-next-line secure-secrets-in-params
 param redcapCommunityPasswordSecretRef string
 param prerequisiteCommand string
+
+param existingPrivateDnsZonesResourceGroupId string = ''
+
+param timeZone string = 'UTC'
 
 param uamiId string
 
@@ -64,7 +70,9 @@ module appService 'webapp.bicep' = {
     dbPasswordSecretRef: dbPasswordSecretRef
     dbUserNameSecretRef: dbUserNameSecretRef
     peSubnetId: peSubnetId
-    privateDnsZoneId: privateDns.outputs.privateDnsId
+    privateDnsZoneId: empty(existingPrivateDnsZonesResourceGroupId)
+      ? privateDns.outputs.privateDnsId
+      : '${existingPrivateDnsZonesResourceGroupId}/providers/Microsoft.Network/privateDnsZones/${privateDnsZoneName}'
     integrationSubnetId: integrationSubnetId
 
     appInsights_connectionString: appInsights_connectionString
@@ -90,10 +98,13 @@ module appService 'webapp.bicep' = {
     uamiId: uamiId
 
     availabiltyZonesEnabled: availabilityZonesEnabled
+    enablePrivateEndpoint: enablePrivateEndpoint
+
+    timeZone: timeZone
   }
 }
 
-module privateDns '../pdns/main.bicep' = {
+module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
   name: take(replace(deploymentNameStructure, '{rtype}', 'app-dns'), 64)
   params: {
     privateDnsZoneName: privateDnsZoneName

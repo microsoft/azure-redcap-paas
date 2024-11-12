@@ -11,6 +11,8 @@ param privateDnsZoneName string
 param sqlAdminUser string
 param virtualNetworkId string
 
+param existingPrivateDnsZonesResourceGroupId string = ''
+
 param roles object
 param deploymentScriptName string
 
@@ -24,7 +26,7 @@ param mysqlVersion string = '8.0.21'
 param sqlAdminPasword string
 
 @description('Azure database for MySQL sku name ')
-param skuName string = 'Standard_B1s'
+param skuName string = 'Standard_B1ms'
 
 @description('Azure database for MySQL pricing tier')
 @allowed([
@@ -77,7 +79,9 @@ module mysqlDbserver './sql.bicep' = {
     StorageSizeGB: StorageSizeGB
     StorageIops: StorageIops
     peSubnetId: peSubnetId
-    privateDnsZoneId: privateDns.outputs.privateDnsId
+    privateDnsZoneId: empty(existingPrivateDnsZonesResourceGroupId)
+      ? privateDns.outputs.privateDnsId
+      : '${existingPrivateDnsZonesResourceGroupId}/providers/Microsoft.Network/privateDnsZones/${privateDnsZoneName}'
     adminUserName: sqlAdminUser
     adminPassword: sqlAdminPasword
     mysqlVersion: mysqlVersion
@@ -95,7 +99,7 @@ module mysqlDbserver './sql.bicep' = {
   }
 }
 
-module privateDns '../pdns/main.bicep' = {
+module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
   name: take(replace(deploymentNameStructure, '{rtype}', 'mysql-dns'), 64)
   scope: resourceGroup
   params: {

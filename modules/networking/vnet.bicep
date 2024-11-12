@@ -31,12 +31,12 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
         name: subnet.key
         properties: {
           addressPrefix: subnet.value.addressPrefix
-          serviceEndpoints: contains(subnet.value, 'serviceEndpoints') ? subnet.value.serviceEndpoints : null
           networkSecurityGroup: !empty(networkSecurityGroupId)
             ? {
                 id: networkSecurityGroupId
               }
             : null
+          serviceEndpoints: subnet.value.?serviceEndpoints
           delegations: contains(subnet.value, 'delegation') && !empty(subnet.value.delegation)
             ? [
                 {

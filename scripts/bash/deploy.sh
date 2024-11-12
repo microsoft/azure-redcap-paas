@@ -20,10 +20,8 @@ stamp=$(date +%Y-%m-%d-%H-%M)
 ####################################################################################
 
 echo "Configuring mysqli extension" >> /home/site/log-$stamp.txt
-cd /home/site
-# echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20190902/mysqlnd_azure.so
-# extension=/usr/local/lib/php/extensions/no-debug-non-zts-20190902/mysqli.so" >> extensions.ini
-echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20220829/mysqli.so" >> extensions.ini
+mkdir -p /home/site/ini
+echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20220829/mysqli.so" >> /home/site/ini/extensions.ini
 
 ####################################################################################
 #
@@ -32,6 +30,8 @@ echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20220829/mysqli.s
 # make a call # to REDCap community site and download it
 #
 ####################################################################################
+
+redcapZipPath="/tmp/redcap.zip"
 
 cd /tmp
 if [ -z "$APPSETTING_redcapAppZip" ]; then
@@ -52,7 +52,7 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
     export APPSETTING_zipVersion="latest"
   fi
   
-  wget --method=post -O /tmp/redcap.zip -q --body-data="username=$APPSETTING_redcapCommunityUsername&password=$APPSETTING_redcapCommunityPassword&version=$APPSETTING_zipVersion&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php
+  wget --method=post -O $redcapZipPath -q --body-data="username=$APPSETTING_redcapCommunityUsername&password=$APPSETTING_redcapCommunityPassword&version=$APPSETTING_zipVersion&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php
 
   # check to see if the redcap.zip file contains the word error
   if [ -z "$(grep -i error redcap.zip)" ]; then
@@ -64,14 +64,19 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
 
 else
   echo "Downloading REDCap zip file from storage" >> /home/site/log-$stamp.txt
-  wget -q -O /tmp/redcap.zip $APPSETTING_redcapAppZip
+  wget -q -O $redcapZipPath $APPSETTING_redcapAppZip
 fi
 
-rm -f /home/site/wwwroot/hostingstart.html
-unzip -oq /tmp/redcap.zip -d /tmp/wwwroot 
-mv /tmp/wwwroot/redcap/* /home/site/wwwroot/
+echo "Unzipping redcap.zip" >> /home/site/log-$stamp.txt
+
+rm -rf /home/site/wwwroot/*
+unzip -oq $redcapZipPath -d /tmp/wwwroot 
+
+echo "Moving REDCap files to wwwroot" >> /home/site/log-$stamp.txt
+
+mv -f /tmp/wwwroot/redcap/* /home/site/wwwroot/
 rm -rf /tmp/wwwroot
-rm /tmp/redcap.zip
+rm -f $redcapZipPath
 
 ####################################################################################
 #
@@ -85,11 +90,11 @@ cd /home/site/wwwroot
 
 wget --no-check-certificate https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem
 
-sed -i "s|hostname[[:space:]]*= '';|hostname = '$APPSETTING_DBHostName';|" database.php
-sed -i "s|db[[:space:]]*= '';|db = '$APPSETTING_DBName';|" database.php
-sed -i "s|username[[:space:]]*= '';|username = '$APPSETTING_DBUserName';|" database.php
-sed -i "s|password[[:space:]]*= '';|password = '$APPSETTING_DBPassword';|" database.php
-sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = '$APPSETTING_DBSslCa';|" database.php
+sed -i "s|hostname[[:space:]]*= '';|hostname = getenv('DBHostName');|" database.php
+sed -i "s|db[[:space:]]*= '';|db = getenv('DBName');|" database.php
+sed -i "s|username[[:space:]]*= '';|username = getenv('DBUserName');|" database.php
+sed -i "s|password[[:space:]]*= '';|password = getenv('DBPassword');|" database.php
+sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = getenv('DBSslCa');|" database.php
 
 sed -i "s/db_ssl_verify_server_cert = false;/db_ssl_verify_server_cert = true;/" database.php
 sed -i "s/$salt = '';/$salt = '$(echo $RANDOM | md5sum | head -c 20; echo;)';/" database.php
@@ -101,11 +106,13 @@ sed -i "s/$salt = '';/$salt = '$(echo $RANDOM | md5sum | head -c 20; echo;)';/" 
 ####################################################################################
 
 echo "Configuring REDCap recommended settings" >> /home/site/log-$stamp.txt
+
 sed -i "s|SMTP[[:space:]]*= ''|SMTP = '$APPSETTING_smtpFQDN'|" /home/site/repository/Files/settings.ini
 sed -i "s|smtp_port[[:space:]]*= |smtp_port = $APPSETTING_smtpPort|" /home/site/repository/Files/settings.ini
 sed -i "s|sendmail_from[[:space:]]*= ''|sendmail_from = '$APPSETTING_fromEmailAddress'|" /home/site/repository/Files/settings.ini
 sed -i "s|sendmail_path[[:space:]]*= ''|sendmail_path = '/usr/sbin/sendmail -t -i'|" /home/site/repository/Files/settings.ini
-cp /home/site/repository/Files/settings.ini /home/site/redcap.ini
+
+cp /home/site/repository/Files/settings.ini /home/site/ini/redcap.ini
 
 ####################################################################################
 #
@@ -115,7 +122,7 @@ cp /home/site/repository/Files/settings.ini /home/site/redcap.ini
 ####################################################################################
 
 echo "For better security, it is recommended that you enable the session.cookie_secure option in your web server's PHP.INI file" >> /home/site/log-$stamp.txt
-echo "session.cookie_secure = On" >> /home/site/redcap.ini
+echo "session.cookie_secure = On" >> /home/site/ini/redcap.ini
 
 ####################################################################################
 #
@@ -133,3 +140,5 @@ cp /home/site/repository/scripts/bash/postbuild.sh /home/site/deployments/tools/
 ####################################################################################
 
 cp /home/site/repository/scripts/bash/startup.sh /home/startup.sh
+
+#echo "mysql: $(which mysql)" >> /home/site/log-$stamp.txt

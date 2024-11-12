@@ -45,6 +45,8 @@ param prerequisiteCommand string = '/home/startup.sh'
 
 param deploymentTime string = utcNow()
 
+param enableAppServicePrivateEndpoint bool = true
+
 @description('The password to use for the MySQL Flexible Server admin account \'sqladmin\'.')
 @secure()
 param sqlPassword string
@@ -82,6 +84,10 @@ param appServiceSkuName string = 'P0v3'
 
 @description('Determines whether availability zone redundancy is enabled for the MySQL Flexible Server and the app service. The region must support availability zones.')
 param availabilityZonesEnabled bool = false
+param existingPrivateDnsZonesResourceGroupId string = ''
+param existingVirtualNetworkId string = ''
+
+param appServiceTimeZone string = 'UTC'
 
 var sequenceFormatted = format('{0:00}', sequence)
 var rgNamingStructure = replace(
@@ -97,7 +103,11 @@ var rgNamingStructure = replace(
   '{env}',
   environment
 )
-var vnetName = nameModule[0].outputs.shortName
+// The name of the VNet is either a new name or the name of the existing VNet parsed from the resource ID
+var vnetName = empty(existingVirtualNetworkId)
+  ? nameModule[0].outputs.shortName
+  : split(existingVirtualNetworkId, '/')[8]
+
 var strgName = nameModule[1].outputs.shortName
 var webAppName = nameModule[2].outputs.shortName
 var kvName = nameModule[3].outputs.shortName
@@ -109,8 +119,10 @@ var lawName = nameModule[8].outputs.shortName
 
 var deploymentNameStructure = '${workloadName}-${environment}-${sequenceFormatted}-{rtype}-${deploymentTime}'
 
-var subnets = {
+// TODO: Define type
+param subnets object = {
   // TODO: Define securityRules
+  // TODO: Add existingSubnetName property for existing subnet
   PrivateLinkSubnet: {
     addressPrefix: cidrSubnet(vnetAddressSpace, 27, 0)
     serviceEndpoints: [
@@ -258,7 +270,7 @@ module kvSecretReferencesModule './modules/common/appSvcKeyVaultRefs.bicep' = {
   }
 }
 
-module virtualNetworkModule './modules/networking/main.bicep' = {
+module virtualNetworkModule './modules/networking/main.bicep' = if (empty(existingVirtualNetworkId)) {
   name: take(replace(deploymentNameStructure, '{rtype}', 'network'), 64)
   params: {
     resourceGroupName: replace(rgNamingStructure, '{rgName}', 'network')
@@ -294,18 +306,29 @@ module monitoring './modules/monitoring/main.bicep' = {
   }
 }
 
+var privateEndpointSubnetId = empty(existingVirtualNetworkId)
+  ? virtualNetworkModule.outputs.subnets.PrivateLinkSubnet.id
+  : '${existingVirtualNetworkId}/subnets/${subnets.PrivateLinkSubnet.existingSubnetName}'
+
+var virtualNetworkId = empty(existingVirtualNetworkId)
+  ? virtualNetworkModule.outputs.virtualNetworkId
+  : existingVirtualNetworkId
+
 module storageAccountModule './modules/storage/main.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'storage'), 64)
   params: {
     resourceGroupName: replace(rgNamingStructure, '{rgName}', 'storage')
     location: location
     storageAccountName: strgName
-    peSubnetId: virtualNetworkModule.outputs.subnets.PrivateLinkSubnet.id
+    peSubnetId: privateEndpointSubnetId
     storageContainerName: 'redcap'
     kind: 'StorageV2'
     storageAccountSku: 'Standard_LRS'
-    virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
+
+    virtualNetworkId: virtualNetworkId
     privateDnsZoneName: 'privatelink.blob.${az.environment().suffixes.storage}'
+    existingPrivateDnsZonesResourceGroupId: existingPrivateDnsZonesResourceGroupId
+
     tags: tags
     customTags: {
       workloadType: 'storageAccount'
@@ -328,8 +351,9 @@ module keyVaultModule './modules/kv/main.bicep' = {
     customTags: {
       workloadType: 'keyVault'
     }
-    peSubnetId: virtualNetworkModule.outputs.subnets.PrivateLinkSubnet.id
-    virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
+    peSubnetId: privateEndpointSubnetId
+    virtualNetworkId: virtualNetworkId
+    existingPrivateDnsZonesResourceGroupId: existingPrivateDnsZonesResourceGroupId
     roleAssignments: [
       {
         RoleDefinitionId: rolesModule.outputs.roles['Key Vault Administrator']
@@ -338,6 +362,7 @@ module keyVaultModule './modules/kv/main.bicep' = {
       {
         RoleDefinitionId: rolesModule.outputs.roles['Key Vault Secrets User']
         objectId: uamiModule.outputs.principalId
+        principtalType: 'ServicePrincipal'
       }
     ]
     privateDnsZoneName: 'privatelink.vaultcore.azure.net'
@@ -362,8 +387,11 @@ module mySqlModule './modules/sql/main.bicep' = {
     SkuTier: mySqlSkuTier
     StorageSizeGB: mySqlStorageSizeGB
     StorageIops: mySqlStorageIops
-    peSubnetId: virtualNetworkModule.outputs.subnets.MySQLFlexSubnet.id
+    peSubnetId: empty(existingVirtualNetworkId)
+      ? virtualNetworkModule.outputs.subnets.MySQLFlexSubnet.id
+      : '${existingVirtualNetworkId}/subnets/${subnets.MySQLFlexSubnet.existingSubnetName}'
     privateDnsZoneName: 'privatelink.mysql.database.azure.com'
+    existingPrivateDnsZonesResourceGroupId: existingPrivateDnsZonesResourceGroupId
     sqlAdminUser: sqlAdmin
     sqlAdminPasword: sqlPassword
     mysqlVersion: '8.0.21'
@@ -384,7 +412,7 @@ module mySqlModule './modules/sql/main.bicep' = {
     database_charset: 'utf8'
     database_collation: 'utf8_general_ci'
 
-    virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
+    virtualNetworkId: virtualNetworkId
 
     deploymentNameStructure: deploymentNameStructure
   }
@@ -406,7 +434,7 @@ module webAppModule './modules/webapp/main.bicep' = {
     appServicePlanName: planName
     location: location
     skuName: appServiceSkuName
-    peSubnetId: virtualNetworkModule.outputs.subnets.PrivateLinkSubnet.id
+    peSubnetId: privateEndpointSubnetId
     appInsights_connectionString: monitoring.outputs.appInsightsResourceId
     appInsights_instrumentationKey: monitoring.outputs.appInsightsInstrumentationKey
     linuxFxVersion: 'php|8.2'
@@ -414,8 +442,11 @@ module webAppModule './modules/webapp/main.bicep' = {
     customTags: {
       workloadType: 'webApp'
     }
+
+    existingPrivateDnsZonesResourceGroupId: existingPrivateDnsZonesResourceGroupId
     privateDnsZoneName: 'privatelink.azurewebsites.net'
-    virtualNetworkId: virtualNetworkModule.outputs.virtualNetworkId
+    virtualNetworkId: virtualNetworkId
+
     redcapZipUrl: redcapZipUrl
     dbHostName: mySqlModule.outputs.fqdn
     dbName: mySqlModule.outputs.databaseName
@@ -432,7 +463,9 @@ module webAppModule './modules/webapp/main.bicep' = {
     storageAccountName: storageAccountModule.outputs.name
 
     // Enable VNet integration
-    integrationSubnetId: virtualNetworkModule.outputs.subnets.IntegrationSubnet.id
+    integrationSubnetId: empty(existingVirtualNetworkId)
+      ? virtualNetworkModule.outputs.subnets.IntegrationSubnet.id
+      : '${existingVirtualNetworkId}/subnets/${subnets.IntegrationSubnet.existingSubnetName}'
 
     scmRepoUrl: scmRepoUrl
     scmRepoBranch: scmRepoBranch
@@ -447,6 +480,9 @@ module webAppModule './modules/webapp/main.bicep' = {
     uamiId: uamiModule.outputs.id
 
     availabilityZonesEnabled: availabilityZonesEnabled
+    enablePrivateEndpoint: enableAppServicePrivateEndpoint
+
+    timeZone: appServiceTimeZone
   }
 }
 
@@ -460,5 +496,5 @@ module uamiModule 'modules/uami/main.bicep' = {
   }
 }
 
-// The web app URL
+// // The web app URL
 output webAppUrl string = webAppModule.outputs.webAppUrl

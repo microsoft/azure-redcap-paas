@@ -30,10 +30,13 @@ param appInsights_connectionString string
 param appInsights_instrumentationKey string
 
 param availabiltyZonesEnabled bool = false
+param enablePrivateEndpoint bool
 
 param smtpFQDN string = ''
 param smtpPort string = ''
 param smtpFromEmailAddress string = ''
+
+param timeZone string = 'UTC'
 
 // This is not a secret, it's a Key Vault reference
 #disable-next-line secure-secrets-in-params
@@ -78,10 +81,7 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
       ftpsState: 'FtpsOnly'
       appCommandLine: prerequisiteCommand
       appSettings: [
-        {
-          name: 'redcapAppZip'
-          value: redcapZipUrl
-        }
+        // REDCap runtime settings
         {
           name: 'DBHostName'
           value: dbHostName
@@ -97,6 +97,11 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'DBPassword'
           value: dbPasswordSecretRef
+        }
+        // REDCap deployment settings
+        {
+          name: 'redcapAppZip'
+          value: redcapZipUrl
         }
         {
           name: 'zipVersion'
@@ -114,6 +119,7 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'DBSslCa'
           value: DBSslCa
         }
+        // SMTP, possibly legacy settings
         {
           name: 'smtpFQDN'
           value: smtpFQDN
@@ -126,6 +132,7 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'fromEmailAddress'
           value: smtpFromEmailAddress
         }
+        // END SMTP
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
           value: appInsights_instrumentationKey
@@ -138,6 +145,7 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
           value: '1'
         }
+        // EDOC configuration, used during deployment only
         {
           name: 'StorageKey'
           value: storageAccountKeySecretRef
@@ -150,9 +158,19 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'StorageContainerName'
           value: storageAccountContainerName
         }
+        // END EDOC
         {
           name: 'ENABLE_DYNAMIC_INSTALL'
           value: 'true'
+        }
+        {
+          // Ensure /home/site/ini/redcap.ini and /home/site/ini/extensions.ini gets processed
+          name: 'PHP_INI_SCAN_DIR'
+          value: '/usr/local/etc/php/conf.d:/home/site/ini'
+        }
+        {
+          name: 'WEBSITE_TIME_ZONE'
+          value: timeZone
         }
       ]
     }
@@ -186,7 +204,7 @@ resource sourcecontrol 'Microsoft.Web/sites/sourcecontrols@2023-12-01' = {
   dependsOn: [privateDnsZoneGroupsWebApp]
 }
 
-resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = if (enablePrivateEndpoint) {
   name: 'pe-${webApp.name}'
   location: location
   properties: {
@@ -207,7 +225,7 @@ resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = {
   }
 }
 
-resource privateDnsZoneGroupsWebApp 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
+resource privateDnsZoneGroupsWebApp 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = if (enablePrivateEndpoint) {
   name: 'privatednszonegroup'
   parent: peWebApp
   properties: {
