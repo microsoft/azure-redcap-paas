@@ -69,9 +69,11 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
   tags: tags
   properties: {
     httpsOnly: true
+    endToEndEncryptionEnabled: true
     serverFarmId: appSrvcPlan.id
     virtualNetworkSubnetId: integrationSubnetId
     keyVaultReferenceIdentity: uamiId
+
     siteConfig: {
       alwaysOn: true
       http20Enabled: true
