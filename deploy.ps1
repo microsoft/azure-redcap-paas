@@ -1,7 +1,7 @@
 # PowerShell script to deploy the main.bicep template with parameter values
 
-#Requires -Modules "Az"
-#Requires -PSEdition Core
+#Requires -Modules "Az.Resources"
+#Requires -Version 7.4
 
 # Use these parameters to customize the deployment instead of modifying the default parameter values
 [CmdletBinding()]
