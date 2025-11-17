@@ -10,7 +10,7 @@ This template automates the deployment of the REDCap solution into Azure using m
 
 - ### Manual deployment
 
-  - For manual deployment process, please navigate [***here***](manual.md)
+  - For manual deployment process, please see [***manual installation***](manual.md).
 
 - ### CI/CD Deployment with GitHub
 
@@ -90,9 +90,9 @@ bash ./site/repository/scripts/bash/install.sh
 
 Once you regain access to the console, you can navigate to the root of your app service and confirm everything shows green on the REDCap Configuration Check page - with the exception of CronJob status which you may have to manually invoke. If anything displays on that page in red or yellow, it is recommended that you perform a "Restart" of the Azure "App Service". This needs to be done due to the fact that some necessary server environment settings get changed after the initial deployment, but restarting the App Service will load the service with the intended settings.
 
-## Note about REDCap "Easy Upgade"
+## Note about REDCap "Easy Upgrade"
 
-The "Easy Upgrade" feature in REDCap 8.11.0 and later is currently _not_ supported when deploying a REDCap instance on Azure. Support for "Easy Upgrade" on Azure is expected to come at a later time in a future REDCap release.
+The "Easy Upgrade" feature in REDCap 8.11.0 and later is currently *not* supported when deploying a REDCap instance on Azure. Support for "Easy Upgrade" on Azure is expected to come at a later time in a future REDCap release.
 
 ## Resources
 
