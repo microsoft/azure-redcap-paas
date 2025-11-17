@@ -23,9 +23,7 @@ echo "DBHostName=$DBHostName" > /etc/environment # Overwrite the file with the f
 echo "DBName=$DBName" >> /etc/environment # Append all the other lines
 echo "DBUserName=$DBUserName" >> /etc/environment
 echo "DBPassword=$DBPassword" >> /etc/environment
-
-# HACK: 2025-11-11: The SSL cert is no longer needed
-#echo "DBSslCa=$DBSslCa" >> /etc/environment
+echo "DBSslCa=$DBSslCa" >> /etc/environment
 
 sed -i "s|date.timezone=UTC|date.timezone=$WEBSITE_TIME_ZONE|" /usr/local/etc/php/conf.d/php.ini
 

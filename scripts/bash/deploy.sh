@@ -88,16 +88,13 @@ echo "Updating database connection info in database.php" >> /home/site/log-$stam
 
 cd /home/site/wwwroot
 
-# HACK: 2025-11-11: The SSL cert is no longer needed
-# wget --no-check-certificate https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem
+wget --no-check-certificate -O $APPSETTING_DBSslCa https://cacerts.digicert.com/DigiCertGlobalRootG2.crt.pem
 
 sed -i "s|hostname[[:space:]]*= '';|hostname = getenv('DBHostName');|" database.php
 sed -i "s|db[[:space:]]*= '';|db = getenv('DBName');|" database.php
 sed -i "s|username[[:space:]]*= '';|username = getenv('DBUserName');|" database.php
 sed -i "s|password[[:space:]]*= '';|password = getenv('DBPassword');|" database.php
-
-# HACK: 2025-11-11: The SSL cert is no longer needed
-# sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = getenv('DBSslCa');|" database.php
+sed -i "s|db_ssl_ca[[:space:]]*= '';|db_ssl_ca = getenv('DBSslCa');|" database.php
 
 sed -i "s/db_ssl_verify_server_cert = false;/db_ssl_verify_server_cert = true;/" database.php
 sed -i "s/$salt = '';/$salt = '$(echo $RANDOM | md5sum | head -c 20; echo;)';/" database.php
