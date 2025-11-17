@@ -30,6 +30,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 }
 
 module keyVaultModule './kv.bicep' = {
+  #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'kv'), 64)
   scope: resourceGroup
   params: {
@@ -38,7 +39,7 @@ module keyVaultModule './kv.bicep' = {
     tags: tags
     peSubnetId: peSubnetId
     privateDnsZoneId: empty(existingPrivateDnsZonesResourceGroupId)
-      ? keyVaultPrivateDnsModule.outputs.privateDnsId
+      ? keyVaultPrivateDnsModule.?outputs.privateDnsId!
       : '${existingPrivateDnsZonesResourceGroupId}/providers/Microsoft.Network/privateDnsZones/${privateDnsZoneName}'
     secrets: secrets
     roleAssignments: roleAssignments
@@ -47,6 +48,7 @@ module keyVaultModule './kv.bicep' = {
 }
 
 module keyVaultPrivateDnsModule '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
+  #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'kv-dns'), 64)
   scope: resourceGroup
   params: {

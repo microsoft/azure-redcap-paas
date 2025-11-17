@@ -11,12 +11,7 @@ param peSubnetId string
 
 param deploymentNameStructure string
 
-param roleAssignments array = [
-  {
-    RoleDefinitionId: ''
-    objectId: ''
-  }
-]
+param roleAssignments array = []
 param privateDnsZoneId string
 
 @secure()
@@ -55,6 +50,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
 }
 
 module keyVaultSecretsModule 'kvSecrets.bicep' = {
+  #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'kv-secrets'), 64)
   params: {
     keyVaultName: keyVault.name
@@ -69,14 +65,15 @@ resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = [
     properties: {
       roleDefinitionId: roleAssignment.RoleDefinitionId
       principalId: roleAssignment.objectId
-      principalType: contains(roleAssignment, 'principalType') && !empty(roleAssignment.principalType)
-        ? roleAssignment.principalType
-        : null
+      principalType: roleAssignment.?principalType
+      // principalType: contains(roleAssignment, 'principalType') && !empty(roleAssignment.principalType)
+      //   ? roleAssignment.principalType
+      //   : null
     }
   }
 ]
 
-resource pekeyVault 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+resource peKeyVault 'Microsoft.Network/privateEndpoints@2022-07-01' = {
   name: 'pe-${keyVaultName}'
   location: location
   properties: {
@@ -98,8 +95,8 @@ resource pekeyVault 'Microsoft.Network/privateEndpoints@2022-07-01' = {
 }
 
 resource privateDnsZoneGroupsKeyVault 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
-  name: 'privatednszonegroup'
-  parent: pekeyVault
+  name: 'privateDnsZoneGroup'
+  parent: peKeyVault
   properties: {
     privateDnsZoneConfigs: [
       {

@@ -3,7 +3,7 @@ param location string = resourceGroup().location
 param webAppName string
 param appServicePlanName string
 param skuName string
-param linuxFxVersion string = 'php|8.2'
+param linuxFxVersion string
 param dbHostName string
 #disable-next-line secure-secrets-in-params
 param dbUserNameSecretRef string
@@ -17,9 +17,9 @@ param integrationSubnetId string
 
 param availabilityZonesEnabled bool = false
 
-param smtpFQDN string = ''
-param smtpPort string = ''
-param smtpFromEmailAddress string = ''
+// param smtpFQDN string = ''
+// param smtpPort string = ''
+// param smtpFromEmailAddress string = ''
 
 #disable-next-line secure-secrets-in-params
 param storageAccountKeySecretRef string
@@ -57,6 +57,7 @@ param deploymentNameStructure string
 var mergeTags = union(tags, customTags)
 
 module appService 'webapp.bicep' = {
+  #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'planAndApp'), 64)
   params: {
     webAppName: webAppName
@@ -71,7 +72,7 @@ module appService 'webapp.bicep' = {
     dbUserNameSecretRef: dbUserNameSecretRef
     peSubnetId: peSubnetId
     privateDnsZoneId: empty(existingPrivateDnsZonesResourceGroupId)
-      ? privateDns.outputs.privateDnsId
+      ? privateDns.?outputs.privateDnsId!
       : '${existingPrivateDnsZonesResourceGroupId}/providers/Microsoft.Network/privateDnsZones/${privateDnsZoneName}'
     integrationSubnetId: integrationSubnetId
 
@@ -91,13 +92,13 @@ module appService 'webapp.bicep' = {
     storageAccountKeySecretRef: storageAccountKeySecretRef
     storageAccountName: storageAccountName
 
-    smtpFQDN: smtpFQDN
-    smtpFromEmailAddress: smtpFromEmailAddress
-    smtpPort: smtpPort
+    // smtpFQDN: smtpFQDN
+    // smtpFromEmailAddress: smtpFromEmailAddress
+    // smtpPort: smtpPort
 
     uamiId: uamiId
 
-    availabiltyZonesEnabled: availabilityZonesEnabled
+    availabilityZonesEnabled: availabilityZonesEnabled
     enablePrivateEndpoint: enablePrivateEndpoint
 
     timeZone: timeZone
@@ -105,6 +106,7 @@ module appService 'webapp.bicep' = {
 }
 
 module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
+  #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'app-dns'), 64)
   params: {
     privateDnsZoneName: privateDnsZoneName

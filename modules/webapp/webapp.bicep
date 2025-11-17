@@ -29,12 +29,12 @@ param prerequisiteCommand string
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
 
-param availabiltyZonesEnabled bool = false
+param availabilityZonesEnabled bool = false
 param enablePrivateEndpoint bool
 
-param smtpFQDN string = ''
-param smtpPort string = ''
-param smtpFromEmailAddress string = ''
+// param smtpFQDN string = ''
+// param smtpPort string = ''
+// param smtpFromEmailAddress string = ''
 
 param timeZone string = 'UTC'
 
@@ -47,7 +47,7 @@ param minTlsVersion string = '1.2'
 
 param uamiId string
 
-resource appSrvcPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: appServicePlanName
   location: location
   tags: tags
@@ -57,11 +57,11 @@ resource appSrvcPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   kind: 'linux'
   properties: {
     reserved: true
-    zoneRedundant: availabiltyZonesEnabled
+    zoneRedundant: availabilityZonesEnabled
   }
 }
 
-var DBSslCa = '/home/site/wwwroot/DigiCertGlobalRootCA.crt.pem'
+var DBSslCa = '/home/site/wwwroot/DigiCertGlobalRootG2.crt.pem'
 
 resource webApp 'Microsoft.Web/sites@2023-12-01' = {
   name: webAppName
@@ -70,8 +70,9 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
   properties: {
     httpsOnly: true
     endToEndEncryptionEnabled: true
-    serverFarmId: appSrvcPlan.id
+    serverFarmId: appServicePlan.id
     virtualNetworkSubnetId: integrationSubnetId
+    vnetRouteAllEnabled: true
     keyVaultReferenceIdentity: uamiId
 
     siteConfig: {
@@ -121,19 +122,19 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'DBSslCa'
           value: DBSslCa
         }
-        // SMTP, possibly legacy settings
-        {
-          name: 'smtpFQDN'
-          value: smtpFQDN
-        }
-        {
-          name: 'smtpPort'
-          value: smtpPort
-        }
-        {
-          name: 'fromEmailAddress'
-          value: smtpFromEmailAddress
-        }
+        // SMTP, legacy settings - Please use Azure Communication Services for new deployments
+        // {
+        //   name: 'smtpFQDN'
+        //   value: smtpFQDN
+        // }
+        // {
+        //   name: 'smtpPort'
+        //   value: smtpPort
+        // }
+        // {
+        //   name: 'fromEmailAddress'
+        //   value: smtpFromEmailAddress
+        // }
         // END SMTP
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
@@ -228,7 +229,7 @@ resource peWebApp 'Microsoft.Network/privateEndpoints@2022-07-01' = if (enablePr
 }
 
 resource privateDnsZoneGroupsWebApp 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = if (enablePrivateEndpoint) {
-  name: 'privatednszonegroup'
+  name: 'privateDnsZoneGroup'
   parent: peWebApp
   properties: {
     privateDnsZoneConfigs: [
