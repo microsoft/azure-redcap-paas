@@ -8,7 +8,7 @@ echo "Custom container startup"
 #
 ####################################################################################
 
-apt-get update -qq && apt-get install cron sendmail -yqq
+apt-get update -qq && apt-get install cron -yqq
 
 ####################################################################################
 #
@@ -40,6 +40,9 @@ sed -i '/^}/i \
         deny all;\
     }\
     # END REDCap_recommended_block_temp' /etc/nginx/sites-enabled/default
+
+# Must restart nginx to apply the config change
+service nginx restart
 
 # Start the cron service and add the REDCap cronjob
 service cron start
