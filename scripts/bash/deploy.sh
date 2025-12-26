@@ -71,14 +71,14 @@ fi
 
 echo "Unzipping redcap.zip" >> /home/site/log-$stamp.txt
 
-# Clean up wwwroot
+# Remove any default files from wwwroot
 rm -rf /home/site/wwwroot/*
 
 # Unzip the REDCap zip file to a temp location
 unzip -oq $redcapZipPath -d /tmp/wwwroot
 
-echo "Moving REDCap files to wwwroot" >> /home/site/log-$stamp.txt
-mv -f /tmp/wwwroot/redcap/* /home/site/wwwroot/
+echo "Copying REDCap files to wwwroot" >> /home/site/log-$stamp.txt
+cp --no-preserve=mode -r -f /tmp/wwwroot/redcap /home/site/wwwroot/
 
 # Cleanup: delete the tmp files and the downloaded zip file
 rm -rf /tmp/wwwroot
