@@ -19,6 +19,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 }
 
 module logAnalyticsWorkspace 'law.bicep' = {
+  #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'log'), 64)
   scope: resourceGroup
   params: {
@@ -31,6 +32,7 @@ module logAnalyticsWorkspace 'law.bicep' = {
 }
 
 module appInsights 'appInsights.bicep' = {
+  #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'appi'), 64)
   scope: resourceGroup
   params: {

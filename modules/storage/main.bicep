@@ -30,6 +30,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 }
 
 module storageAccount './storage.bicep' = {
+  #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'st'), 64)
   scope: resourceGroup
   params: {
@@ -41,7 +42,7 @@ module storageAccount './storage.bicep' = {
     kind: kind
     storageAccountSku: storageAccountSku
     privateDnsZoneId: empty(existingPrivateDnsZonesResourceGroupId)
-      ? privateDns.outputs.privateDnsId
+      ? privateDns.?outputs.privateDnsId!
       : '${existingPrivateDnsZonesResourceGroupId}/providers/Microsoft.Network/privateDnsZones/${privateDnsZoneName}'
     keyVaultId: keyVaultId
     keyVaultSecretName: keyVaultSecretName
@@ -50,6 +51,7 @@ module storageAccount './storage.bicep' = {
 }
 
 module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
+  #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'st-dns'), 64)
   scope: resourceGroup
   params: {
