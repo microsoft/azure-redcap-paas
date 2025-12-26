@@ -32,17 +32,26 @@ sed -i "s|date.timezone=UTC|date.timezone=$WEBSITE_TIME_ZONE|" /usr/local/etc/ph
 # Configure the ImageMagick policy to allow PDF read/write
 sed -i 's~<policy domain="coder" rights="none" pattern="PDF" />~<policy domain="coder" rights="read | write" pattern="PDF" />~' /etc/ImageMagick-6/policy.xml
 
-# Disallow reading from the temp directory
-grep -q 'REDCap_recommended_block_temp' /etc/nginx/sites-enabled/default || \
-sed -i '/^}/i \
-    # BEGIN REDCap_recommended_block_temp\
-    location ~* /temp/* {\
-        deny all;\
-    }\
-    # END REDCap_recommended_block_temp' /etc/nginx/sites-enabled/default
+# Disallow reading from the temp directory by adding a location block to nginx config
+# But only do this once
+NGINX_CONF_FILE="/etc/nginx/sites-enabled/default"
+BLOCK_MARKER="REDCap_recommended_block_temp"
 
-# Must restart nginx to apply the config change
-service nginx restart
+if ! grep -q "$BLOCK_MARKER" "$NGINX_CONF_FILE"; then
+    sed -i '/^}/i \
+        #
+        # BEGIN REDCap_recommended_block_temp\
+        location ~* /temp/* {\
+            deny all;\
+        }\
+        # END REDCap_recommended_block_temp' "$NGINX_CONF_FILE"
+
+    # Validate nginx config
+    nginx -t
+
+    # Must restart nginx to apply the config change
+    service nginx restart
+fi
 
 # Start the cron service and add the REDCap cronjob
 service cron start
