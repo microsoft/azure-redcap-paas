@@ -78,7 +78,7 @@ rm -rf /home/site/wwwroot/*
 unzip -oq $redcapZipPath -d /tmp/wwwroot
 
 echo "Copying REDCap files to wwwroot" >> /home/site/log-$stamp.txt
-cp --no-preserve=mode,ownership -r -f /tmp/wwwroot/redcap /home/site/wwwroot/
+cp --no-preserve=all -r -f /tmp/wwwroot/redcap /home/site/wwwroot/
 
 # Cleanup: delete the tmp files and the downloaded zip file
 rm -rf /tmp/wwwroot
