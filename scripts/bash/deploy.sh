@@ -27,13 +27,15 @@ echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20220829/mysqli.s
 #
 # Download REDCap zip file and unzip to wwwroot
 # If zip file path exists just download it; otherwise 
-# make a call # to REDCap community site and download it
+# make a call to REDCap community site and download it
 #
 ####################################################################################
 
 redcapZipPath="/tmp/redcap.zip"
 
 cd /tmp
+
+# If there is no REDCap zip file path, download from REDCap Community site
 if [ -z "$APPSETTING_redcapAppZip" ]; then
   echo "Downloading REDCap zip file from REDCap Community site" >> /home/site/log-$stamp.txt
 
@@ -54,7 +56,7 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
   
   wget --method=post -O $redcapZipPath -q --body-data="username=$APPSETTING_redcapCommunityUsername&password=$APPSETTING_redcapCommunityPassword&version=$APPSETTING_zipVersion&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vanderbilt.edu/plugins/redcap_consortium/versions.php
 
-  # check to see if the redcap.zip file contains the word error
+  # Check to see if the redcap.zip file contains the word error
   if [ -z "$(grep -i error redcap.zip)" ]; then
     echo "Downloaded REDCap zip file" >> /home/site/log-$stamp.txt
   else
@@ -69,12 +71,16 @@ fi
 
 echo "Unzipping redcap.zip" >> /home/site/log-$stamp.txt
 
+# Clean up wwwroot
 rm -rf /home/site/wwwroot/*
-unzip -oq $redcapZipPath -d /tmp/wwwroot 
+
+# Unzip the REDCap zip file to a temp location
+unzip -oq $redcapZipPath -d /tmp/wwwroot
 
 echo "Moving REDCap files to wwwroot" >> /home/site/log-$stamp.txt
-
 mv -f /tmp/wwwroot/redcap/* /home/site/wwwroot/
+
+# Cleanup: delete the tmp files and the downloaded zip file
 rm -rf /tmp/wwwroot
 rm -f $redcapZipPath
 
@@ -122,7 +128,7 @@ cp /home/site/repository/Files/settings.ini /home/site/ini/redcap.ini
 #
 ####################################################################################
 
-echo "For better security, it is recommended that you enable the session.cookie_secure option in your web server's PHP.INI file" >> /home/site/log-$stamp.txt
+echo "Enabling session.cookie_secure option in redcap.ini" >> /home/site/log-$stamp.txt
 echo "session.cookie_secure = On" >> /home/site/ini/redcap.ini
 
 ####################################################################################
