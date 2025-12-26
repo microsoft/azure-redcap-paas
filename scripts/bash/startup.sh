@@ -25,9 +25,22 @@ echo "DBUserName=$DBUserName" >> /etc/environment
 echo "DBPassword=$DBPassword" >> /etc/environment
 echo "DBSslCa=$DBSslCa" >> /etc/environment
 
+# Configure PHP timezone setting
+# TODO: Can this be done in redcap.ini?
 sed -i "s|date.timezone=UTC|date.timezone=$WEBSITE_TIME_ZONE|" /usr/local/etc/php/conf.d/php.ini
 
+# Configure the ImageMagick policy to allow PDF read/write
 sed -i 's~<policy domain="coder" rights="none" pattern="PDF" />~<policy domain="coder" rights="read | write" pattern="PDF" />~' /etc/ImageMagick-6/policy.xml
 
+# Disallow reading from the temp directory
+grep -q 'REDCap_recommended_block_temp' /etc/nginx/sites-enabled/default || \
+sed -i '/^}/i \
+    # BEGIN REDCap_recommended_block_temp\
+    location ~* /temp/* {\
+        deny all;\
+    }\
+    # END REDCap_recommended_block_temp' /etc/nginx/sites-enabled/default
+
+# Start the cron service and add the REDCap cronjob
 service cron start
 (crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/php /home/site/wwwroot/cron.php > /dev/null")|crontab
