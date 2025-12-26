@@ -109,6 +109,7 @@ resource keyVaultResourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' e
 }
 
 module keyVaultSecretsModule '../kv/kvSecrets.bicep' = {
+  #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'kv-st-secret'), 64)
   scope: keyVaultResourceGroup
   params: {

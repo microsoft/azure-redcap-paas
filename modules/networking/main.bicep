@@ -20,6 +20,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 }
 
 module vNetModule 'vnet.bicep' = {
+  #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'vnet'), 64)
   scope: resourceGroup
   params: {
