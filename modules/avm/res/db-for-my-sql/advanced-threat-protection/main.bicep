@@ -1,5 +1,3 @@
-// VERSION 0.9.1 FROM https://github.com/Azure/bicep-registry-modules/blob/main/avm/res/db-for-my-sql/flexible-server/advanced-threat-protection/main.bicep
-
 metadata name = 'DBforMySQL Flexible Server Advanced Threat Protection'
 metadata description = 'This module enables Advanced Threat Protection for DBforMySQL Flexible Server.'
 
@@ -13,11 +11,11 @@ param flexibleServerName string
 ])
 param advancedThreatProtection string = 'Enabled'
 
-resource flexibleServer 'Microsoft.DBforMySQL/flexibleServers@2024-12-01-preview' existing = {
+resource flexibleServer 'Microsoft.DBforMySQL/flexibleServers@2024-12-30' existing = {
   name: flexibleServerName
 }
 
-resource advancedThreatProtectionSettings 'Microsoft.DBforMySQL/flexibleServers/advancedThreatProtectionSettings@2024-12-01-preview' = {
+resource advancedThreatProtectionSettings 'Microsoft.DBforMySQL/flexibleServers/advancedThreatProtectionSettings@2024-12-30' = {
   parent: flexibleServer
   name: 'Default'
   properties: {

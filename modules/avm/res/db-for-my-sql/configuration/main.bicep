@@ -1,5 +1,3 @@
-// VERSION 0.9.1 FROM https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/db-for-my-sql/flexible-server/configuration
-
 metadata name = 'DBforMySQL Flexible Server Configurations'
 metadata description = 'This module deploys a DBforMySQL Flexible Server Configuration.'
 
@@ -19,11 +17,11 @@ param source string?
 @description('Optional. Value of the configuration.')
 param value string?
 
-resource flexibleServer 'Microsoft.DBforMySQL/flexibleServers@2024-12-01-preview' existing = {
+resource flexibleServer 'Microsoft.DBforMySQL/flexibleServers@2024-12-30' existing = {
   name: flexibleServerName
 }
 
-resource configuration 'Microsoft.DBforMySQL/flexibleServers/configurations@2024-12-01-preview' = {
+resource configuration 'Microsoft.DBforMySQL/flexibleServers/configurations@2024-12-30' = {
   name: name
   parent: flexibleServer
   properties: {

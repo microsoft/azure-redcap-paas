@@ -1,5 +1,3 @@
-// VERSION 0.9.1. FROM https://github.com/Azure/bicep-registry-modules/blob/main/avm/res/db-for-my-sql/flexible-server/firewall-rule/main.bicep
-
 metadata name = 'DBforMySQL Flexible Server Firewall Rules'
 metadata description = 'This module deploys a DBforMySQL Flexible Server Firewall Rule.'
 
@@ -15,11 +13,11 @@ param endIpAddress string
 @description('Conditional. The name of the parent MySQL flexible server. Required if the template is used in a standalone deployment.')
 param flexibleServerName string
 
-resource flexibleServer 'Microsoft.DBforMySQL/flexibleServers@2024-12-01-preview' existing = {
+resource flexibleServer 'Microsoft.DBforMySQL/flexibleServers@2024-12-30' existing = {
   name: flexibleServerName
 }
 
-resource firewallRule 'Microsoft.DBforMySQL/flexibleServers/firewallRules@2024-12-01-preview' = {
+resource firewallRule 'Microsoft.DBforMySQL/flexibleServers/firewallRules@2024-12-30' = {
   name: name
   parent: flexibleServer
   properties: {
