@@ -18,7 +18,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   tags: mergeTags
 }
 
-module logAnalyticsWorkspace 'law.bicep' = {
+module logAnalyticsWorkspace 'log.bicep' = {
   name: take(replace(deploymentNameStructure, '{rtype}', 'log'), 64)
   scope: resourceGroup
   params: {
