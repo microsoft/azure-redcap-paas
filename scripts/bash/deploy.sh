@@ -26,34 +26,32 @@ echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20220829/mysqli.s
 ####################################################################################
 #
 # Wait for Key Vault secrets to be resolved (race condition fix)
+# Only applies when using REDCap Community credentials (no redcapZipUrl provided)
 # Azure App Service may not have resolved @Microsoft.KeyVault(...) references yet
 #
 ####################################################################################
 
-echo "Checking if Key Vault secrets are resolved..." >> /home/site/log-$stamp.txt
+# Only wait for secrets if redcapZipUrl is not provided
+if [ -z "$APPSETTING_redcapAppZip" ]; then
+  echo "Checking if Key Vault secrets are resolved..." >> /home/site/log-$stamp.txt
 
-max_wait=300  # 5 minutes max
-wait_interval=10
-elapsed=0
+  max_wait=300  # 5 minutes max
+  wait_interval=10
+  elapsed=0
 
-while [ $elapsed -lt $max_wait ]; do
-  # Check if credentials look like Key Vault references (not yet resolved) or are empty
-  if [[ "$APPSETTING_redcapCommunityPassword" == @Microsoft.KeyVault* ]] || [ -z "$APPSETTING_redcapCommunityPassword" ]; then
-    # Only wait if we're using community credentials (not a zip URL)
-    if [ -z "$APPSETTING_redcapAppZip" ]; then
+  while [ $elapsed -lt $max_wait ]; do
+    # Check if credentials look like Key Vault references (not yet resolved) or are empty
+    if [[ "$APPSETTING_redcapCommunityPassword" == @Microsoft.KeyVault* ]] || [ -z "$APPSETTING_redcapCommunityPassword" ]; then
       echo "Waiting for Key Vault secrets to resolve... ($elapsed seconds elapsed)" >> /home/site/log-$stamp.txt
       sleep $wait_interval
       elapsed=$((elapsed + wait_interval))
     else
+      echo "Key Vault secrets resolved after $elapsed seconds" >> /home/site/log-$stamp.txt
       break
     fi
-  else
-    echo "Key Vault secrets resolved after $elapsed seconds" >> /home/site/log-$stamp.txt
-    break
-  fi
-done
+  done
 
-if [ -z "$APPSETTING_redcapAppZip" ]; then
+  # Verify secrets were resolved before proceeding
   if [[ "$APPSETTING_redcapCommunityPassword" == @Microsoft.KeyVault* ]] || [ -z "$APPSETTING_redcapCommunityPassword" ]; then
     echo "ERROR: Key Vault secrets not resolved after $max_wait seconds. Exiting." >> /home/site/log-$stamp.txt
     exit 1
@@ -100,7 +98,18 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
     export APPSETTING_zipVersion="latest"
   fi
 
-  wget --method=post -O $redcapZipPath -q --body-data="username=$APPSETTING_redcapCommunityUsername&password=$APPSETTING_redcapCommunityPassword&version=$APPSETTING_zipVersion&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vumc.org/plugins/redcap_consortium/versions.php
+  echo "Using credentials for user: ${APPSETTING_redcapCommunityUsername}" >> "/home/site/log-${stamp}.txt"
+  echo "Starting wget download..." >> "/home/site/log-${stamp}.txt"
+
+  wget --progress=dot:mega --method=post -O "${redcapZipPath}" --body-data="username=${APPSETTING_redcapCommunityUsername}&password=${APPSETTING_redcapCommunityPassword}&version=${APPSETTING_zipVersion}&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vumc.org/plugins/redcap_consortium/versions.php 2>&1 | tee -a "/home/site/log-${stamp}.txt"
+
+  wget_exit_code="${PIPESTATUS[0]}"
+  if [ "${wget_exit_code}" -ne 0 ]; then
+    echo "ERROR: wget failed with exit code ${wget_exit_code}" >> "/home/site/log-${stamp}.txt"
+    exit 1
+  fi
+
+  echo "wget download completed" >> "/home/site/log-${stamp}.txt"
 
   # check to see if the redcap.zip file contains the word error
   if [ -z "$(grep -i error redcap.zip)" ]; then
@@ -111,8 +120,17 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
   fi
 
 else
-  echo "Downloading REDCap zip file from storage" >> /home/site/log-$stamp.txt
-  wget -q -O $redcapZipPath $APPSETTING_redcapAppZip
+  echo "Downloading REDCap zip file from storage" >> "/home/site/log-${stamp}.txt"
+  echo "Starting wget download from: ${APPSETTING_redcapAppZip}" >> "/home/site/log-${stamp}.txt"
+  wget --progress=dot:mega -O "${redcapZipPath}" "${APPSETTING_redcapAppZip}" 2>&1 | tee -a "/home/site/log-${stamp}.txt"
+
+  wget_exit_code="${PIPESTATUS[0]}"
+  if [ "${wget_exit_code}" -ne 0 ]; then
+    echo "ERROR: wget failed with exit code ${wget_exit_code}" >> "/home/site/log-${stamp}.txt"
+    exit 1
+  fi
+
+  echo "wget download completed" >> "/home/site/log-${stamp}.txt"
 fi
 
 echo "Unzipping redcap.zip" >> /home/site/log-$stamp.txt
