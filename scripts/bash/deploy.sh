@@ -5,6 +5,9 @@
 #
 # MIT License
 
+# Exit on any error
+set -e
+
 ####################################################################################
 #
 # Timestamp for log file
@@ -12,6 +15,9 @@
 ####################################################################################
 
 stamp=$(date +%Y-%m-%d-%H-%M)
+
+# Trap to detect if script is killed
+trap 'echo "ERROR: deploy.sh was interrupted or killed at $(date)" >> "/home/site/log-${stamp}.txt"; exit 1' INT TERM
 
 ####################################################################################
 #
@@ -125,12 +131,12 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
   echo "wget download completed - file size: ${file_size} bytes" >> "/home/site/log-${stamp}.txt"
 
   # check to see if the redcap.zip file contains the word error
-  if [ -z "$(grep -i error redcap.zip)" ]; then
-    echo "Downloaded REDCap zip file" >> /home/site/log-$stamp.txt
-  else
-    echo $(cat redcap.zip) >> /home/site/log-$stamp.txt
+  if grep -qi error "${redcapZipPath}"; then
+    echo "ERROR: Downloaded file contains error message:" >> "/home/site/log-${stamp}.txt"
+    cat "${redcapZipPath}" >> "/home/site/log-${stamp}.txt"
     exit 1
   fi
+  echo "Downloaded REDCap zip file successfully" >> "/home/site/log-${stamp}.txt"
 
 else
   echo "Downloading REDCap zip file from storage" >> "/home/site/log-${stamp}.txt"
