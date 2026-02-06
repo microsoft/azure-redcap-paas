@@ -105,16 +105,30 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
   fi
 
   echo "Using credentials for user: ${APPSETTING_redcapCommunityUsername}" >> "/home/site/log-${stamp}.txt"
-  echo "Starting wget download..." >> "/home/site/log-${stamp}.txt"
+
+  # Try wget first with aggressive retry settings
+  echo "Attempting download with wget (timeout: 30s, tries: 5)..." >> "/home/site/log-${stamp}.txt"
 
   set -o pipefail
-  wget --progress=dot:mega --timeout=30 --read-timeout=30 --tries=3 --method=post -O "${redcapZipPath}" --body-data="username=${APPSETTING_redcapCommunityUsername}&password=${APPSETTING_redcapCommunityPassword}&version=${APPSETTING_zipVersion}&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vumc.org/plugins/redcap_consortium/versions.php 2>&1 | tee -a "/home/site/log-${stamp}.txt"
+  wget --progress=dot:mega --timeout=30 --read-timeout=30 --tries=5 --waitretry=5 --retry-connrefused --method=post -O "${redcapZipPath}" --body-data="username=${APPSETTING_redcapCommunityUsername}&password=${APPSETTING_redcapCommunityPassword}&version=${APPSETTING_zipVersion}&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vumc.org/plugins/redcap_consortium/versions.php 2>&1 | tee -a "/home/site/log-${stamp}.txt"
   wget_exit_code=$?
   set +o pipefail
 
+  # If wget fails, try curl as fallback
   if [ "${wget_exit_code}" -ne 0 ]; then
-    echo "ERROR: wget failed with exit code ${wget_exit_code}" >> "/home/site/log-${stamp}.txt"
-    exit 1
+    echo "wget failed with exit code ${wget_exit_code}, trying curl as fallback..." >> "/home/site/log-${stamp}.txt"
+
+    # Remove partial download
+    rm -f "${redcapZipPath}"
+
+    curl --fail --show-error --location --connect-timeout 30 --max-time 1800 --retry 5 --retry-delay 5 --retry-max-time 3600 -X POST -o "${redcapZipPath}" -d "username=${APPSETTING_redcapCommunityUsername}&password=${APPSETTING_redcapCommunityPassword}&version=${APPSETTING_zipVersion}&install=1" -H "Content-Type: application/x-www-form-urlencoded" https://redcap.vumc.org/plugins/redcap_consortium/versions.php 2>&1 | tee -a "/home/site/log-${stamp}.txt"
+    curl_exit_code=$?
+
+    if [ "${curl_exit_code}" -ne 0 ]; then
+      echo "ERROR: Both wget and curl failed. curl exit code: ${curl_exit_code}" >> "/home/site/log-${stamp}.txt"
+      exit 1
+    fi
+    echo "curl download succeeded" >> "/home/site/log-${stamp}.txt"
   fi
 
   if [ ! -f "${redcapZipPath}" ]; then
@@ -140,16 +154,28 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
 
 else
   echo "Downloading REDCap zip file from storage" >> "/home/site/log-${stamp}.txt"
-  echo "Starting wget download from: ${APPSETTING_redcapAppZip}" >> "/home/site/log-${stamp}.txt"
+  echo "Attempting download from: ${APPSETTING_redcapAppZip}" >> "/home/site/log-${stamp}.txt"
 
+  # Try wget first
   set -o pipefail
-  wget --progress=dot:mega --timeout=30 --read-timeout=30 --tries=3 -O "${redcapZipPath}" "${APPSETTING_redcapAppZip}" 2>&1 | tee -a "/home/site/log-${stamp}.txt"
+  wget --progress=dot:mega --timeout=30 --read-timeout=30 --tries=5 --waitretry=5 -O "${redcapZipPath}" "${APPSETTING_redcapAppZip}" 2>&1 | tee -a "/home/site/log-${stamp}.txt"
   wget_exit_code=$?
   set +o pipefail
 
+  # If wget fails, try curl as fallback
   if [ "${wget_exit_code}" -ne 0 ]; then
-    echo "ERROR: wget failed with exit code ${wget_exit_code}" >> "/home/site/log-${stamp}.txt"
-    exit 1
+    echo "wget failed with exit code ${wget_exit_code}, trying curl as fallback..." >> "/home/site/log-${stamp}.txt"
+
+    rm -f "${redcapZipPath}"
+
+    curl --fail --show-error --location --connect-timeout 30 --max-time 1800 --retry 5 --retry-delay 5 -o "${redcapZipPath}" "${APPSETTING_redcapAppZip}" 2>&1 | tee -a "/home/site/log-${stamp}.txt"
+    curl_exit_code=$?
+
+    if [ "${curl_exit_code}" -ne 0 ]; then
+      echo "ERROR: Both wget and curl failed. curl exit code: ${curl_exit_code}" >> "/home/site/log-${stamp}.txt"
+      exit 1
+    fi
+    echo "curl download succeeded" >> "/home/site/log-${stamp}.txt"
   fi
 
   if [ ! -f "${redcapZipPath}" ]; then
