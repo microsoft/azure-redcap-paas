@@ -25,8 +25,56 @@ echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20220829/mysqli.s
 
 ####################################################################################
 #
+# Wait for Key Vault secrets to be resolved (race condition fix)
+# Azure App Service may not have resolved @Microsoft.KeyVault(...) references yet
+#
+####################################################################################
+
+echo "Checking if Key Vault secrets are resolved..." >> /home/site/log-$stamp.txt
+
+max_wait=300  # 5 minutes max
+wait_interval=10
+elapsed=0
+
+while [ $elapsed -lt $max_wait ]; do
+  # Check if credentials look like Key Vault references (not yet resolved) or are empty
+  if [[ "$APPSETTING_redcapCommunityPassword" == @Microsoft.KeyVault* ]] || [ -z "$APPSETTING_redcapCommunityPassword" ]; then
+    # Only wait if we're using community credentials (not a zip URL)
+    if [ -z "$APPSETTING_redcapAppZip" ]; then
+      echo "Waiting for Key Vault secrets to resolve... ($elapsed seconds elapsed)" >> /home/site/log-$stamp.txt
+      sleep $wait_interval
+      elapsed=$((elapsed + wait_interval))
+    else
+      break
+    fi
+  else
+    echo "Key Vault secrets resolved after $elapsed seconds" >> /home/site/log-$stamp.txt
+    break
+  fi
+done
+
+if [ -z "$APPSETTING_redcapAppZip" ]; then
+  if [[ "$APPSETTING_redcapCommunityPassword" == @Microsoft.KeyVault* ]] || [ -z "$APPSETTING_redcapCommunityPassword" ]; then
+    echo "ERROR: Key Vault secrets not resolved after $max_wait seconds. Exiting." >> /home/site/log-$stamp.txt
+    exit 1
+  fi
+fi
+
+####################################################################################
+#
+# Install unzip if not present
+#
+####################################################################################
+
+if ! command -v unzip &> /dev/null; then
+  echo "Installing unzip..." >> /home/site/log-$stamp.txt
+  apt-get update && apt-get install -y unzip >> /home/site/log-$stamp.txt 2>&1
+fi
+
+####################################################################################
+#
 # Download REDCap zip file and unzip to wwwroot
-# If zip file path exists just download it; otherwise 
+# If zip file path exists just download it; otherwise
 # make a call # to REDCap community site and download it
 #
 ####################################################################################
@@ -51,7 +99,7 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
     echo "zipVersion is null or empty. Setting to latest" >> /home/site/log-$stamp.txt
     export APPSETTING_zipVersion="latest"
   fi
-  
+
   wget --method=post -O $redcapZipPath -q --body-data="username=$APPSETTING_redcapCommunityUsername&password=$APPSETTING_redcapCommunityPassword&version=$APPSETTING_zipVersion&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vumc.org/plugins/redcap_consortium/versions.php
 
   # check to see if the redcap.zip file contains the word error
@@ -70,7 +118,7 @@ fi
 echo "Unzipping redcap.zip" >> /home/site/log-$stamp.txt
 
 rm -rf /home/site/wwwroot/*
-unzip -oq $redcapZipPath -d /tmp/wwwroot 
+unzip -oq $redcapZipPath -d /tmp/wwwroot
 
 echo "Moving REDCap files to wwwroot" >> /home/site/log-$stamp.txt
 
@@ -116,7 +164,7 @@ cp /home/site/repository/Files/settings.ini /home/site/ini/redcap.ini
 
 ####################################################################################
 #
-# For better security, it is recommended that you enable the 
+# For better security, it is recommended that you enable the
 # session.cookie_secure option in your web server's PHP.INI file
 #
 ####################################################################################
