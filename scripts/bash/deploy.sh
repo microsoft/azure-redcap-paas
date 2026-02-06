@@ -101,15 +101,28 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
   echo "Using credentials for user: ${APPSETTING_redcapCommunityUsername}" >> "/home/site/log-${stamp}.txt"
   echo "Starting wget download..." >> "/home/site/log-${stamp}.txt"
 
-  wget --progress=dot:mega --method=post -O "${redcapZipPath}" --body-data="username=${APPSETTING_redcapCommunityUsername}&password=${APPSETTING_redcapCommunityPassword}&version=${APPSETTING_zipVersion}&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vumc.org/plugins/redcap_consortium/versions.php 2>&1 | tee -a "/home/site/log-${stamp}.txt"
+  set -o pipefail
+  wget --progress=dot:mega --timeout=30 --read-timeout=30 --tries=3 --method=post -O "${redcapZipPath}" --body-data="username=${APPSETTING_redcapCommunityUsername}&password=${APPSETTING_redcapCommunityPassword}&version=${APPSETTING_zipVersion}&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vumc.org/plugins/redcap_consortium/versions.php 2>&1 | tee -a "/home/site/log-${stamp}.txt"
+  wget_exit_code=$?
+  set +o pipefail
 
-  wget_exit_code="${PIPESTATUS[0]}"
   if [ "${wget_exit_code}" -ne 0 ]; then
     echo "ERROR: wget failed with exit code ${wget_exit_code}" >> "/home/site/log-${stamp}.txt"
     exit 1
   fi
 
-  echo "wget download completed" >> "/home/site/log-${stamp}.txt"
+  if [ ! -f "${redcapZipPath}" ]; then
+    echo "ERROR: Download file ${redcapZipPath} does not exist" >> "/home/site/log-${stamp}.txt"
+    exit 1
+  fi
+
+  if [ ! -s "${redcapZipPath}" ]; then
+    echo "ERROR: Download file ${redcapZipPath} is empty" >> "/home/site/log-${stamp}.txt"
+    exit 1
+  fi
+
+  file_size=$(stat -f%z "${redcapZipPath}" 2>/dev/null || stat -c%s "${redcapZipPath}" 2>/dev/null)
+  echo "wget download completed - file size: ${file_size} bytes" >> "/home/site/log-${stamp}.txt"
 
   # check to see if the redcap.zip file contains the word error
   if [ -z "$(grep -i error redcap.zip)" ]; then
@@ -122,15 +135,29 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
 else
   echo "Downloading REDCap zip file from storage" >> "/home/site/log-${stamp}.txt"
   echo "Starting wget download from: ${APPSETTING_redcapAppZip}" >> "/home/site/log-${stamp}.txt"
-  wget --progress=dot:mega -O "${redcapZipPath}" "${APPSETTING_redcapAppZip}" 2>&1 | tee -a "/home/site/log-${stamp}.txt"
 
-  wget_exit_code="${PIPESTATUS[0]}"
+  set -o pipefail
+  wget --progress=dot:mega --timeout=30 --read-timeout=30 --tries=3 -O "${redcapZipPath}" "${APPSETTING_redcapAppZip}" 2>&1 | tee -a "/home/site/log-${stamp}.txt"
+  wget_exit_code=$?
+  set +o pipefail
+
   if [ "${wget_exit_code}" -ne 0 ]; then
     echo "ERROR: wget failed with exit code ${wget_exit_code}" >> "/home/site/log-${stamp}.txt"
     exit 1
   fi
 
-  echo "wget download completed" >> "/home/site/log-${stamp}.txt"
+  if [ ! -f "${redcapZipPath}" ]; then
+    echo "ERROR: Download file ${redcapZipPath} does not exist" >> "/home/site/log-${stamp}.txt"
+    exit 1
+  fi
+
+  if [ ! -s "${redcapZipPath}" ]; then
+    echo "ERROR: Download file ${redcapZipPath} is empty" >> "/home/site/log-${stamp}.txt"
+    exit 1
+  fi
+
+  file_size=$(stat -f%z "${redcapZipPath}" 2>/dev/null || stat -c%s "${redcapZipPath}" 2>/dev/null)
+  echo "wget download completed - file size: ${file_size} bytes" >> "/home/site/log-${stamp}.txt"
 fi
 
 echo "Unzipping redcap.zip" >> /home/site/log-$stamp.txt
