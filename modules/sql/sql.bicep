@@ -124,7 +124,7 @@ module uamiMySqlRoleAssignmentModule '../common/roleAssignment-mySql.bicep' = {
   }
 }
 
-// Turn off the "invisible primary key" parameter on the server
+// Turn off the "invisible primary key" parameter and set max_allowed_packet for REDCap
 resource dbConfigDeploymentScript 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
   name: deploymentScriptName
   location: location
@@ -140,7 +140,7 @@ resource dbConfigDeploymentScript 'Microsoft.Resources/deploymentScripts@2020-10
     retentionInterval: 'P1D'
     cleanupPreference: 'OnSuccess'
     forceUpdateTag: currentTime
-    scriptContent: 'az mysql flexible-server parameter set -g ${resourceGroup().name} --server-name ${server.name} --name sql_generate_invisible_primary_key --value OFF'
+    scriptContent: 'az mysql flexible-server parameter set -g ${resourceGroup().name} --server-name ${server.name} --name sql_generate_invisible_primary_key --value OFF && az mysql flexible-server parameter set -g ${resourceGroup().name} --server-name ${server.name} --name max_allowed_packet --value 1073741824'
   }
   tags: tags
   dependsOn: [uamiMySqlRoleAssignmentModule]
