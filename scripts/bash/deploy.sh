@@ -136,7 +136,11 @@ echo "Updating database connection info in database.php" >> /home/site/log-$stam
 
 cd /home/site/wwwroot
 
-wget --no-check-certificate https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem
+# Download Mozilla CA bundle (includes Microsoft, DigiCert, and all major CAs)
+# Azure MySQL Flexible Server now uses Microsoft's own CA, not DigiCert
+curl -sL https://curl.se/ca/cacert.pem -o /home/site/wwwroot/DigiCertGlobalRootCA.crt.pem
+
+echo "Downloaded Mozilla CA bundle for SSL verification" >> /home/site/log-$stamp.txt
 
 sed -i "s|hostname[[:space:]]*= '';|hostname = getenv('DBHostName');|" database.php
 sed -i "s|db[[:space:]]*= '';|db = getenv('DBName');|" database.php
