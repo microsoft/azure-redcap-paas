@@ -72,7 +72,7 @@ fi
 
 if ! command -v unzip &> /dev/null; then
   echo "Installing unzip..." >> /home/site/log-$stamp.txt
-  apt-get update && apt-get install -y unzip >> /home/site/log-$stamp.txt 2>&1
+  apt-get install -y unzip >> /home/site/log-$stamp.txt 2>&1
 fi
 
 ####################################################################################
@@ -106,30 +106,18 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
 
   echo "Using credentials for user: ${APPSETTING_redcapCommunityUsername}" >> "/home/site/log-${stamp}.txt"
 
-  # Try wget first with aggressive retry settings
-  echo "Attempting download with wget (timeout: 30s, tries: 5)..." >> "/home/site/log-${stamp}.txt"
+  # Skip wget entirely and use curl which is more reliable
+  echo "Downloading with curl (max-time: 900s, retries: 10)..." >> "/home/site/log-${stamp}.txt"
 
-  set -o pipefail
-  wget --progress=dot:mega --timeout=30 --read-timeout=30 --tries=5 --waitretry=5 --retry-connrefused --method=post -O "${redcapZipPath}" --body-data="username=${APPSETTING_redcapCommunityUsername}&password=${APPSETTING_redcapCommunityPassword}&version=${APPSETTING_zipVersion}&install=1" --header=Content-Type:application/x-www-form-urlencoded https://redcap.vumc.org/plugins/redcap_consortium/versions.php 2>&1 | tee -a "/home/site/log-${stamp}.txt"
-  wget_exit_code=$?
-  set +o pipefail
+  curl --fail --show-error --location --progress-bar --connect-timeout 30 --speed-limit 10000 --speed-time 60 --max-time 900 --retry 10 --retry-delay 5 --retry-max-time 3600 -X POST -o "${redcapZipPath}" -d "username=${APPSETTING_redcapCommunityUsername}&password=${APPSETTING_redcapCommunityPassword}&version=${APPSETTING_zipVersion}&install=1" -H "Content-Type: application/x-www-form-urlencoded" https://redcap.vumc.org/plugins/redcap_consortium/versions.php 2>&1 | tee -a "/home/site/log-${stamp}.txt"
+  curl_exit_code=$?
 
-  # If wget fails, try curl as fallback
-  if [ "${wget_exit_code}" -ne 0 ]; then
-    echo "wget failed with exit code ${wget_exit_code}, trying curl as fallback..." >> "/home/site/log-${stamp}.txt"
-
-    # Remove partial download
-    rm -f "${redcapZipPath}"
-
-    curl --fail --show-error --location --connect-timeout 30 --max-time 1800 --retry 5 --retry-delay 5 --retry-max-time 3600 -X POST -o "${redcapZipPath}" -d "username=${APPSETTING_redcapCommunityUsername}&password=${APPSETTING_redcapCommunityPassword}&version=${APPSETTING_zipVersion}&install=1" -H "Content-Type: application/x-www-form-urlencoded" https://redcap.vumc.org/plugins/redcap_consortium/versions.php 2>&1 | tee -a "/home/site/log-${stamp}.txt"
-    curl_exit_code=$?
-
-    if [ "${curl_exit_code}" -ne 0 ]; then
-      echo "ERROR: Both wget and curl failed. curl exit code: ${curl_exit_code}" >> "/home/site/log-${stamp}.txt"
-      exit 1
-    fi
-    echo "curl download succeeded" >> "/home/site/log-${stamp}.txt"
+  if [ "${curl_exit_code}" -ne 0 ]; then
+    echo "ERROR: curl failed with exit code ${curl_exit_code}" >> "/home/site/log-${stamp}.txt"
+    exit 1
   fi
+
+  echo "Download completed successfully" >> "/home/site/log-${stamp}.txt"
 
   if [ ! -f "${redcapZipPath}" ]; then
     echo "ERROR: Download file ${redcapZipPath} does not exist" >> "/home/site/log-${stamp}.txt"
@@ -154,29 +142,17 @@ if [ -z "$APPSETTING_redcapAppZip" ]; then
 
 else
   echo "Downloading REDCap zip file from storage" >> "/home/site/log-${stamp}.txt"
-  echo "Attempting download from: ${APPSETTING_redcapAppZip}" >> "/home/site/log-${stamp}.txt"
+  echo "Downloading with curl from: ${APPSETTING_redcapAppZip}" >> "/home/site/log-${stamp}.txt"
 
-  # Try wget first
-  set -o pipefail
-  wget --progress=dot:mega --timeout=30 --read-timeout=30 --tries=5 --waitretry=5 -O "${redcapZipPath}" "${APPSETTING_redcapAppZip}" 2>&1 | tee -a "/home/site/log-${stamp}.txt"
-  wget_exit_code=$?
-  set +o pipefail
+  curl --fail --show-error --location --progress-bar --connect-timeout 30 --speed-limit 10000 --speed-time 60 --max-time 900 --retry 10 --retry-delay 5 -o "${redcapZipPath}" "${APPSETTING_redcapAppZip}" 2>&1 | tee -a "/home/site/log-${stamp}.txt"
+  curl_exit_code=$?
 
-  # If wget fails, try curl as fallback
-  if [ "${wget_exit_code}" -ne 0 ]; then
-    echo "wget failed with exit code ${wget_exit_code}, trying curl as fallback..." >> "/home/site/log-${stamp}.txt"
-
-    rm -f "${redcapZipPath}"
-
-    curl --fail --show-error --location --connect-timeout 30 --max-time 1800 --retry 5 --retry-delay 5 -o "${redcapZipPath}" "${APPSETTING_redcapAppZip}" 2>&1 | tee -a "/home/site/log-${stamp}.txt"
-    curl_exit_code=$?
-
-    if [ "${curl_exit_code}" -ne 0 ]; then
-      echo "ERROR: Both wget and curl failed. curl exit code: ${curl_exit_code}" >> "/home/site/log-${stamp}.txt"
-      exit 1
-    fi
-    echo "curl download succeeded" >> "/home/site/log-${stamp}.txt"
+  if [ "${curl_exit_code}" -ne 0 ]; then
+    echo "ERROR: curl failed with exit code ${curl_exit_code}" >> "/home/site/log-${stamp}.txt"
+    exit 1
   fi
+
+  echo "Download completed successfully" >> "/home/site/log-${stamp}.txt"
 
   if [ ! -f "${redcapZipPath}" ]; then
     echo "ERROR: Download file ${redcapZipPath} does not exist" >> "/home/site/log-${stamp}.txt"
