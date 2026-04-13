@@ -39,7 +39,6 @@ BLOCK_MARKER="REDCap_recommended_block_temp"
 
 if ! grep -q "$BLOCK_MARKER" "$NGINX_CONF_FILE"; then
     sed -i '/^}/i \
-        #
         # BEGIN REDCap_recommended_block_temp\
         location ~* /temp/* {\
             deny all;\
