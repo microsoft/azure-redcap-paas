@@ -4,6 +4,16 @@ echo "Custom container startup"
 
 ####################################################################################
 #
+# Ensure that the currently available mysqli extension is configured for PHP
+#
+####################################################################################
+
+# Find the latest mysqli.so file in the extensions directory and add it to the redcap.ini file
+MYSQLI_SO_PATH=$(find /usr/local/lib/php/extensions/ -name "mysqli.so" -print 2>/dev/null | sort -V | tail -n 1)
+echo "extension=${MYSQLI_SO_PATH}" > /home/site/ini/extensions.ini
+
+####################################################################################
+#
 # Install required packages in container
 #
 ####################################################################################

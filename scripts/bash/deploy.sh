@@ -20,10 +20,11 @@ stamp=$(date +%Y-%m-%d-%H-%M)
 ####################################################################################
 
 echo "Configuring mysqli extension" >> /home/site/log-$stamp.txt
+# This path is set in webapp.bicep as an environment variable
 mkdir -p /home/site/ini
 # Find the latest mysqli.so file in the extensions directory and add it to the redcap.ini file
 MYSQLI_SO_PATH=$(find /usr/local/lib/php/extensions/ -name "mysqli.so" -print 2>/dev/null | sort -V | tail -n 1)
-echo "extension=${MYSQLI_SO_PATH}" >> /home/site/ini/extensions.ini
+echo "extension=${MYSQLI_SO_PATH}" > /home/site/ini/extensions.ini
 
 ####################################################################################
 #
