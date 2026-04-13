@@ -21,7 +21,9 @@ stamp=$(date +%Y-%m-%d-%H-%M)
 
 echo "Configuring mysqli extension" >> /home/site/log-$stamp.txt
 mkdir -p /home/site/ini
-echo "extension=/usr/local/lib/php/extensions/no-debug-non-zts-20220829/mysqli.so" >> /home/site/ini/extensions.ini
+# Find the latest mysqli.so file in the extensions directory and add it to the redcap.ini file
+MYSQLI_SO_PATH=$(find /usr/local/lib/php/extensions/ -name "mysqli.so" -print 2>/dev/null | sort -V | tail -n 1)
+echo "extension=${MYSQLI_SO_PATH}" >> /home/site/ini/extensions.ini
 
 ####################################################################################
 #
