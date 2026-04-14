@@ -28,7 +28,7 @@ apt-get update -qq && apt-get install cron -yqq
 
 # Export the database connection environment variables to /etc/environment so cron can use them
 # We do this in startup.sh so that each container instance will get this file (it's outside of /home so not persisted)
-# and also because then updates to the environment variables will be picked up by cron
+# and also because then updates to the environment variables (app settings) will be picked up by cron
 echo "DBHostName=$DBHostName" > /etc/environment # Overwrite the file with the first statement
 echo "DBName=$DBName" >> /etc/environment # Append all the other lines
 echo "DBUserName=$DBUserName" >> /etc/environment
@@ -48,18 +48,16 @@ NGINX_CONF_FILE="/etc/nginx/sites-enabled/default"
 BLOCK_MARKER="REDCap_recommended_block_temp"
 
 if ! grep -q "$BLOCK_MARKER" "$NGINX_CONF_FILE"; then
-    sed -i '/^}/i \
-        # BEGIN REDCap_recommended_block_temp\
-        location ~* /temp/* {\
-            deny all;\
-        }\
-        # END REDCap_recommended_block_temp' "$NGINX_CONF_FILE"
+    sed -i '/server\s*{/a \
+    # BEGIN REDCap_recommended_block_temp\
+    location ^~ /temp/ {\
+        deny all;\
+    }\
+    # END REDCap_recommended_block_temp\
+    ' "$NGINX_CONF_FILE"
 
-    # Validate nginx config
-    nginx -t
-
-    # Must restart nginx to apply the config change
-    service nginx restart
+    # Validate nginx config and restart if valid
+    nginx -t && service nginx restart
 fi
 
 # Start the cron service and add the REDCap cronjob
