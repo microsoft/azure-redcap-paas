@@ -32,10 +32,6 @@ param appInsights_instrumentationKey string
 param availabilityZonesEnabled bool = false
 param enablePrivateEndpoint bool
 
-// param smtpFQDN string = ''
-// param smtpPort string = ''
-// param smtpFromEmailAddress string = ''
-
 param timeZone string = 'UTC'
 
 // This is not a secret, it's a Key Vault reference
@@ -122,20 +118,6 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'DBSslCa'
           value: DBSslCa
         }
-        // SMTP, legacy settings - Please use Azure Communication Services for new deployments
-        // {
-        //   name: 'smtpFQDN'
-        //   value: smtpFQDN
-        // }
-        // {
-        //   name: 'smtpPort'
-        //   value: smtpPort
-        // }
-        // {
-        //   name: 'fromEmailAddress'
-        //   value: smtpFromEmailAddress
-        // }
-        // END SMTP
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
           value: appInsights_instrumentationKey

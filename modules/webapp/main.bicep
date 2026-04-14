@@ -17,10 +17,6 @@ param integrationSubnetId string
 
 param availabilityZonesEnabled bool = false
 
-// param smtpFQDN string = ''
-// param smtpPort string = ''
-// param smtpFromEmailAddress string = ''
-
 #disable-next-line secure-secrets-in-params
 param storageAccountKeySecretRef string
 param storageAccountName string
@@ -91,10 +87,6 @@ module appService 'webapp.bicep' = {
     storageAccountContainerName: storageAccountContainerName
     storageAccountKeySecretRef: storageAccountKeySecretRef
     storageAccountName: storageAccountName
-
-    // smtpFQDN: smtpFQDN
-    // smtpFromEmailAddress: smtpFromEmailAddress
-    // smtpPort: smtpPort
 
     uamiId: uamiId
 
