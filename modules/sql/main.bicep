@@ -88,7 +88,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   tags: mergeTags
 }
 
-module flexibleServerModule '../avm/res/db-for-my-sql/main.bicep' = {
+module flexibleServerModule 'br/public:avm/res/db-for-my-sql/flexible-server:0.10.1' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'db'), 64)
   scope: resourceGroup
@@ -169,42 +169,6 @@ module flexibleServerModule '../avm/res/db-for-my-sql/main.bicep' = {
   }
 }
 
-// module mysqlDbserver './sql.bicep' = {
-//   #disable-next-line BCP334
-//   name: take(replace(deploymentNameStructure, '{rtype}', 'mysql'), 64)
-//   scope: resourceGroup
-//   params: {
-//     flexibleSqlServerName: flexibleSqlServerName
-//     location: location
-//     tags: mergeTags
-//     skuName: skuName
-//     SkuTier: SkuTier
-//     StorageSizeGB: StorageSizeGB
-//     StorageIops: StorageIops
-//     peSubnetId: peSubnetId
-//     privateDnsZoneId: empty(existingPrivateDnsZonesResourceGroupId)
-//       ? privateDns.outputs.privateDnsId
-//       : '${existingPrivateDnsZonesResourceGroupId}/providers/Microsoft.Network/privateDnsZones/${privateDnsZoneName}'
-//     adminUserName: sqlAdminUser
-//     adminPassword: sqlAdminPassword
-//     mysqlVersion: mysqlVersion
-//     databaseName: databaseName
-//     database_charset: database_charset
-//     database_collation: database_collation
-
-//     highAvailability: (highAvailability == 'Enabled') ? true : false
-//     availabilityZonesEnabled: availabilityZonesEnabled
-
-//     // roles: roles
-//     // uamiId: uamiId
-//     // uamiPrincipalId: uamiPrincipalId
-//     // deploymentScriptName: deploymentScriptName
-
-//     deploymentNameStructure: deploymentNameStructure
-//     enableAzureVerifiedModulesTelemetry: enableAzureVerifiedModulesTelemetry
-//   }
-// }
-
 module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'mysql-dns'), 64)
@@ -215,11 +179,6 @@ module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResour
     tags: tags
   }
 }
-
-// output mySqlServerName string = mysqlDbserver.outputs.mySqlServerName
-// output databaseName string = mysqlDbserver.outputs.databaseName
-// output sqlAdmin string = mysqlDbserver.outputs.sqlAdmin
-// output fqdn string = mysqlDbserver.outputs.fqdn
 
 output mySqlServerName string = flexibleServerModule.outputs.name // server.name
 output databaseName string = databaseName
