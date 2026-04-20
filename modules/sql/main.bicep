@@ -1,6 +1,3 @@
-targetScope = 'subscription'
-
-param resourceGroupName string
 param location string
 param tags object
 param customTags object
@@ -19,8 +16,6 @@ param publicNetworkAccess string = 'Disabled'
 
 param existingPrivateDnsZonesResourceGroupId string = ''
 
-// param roles object
-// param deploymentScriptName string
 param enableAzureVerifiedModulesTelemetry bool
 
 @description('MySQL version')
@@ -75,23 +70,13 @@ param databaseName string
 param database_charset string = 'utf8'
 param database_collation string = 'utf8_general_ci'
 
-// param uamiId string
-// param uamiPrincipalId string
-
 param deploymentNameStructure string
 
 var mergeTags = union(tags, customTags)
 
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
-  name: resourceGroupName
-  location: location
-  tags: mergeTags
-}
-
 module flexibleServerModule 'br/public:avm/res/db-for-my-sql/flexible-server:0.10.1' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'db'), 64)
-  scope: resourceGroup
   params: {
     // Required parameters
     availabilityZone: -1
@@ -163,7 +148,7 @@ module flexibleServerModule 'br/public:avm/res/db-for-my-sql/flexible-server:0.1
     //   }
     // ]
 
-    tags: tags
+    tags: mergeTags
 
     enableTelemetry: enableAzureVerifiedModulesTelemetry
   }
@@ -172,11 +157,10 @@ module flexibleServerModule 'br/public:avm/res/db-for-my-sql/flexible-server:0.1
 module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'mysql-dns'), 64)
-  scope: resourceGroup
   params: {
     privateDnsZoneName: privateDnsZoneName
     virtualNetworkId: virtualNetworkId
-    tags: tags
+    tags: mergeTags
   }
 }
 

@@ -69,13 +69,6 @@ param mySqlStorageIops int = 396
 @description('The MySQL Flexible Server admin user account name. Defaults to \'sqladmin\'.')
 param sqlAdmin string = 'sqladmin'
 
-// @description('The outgoing SMTP server FQDN or IP address.')
-// param smtpFQDN string = ''
-// @description('The outgoing SMTP server port.')
-// param smtpPort string = ''
-// @description('The email address to use as the sender for outgoing emails.')
-// param smtpFromEmailAddress string = ''
-
 param appServiceSkuName string = 'P0v3'
 
 @description('Determines whether availability zone redundancy is enabled for the MySQL Flexible Server and the app service. The region must support availability zones.')
@@ -85,8 +78,39 @@ param existingVirtualNetworkId string = ''
 
 param appServiceTimeZone string = 'UTC'
 
-@description('If true, telemetry will be sent to Microsoft to help improve Azure Verified Modules. No customer data is included in this telemetry.')
+@description('If true, the deployment will create all resources in a single resource group. If false, resources will be distributed across multiple resource groups according to their type.')
+param singleResourceGroupDeployment bool = false
+
+@description('If true, telemetry will be sent to Microsoft to help improve Azure Verified Modules. See https://azure.github.io/Azure-Verified-Modules/help-support/telemetry/ for more information.')
 param enableAzureVerifiedModulesTelemetry bool = true
+
+@description('The subnets in the REDCap virtual network. Leave default for most purposes. This parameter must be used when integrating with an existing virtual network, and the existing subnet names must be specified using the existingSubnetName property.')
+// TODO: Define type
+param subnets object = {
+  // TODO: Define securityRules
+  // TODO: Add existingSubnetName property for existing subnet
+  PrivateLinkSubnet: {
+    addressPrefix: cidrSubnet(vnetAddressSpace, 27, 0)
+  }
+  ComputeSubnet: {
+    addressPrefix: cidrSubnet(vnetAddressSpace, 27, 1)
+  }
+  IntegrationSubnet: {
+    // Two /27 have already been created, which add up to a /26. This the second /26 (index = 1).
+    addressPrefix: cidrSubnet(vnetAddressSpace, 26, 1)
+    delegation: 'Microsoft.Web/serverFarms'
+  }
+  MySQLFlexSubnet: {
+    // TODO: /29 seems very small
+    // Two /26 have been allocated; that's equivalent to sixteen /29s.
+    addressPrefix: cidrSubnet(vnetAddressSpace, 29, 16)
+    delegation: 'Microsoft.DBforMySQL/flexibleServers'
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// VARIABLES
+////////////////////////////////////////////////////////////////////////////////
 
 var sequenceFormatted = format('{0:00}', sequence)
 var rgNamingStructure = replace(
@@ -118,29 +142,6 @@ var lawName = nameModule[8].outputs.shortName
 
 var deploymentNameStructure = '${workloadName}-${environment}-${sequenceFormatted}-{rtype}-${deploymentTime}'
 
-// TODO: Define type
-param subnets object = {
-  // TODO: Define securityRules
-  // TODO: Add existingSubnetName property for existing subnet
-  PrivateLinkSubnet: {
-    addressPrefix: cidrSubnet(vnetAddressSpace, 27, 0)
-  }
-  ComputeSubnet: {
-    addressPrefix: cidrSubnet(vnetAddressSpace, 27, 1)
-  }
-  IntegrationSubnet: {
-    // Two /27 have already been created, which add up to a /26. This the second /26 (index = 1).
-    addressPrefix: cidrSubnet(vnetAddressSpace, 26, 1)
-    delegation: 'Microsoft.Web/serverFarms'
-  }
-  MySQLFlexSubnet: {
-    // TODO: /29 seems very small
-    // Two /26 have been allocated; that's equivalent to sixteen /29s.
-    addressPrefix: cidrSubnet(vnetAddressSpace, 29, 16)
-    delegation: 'Microsoft.DBforMySQL/flexibleServers'
-  }
-}
-
 var tags = {
   workload: workloadName
   environment: environment
@@ -164,6 +165,21 @@ var resourceTypes = [
   'dplscr'
   'law'
 ]
+
+var resourceGroupNames = {
+  network: replace(rgNamingStructure, '{rgName}', 'network')
+  storage: replace(rgNamingStructure, '{rgName}', 'storage')
+  keyVault: replace(rgNamingStructure, '{rgName}', 'keyVault')
+  database: replace(rgNamingStructure, '{rgName}', 'database')
+  monitoring: replace(rgNamingStructure, '{rgName}', 'monitoring')
+  web: replace(rgNamingStructure, '{rgName}', 'web')
+  // If deploying to a single resource group, remove the '-{rgName}' placeholder and the leading hyphen.
+  single: replace(rgNamingStructure, '-{rgName}', '')
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// HELPER MODULES
+////////////////////////////////////////////////////////////////////////////////
 
 @batchSize(1)
 module nameModule 'modules/common/createValidAzResourceName.bicep' = [
@@ -204,11 +220,101 @@ module kvSecretReferencesModule './modules/common/appSvcKeyVaultRefs.bicep' = {
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// RESOURCE GROUPS
+////////////////////////////////////////////////////////////////////////////////
+
+module singleResourceGroupModule 'br/public:avm/res/resources/resource-group:0.4.3' = if (singleResourceGroupDeployment) {
+  #disable-next-line BCP334
+  name: take(replace(deploymentNameStructure, '{rtype}', 'single-rg'), 64)
+  params: {
+    name: resourceGroupNames.single
+    location: location
+    tags: tags
+  }
+}
+
+module networkResourceGroupModule 'br/public:avm/res/resources/resource-group:0.4.3' = if (!singleResourceGroupDeployment) {
+  #disable-next-line BCP334
+  name: take(replace(deploymentNameStructure, '{rtype}', 'network-rg'), 64)
+  params: {
+    name: resourceGroupNames.network
+    location: location
+    tags: union(tags, {
+      workloadType: 'networking'
+    })
+  }
+}
+
+module monitoringResourceGroupModule 'br/public:avm/res/resources/resource-group:0.4.3' = if (!singleResourceGroupDeployment) {
+  #disable-next-line BCP334
+  name: take(replace(deploymentNameStructure, '{rtype}', 'monitoring-rg'), 64)
+  params: {
+    name: resourceGroupNames.monitoring
+    location: location
+    tags: union(tags, {
+      workloadType: 'monitoring'
+    })
+  }
+}
+
+module storageResourceGroupModule 'br/public:avm/res/resources/resource-group:0.4.3' = if (!singleResourceGroupDeployment) {
+  #disable-next-line BCP334
+  name: take(replace(deploymentNameStructure, '{rtype}', 'storage-rg'), 64)
+  params: {
+    name: resourceGroupNames.storage
+    location: location
+    tags: union(tags, {
+      workloadType: 'storage'
+    })
+  }
+}
+
+module keyVaultResourceGroupModule 'br/public:avm/res/resources/resource-group:0.4.3' = if (!singleResourceGroupDeployment) {
+  #disable-next-line BCP334
+  name: take(replace(deploymentNameStructure, '{rtype}', 'kv-rg'), 64)
+  params: {
+    name: resourceGroupNames.keyVault
+    location: location
+    tags: union(tags, {
+      workloadType: 'keyVault'
+    })
+  }
+}
+
+module databaseResourceGroupModule 'br/public:avm/res/resources/resource-group:0.4.3' = if (!singleResourceGroupDeployment) {
+  #disable-next-line BCP334
+  name: take(replace(deploymentNameStructure, '{rtype}', 'database-rg'), 64)
+  params: {
+    name: resourceGroupNames.database
+    location: location
+    tags: union(tags, {
+      workloadType: 'database'
+    })
+  }
+}
+
+module webAppResourceGroupModule 'br/public:avm/res/resources/resource-group:0.4.3' = if (!singleResourceGroupDeployment) {
+  #disable-next-line BCP334
+  name: take(replace(deploymentNameStructure, '{rtype}', 'web-rg'), 64)
+  params: {
+    name: resourceGroupNames.web
+    location: location
+    tags: union(tags, {
+      workloadType: 'web'
+    })
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// RESOURCE MODULES
+////////////////////////////////////////////////////////////////////////////////
+
 module virtualNetworkModule './modules/networking/main.bicep' = if (empty(existingVirtualNetworkId)) {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'network'), 64)
+  scope: resourceGroup(singleResourceGroupDeployment ? resourceGroupNames.single : resourceGroupNames.network)
   params: {
-    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'network')
     virtualNetworkName: vnetName
     vnetAddressPrefix: vnetAddressSpace
     location: location
@@ -218,17 +324,17 @@ module virtualNetworkModule './modules/networking/main.bicep' = if (empty(existi
     customTags: {
       workloadType: 'networking'
     }
-
     deploymentNameStructure: deploymentNameStructure
   }
+  dependsOn: [singleResourceGroupModule, networkResourceGroupModule]
 }
 
 module monitoring './modules/monitoring/main.bicep' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'monitoring'), 64)
+  scope: resourceGroup(singleResourceGroupDeployment ? resourceGroupNames.single : resourceGroupNames.monitoring)
   params: {
-    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'monitoring')
-    appInsightsName: 'appInsights-${webAppName}'
+    appInsightsName: 'appInsights-${webAppName}' // TODO: consistency
     logAnalyticsWorkspaceName: lawName
     logAnalyticsWorkspaceSku: 'PerGB2018'
     retentionInDays: 30
@@ -237,9 +343,9 @@ module monitoring './modules/monitoring/main.bicep' = {
     customTags: {
       workloadType: 'monitoring'
     }
-
     deploymentNameStructure: deploymentNameStructure
   }
+  dependsOn: [singleResourceGroupModule, monitoringResourceGroupModule]
 }
 
 var privateEndpointSubnetId = empty(existingVirtualNetworkId)
@@ -253,8 +359,8 @@ var virtualNetworkId = empty(existingVirtualNetworkId)
 module storageAccountModule './modules/storage/main.bicep' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'storage'), 64)
+  scope: resourceGroup(singleResourceGroupDeployment ? resourceGroupNames.single : resourceGroupNames.storage)
   params: {
-    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'storage')
     location: location
     storageAccountName: strgName
     peSubnetId: privateEndpointSubnetId
@@ -276,13 +382,14 @@ module storageAccountModule './modules/storage/main.bicep' = {
     keyVaultSecretName: storageAccountKeySecretName
     keyVaultId: keyVaultModule.outputs.id
   }
+  dependsOn: [singleResourceGroupModule, storageResourceGroupModule]
 }
 
 module keyVaultModule './modules/kv/main.bicep' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'keyVault'), 64)
+  scope: resourceGroup(singleResourceGroupDeployment ? resourceGroupNames.single : resourceGroupNames.keyVault)
   params: {
-    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'keyVault')
     keyVaultName: kvName
     location: location
     tags: tags
@@ -308,13 +415,14 @@ module keyVaultModule './modules/kv/main.bicep' = {
 
     deploymentNameStructure: deploymentNameStructure
   }
+  dependsOn: [singleResourceGroupModule, keyVaultResourceGroupModule]
 }
 
 module mySqlModule './modules/sql/main.bicep' = {
   #disable-next-line BCP334
-  name: take(replace(deploymentNameStructure, '{rtype}', 'db'), 64)
+  name: take(replace(deploymentNameStructure, '{rtype}', 'mysql'), 64)
+  scope: resourceGroup(singleResourceGroupDeployment ? resourceGroupNames.single : resourceGroupNames.database)
   params: {
-    resourceGroupName: replace(rgNamingStructure, '{rgName}', 'database')
     flexibleSqlServerName: sqlName
     location: location
     tags: tags
@@ -340,13 +448,6 @@ module mySqlModule './modules/sql/main.bicep' = {
     highAvailability: mySqlHighAvailability
     availabilityZonesEnabled: availabilityZonesEnabled
 
-    // roles: rolesModule.outputs.roles
-
-    // uamiId: uamiModule.outputs.id
-    // uamiPrincipalId: uamiModule.outputs.principalId
-
-    // deploymentScriptName: dplscrName
-
     // Required charset and collation for REDCap
     database_charset: 'utf8'
     database_collation: 'utf8_general_ci'
@@ -356,20 +457,13 @@ module mySqlModule './modules/sql/main.bicep' = {
     deploymentNameStructure: deploymentNameStructure
     enableAzureVerifiedModulesTelemetry: enableAzureVerifiedModulesTelemetry
   }
-}
-
-resource webAppResourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' = {
-  name: replace(rgNamingStructure, '{rgName}', 'web')
-  location: location
-  tags: union(tags, {
-    workloadType: 'web'
-  })
+  dependsOn: [singleResourceGroupModule, databaseResourceGroupModule]
 }
 
 module webAppModule './modules/webapp/main.bicep' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'appService'), 64)
-  scope: webAppResourceGroup
+  scope: resourceGroup(singleResourceGroupDeployment ? resourceGroupNames.single : resourceGroupNames.web)
   params: {
     webAppName: webAppName
     appServicePlanName: planName
@@ -412,10 +506,6 @@ module webAppModule './modules/webapp/main.bicep' = {
     scmRepoBranch: scmRepoBranch
     prerequisiteCommand: prerequisiteCommand
 
-    // smtpFQDN: smtpFQDN
-    // smtpFromEmailAddress: smtpFromEmailAddress
-    // smtpPort: smtpPort
-
     deploymentNameStructure: deploymentNameStructure
 
     uamiId: uamiModule.outputs.id
@@ -425,12 +515,13 @@ module webAppModule './modules/webapp/main.bicep' = {
 
     timeZone: appServiceTimeZone
   }
+  dependsOn: [singleResourceGroupModule, webAppResourceGroupModule]
 }
 
 module uamiModule 'modules/uami/main.bicep' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'uami'), 64)
-  scope: webAppResourceGroup
+  scope: resourceGroup(singleResourceGroupDeployment ? resourceGroupNames.single : resourceGroupNames.web)
   params: {
     tags: tags
     location: location
@@ -438,5 +529,5 @@ module uamiModule 'modules/uami/main.bicep' = {
   }
 }
 
-// // The web app URL
+// The web app URL
 output webAppUrl string = webAppModule.outputs.webAppUrl

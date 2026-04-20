@@ -1,6 +1,3 @@
-targetScope = 'subscription'
-
-param resourceGroupName string
 param location string
 param tags object
 param customTags object
@@ -23,20 +20,13 @@ param deploymentNameStructure string
 
 var mergeTags = union(tags, customTags)
 
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
-  name: resourceGroupName
-  location: location
-  tags: mergeTags
-}
-
 module keyVaultModule './kv.bicep' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'kv'), 64)
-  scope: resourceGroup
   params: {
     keyVaultName: keyVaultName
     location: location
-    tags: tags
+    tags: mergeTags
     peSubnetId: peSubnetId
     privateDnsZoneId: empty(existingPrivateDnsZonesResourceGroupId)
       ? keyVaultPrivateDnsModule.?outputs.privateDnsId!
@@ -50,7 +40,6 @@ module keyVaultModule './kv.bicep' = {
 module keyVaultPrivateDnsModule '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'kv-dns'), 64)
-  scope: resourceGroup
   params: {
     privateDnsZoneName: privateDnsZoneName
     virtualNetworkId: virtualNetworkId

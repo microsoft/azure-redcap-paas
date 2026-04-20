@@ -1,5 +1,3 @@
-targetScope = 'subscription'
-param resourceGroupName string
 param location string
 param tags object
 param customTags object
@@ -12,16 +10,9 @@ param deploymentNameStructure string
 
 var mergeTags = union(tags, customTags)
 
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
-  name: resourceGroupName
-  location: location
-  tags: mergeTags
-}
-
 module logAnalyticsWorkspace 'law.bicep' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'log'), 64)
-  scope: resourceGroup
   params: {
     logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
     logAnalyticsWorkspaceSku: logAnalyticsWorkspaceSku
@@ -34,7 +25,6 @@ module logAnalyticsWorkspace 'law.bicep' = {
 module appInsights 'appInsights.bicep' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'appi'), 64)
-  scope: resourceGroup
   params: {
     appInsightsName: appInsightsName
     logAnalyticsWorkspaceId: logAnalyticsWorkspace.outputs.logAnalyticsWorkspaceId

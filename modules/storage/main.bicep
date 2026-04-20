@@ -1,6 +1,3 @@
-targetScope = 'subscription'
-
-param resourceGroupName string
 param location string
 param storageAccountName string
 param storageContainerName string
@@ -23,16 +20,9 @@ param keyVaultSecretName string
 
 var mergeTags = union(tags, customTags)
 
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
-  name: resourceGroupName
-  location: location
-  tags: mergeTags
-}
-
 module storageAccount './storage.bicep' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'st'), 64)
-  scope: resourceGroup
   params: {
     location: location
     tags: mergeTags
@@ -53,7 +43,6 @@ module storageAccount './storage.bicep' = {
 module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'st-dns'), 64)
-  scope: resourceGroup
   params: {
     privateDnsZoneName: privateDnsZoneName
     virtualNetworkId: virtualNetworkId
@@ -65,5 +54,4 @@ module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResour
 
 output id string = storageAccount.outputs.id
 output name string = storageAccount.outputs.name
-output resourceGroupName string = resourceGroup.name
 output containerName string = storageAccount.outputs.containerName

@@ -1,6 +1,3 @@
-targetScope = 'subscription'
-
-param resourceGroupName string
 param location string
 param virtualNetworkName string
 param vnetAddressPrefix string
@@ -13,16 +10,9 @@ param deploymentNameStructure string
 
 var mergeTags = union(tags, customTags)
 
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' = {
-  name: resourceGroupName
-  location: location
-  tags: mergeTags
-}
-
 module vNetModule 'vnet.bicep' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'vnet'), 64)
-  scope: resourceGroup
   params: {
     virtualNetworkName: virtualNetworkName
     vnetAddressPrefix: vnetAddressPrefix
@@ -35,4 +25,3 @@ module vNetModule 'vnet.bicep' = {
 
 output virtualNetworkId string = vNetModule.outputs.virtualNetworkId
 output subnets object = reduce(vNetModule.outputs.subnets, {}, (cur, next) => union(cur, next))
-output resourceGroupId string = resourceGroup.id
