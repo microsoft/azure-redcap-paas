@@ -70,7 +70,14 @@ if ($DeploymentResult.ProvisioningState -eq 'Succeeded') {
     $DeploymentResult.Outputs | Format-Table -Property Key, @{Name = 'Value'; Expression = { $_.Value.Value } }
 
     if (Test-Path -LiteralPath $JsonParamFile) {
-        Remove-Item -LiteralPath $JsonParamFile -Force
+        if ($PSCmdlet.ShouldProcess($JsonParamFile, 'Remove generated JSON parameter file')) {
+            try {
+                Remove-Item -LiteralPath $JsonParamFile -Force -ErrorAction Stop
+            }
+            catch {
+                Write-Warning "Deployment succeeded, but failed to remove generated JSON parameter file '$JsonParamFile': $($_.Exception.Message)"
+            }
+        }
     }
 }
 else {
