@@ -17,10 +17,8 @@ param integrationSubnetId string
 
 param availabilityZonesEnabled bool = false
 
-#disable-next-line secure-secrets-in-params
-param storageAccountKeySecretRef string
-param storageAccountName string
-param storageAccountContainerName string
+param eDocStorageInfo storageInfo
+param eConsentStorageInfo storageInfo?
 
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
@@ -49,6 +47,8 @@ param uamiId string
 param dbPasswordSecretRef string
 
 param deploymentNameStructure string
+
+import { storageInfo } from './webapp.bicep'
 
 var mergeTags = union(tags, customTags)
 
@@ -84,9 +84,8 @@ module appService 'webapp.bicep' = {
     scmRepoBranch: scmRepoBranch
     prerequisiteCommand: prerequisiteCommand
 
-    storageAccountContainerName: storageAccountContainerName
-    storageAccountKeySecretRef: storageAccountKeySecretRef
-    storageAccountName: storageAccountName
+    eDocStorageInfo: eDocStorageInfo
+    eConsentStorageInfo: eConsentStorageInfo
 
     uamiId: uamiId
 

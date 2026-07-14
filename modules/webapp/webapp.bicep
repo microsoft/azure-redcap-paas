@@ -34,14 +34,19 @@ param enablePrivateEndpoint bool
 
 param timeZone string = 'UTC'
 
-// This is not a secret, it's a Key Vault reference
-#disable-next-line secure-secrets-in-params
-param storageAccountKeySecretRef string
-param storageAccountName string
-param storageAccountContainerName string
+param eDocStorageInfo storageInfo
+param eConsentStorageInfo storageInfo?
+
 param minTlsVersion string = '1.2'
 
 param uamiId string
+
+@export()
+type storageInfo = {
+  storageAccountName: string
+  keySecretRef: string
+  containerName: string
+}
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: appServicePlanName
@@ -58,6 +63,105 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
 }
 
 var DBSslCa = '/home/site/wwwroot/DigiCertGlobalRootG2.crt.pem'
+
+var defaultAppSettings = [
+  // REDCap runtime settings
+  {
+    name: 'DBHostName'
+    value: dbHostName
+  }
+  {
+    name: 'DBName'
+    value: dbName
+  }
+  {
+    name: 'DBUserName'
+    value: dbUserNameSecretRef
+  }
+  {
+    name: 'DBPassword'
+    value: dbPasswordSecretRef
+  }
+  // REDCap deployment settings
+  {
+    name: 'redcapAppZip'
+    value: redcapZipUrl
+  }
+  {
+    name: 'zipVersion'
+    value: redcapVersion
+  }
+  {
+    name: 'redcapCommunityUsername'
+    value: redcapCommunityUsernameSecretRef
+  }
+  {
+    name: 'redcapCommunityPassword'
+    value: redcapCommunityPasswordSecretRef
+  }
+  {
+    name: 'DBSslCa'
+    value: DBSslCa
+  }
+  {
+    name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+    value: appInsights_instrumentationKey
+  }
+  {
+    name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+    value: appInsights_connectionString
+  }
+  {
+    name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+    value: '1'
+  }
+  // EDOC configuration, used during deployment only
+  {
+    name: 'StorageKey'
+    value: eDocStorageInfo.keySecretRef
+  }
+  {
+    name: 'StorageAccount'
+    value: eDocStorageInfo.storageAccountName
+  }
+  {
+    name: 'StorageContainerName'
+    value: eDocStorageInfo.containerName
+  }
+  // END EDOC
+  {
+    name: 'ENABLE_DYNAMIC_INSTALL'
+    value: 'true'
+  }
+  {
+    // Ensure /home/site/ini/redcap.ini and /home/site/ini/extensions.ini gets processed
+    name: 'PHP_INI_SCAN_DIR'
+    value: '/usr/local/etc/php/conf.d:/home/site/ini'
+  }
+  {
+    name: 'WEBSITE_TIME_ZONE'
+    value: timeZone
+  }
+]
+
+var eConsentAppSettings = !empty(eConsentStorageInfo)
+  ? [
+      {
+        name: 'EConsentStorageAccount'
+        value: eConsentStorageInfo.?storageAccountName
+      }
+      {
+        name: 'EConsentStorageKey'
+        value: eConsentStorageInfo.?keySecretRef
+      }
+      {
+        name: 'EConsentStorageContainerName'
+        value: eConsentStorageInfo.?containerName
+      }
+    ]
+  : []
+
+var appSettings = concat(defaultAppSettings, eConsentAppSettings)
 
 resource webApp 'Microsoft.Web/sites@2023-12-01' = {
   name: webAppName
@@ -79,85 +183,7 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
       minTlsVersion: minTlsVersion
       ftpsState: 'FtpsOnly'
       appCommandLine: prerequisiteCommand
-      appSettings: [
-        // REDCap runtime settings
-        {
-          name: 'DBHostName'
-          value: dbHostName
-        }
-        {
-          name: 'DBName'
-          value: dbName
-        }
-        {
-          name: 'DBUserName'
-          value: dbUserNameSecretRef
-        }
-        {
-          name: 'DBPassword'
-          value: dbPasswordSecretRef
-        }
-        // REDCap deployment settings
-        {
-          name: 'redcapAppZip'
-          value: redcapZipUrl
-        }
-        {
-          name: 'zipVersion'
-          value: redcapVersion
-        }
-        {
-          name: 'redcapCommunityUsername'
-          value: redcapCommunityUsernameSecretRef
-        }
-        {
-          name: 'redcapCommunityPassword'
-          value: redcapCommunityPasswordSecretRef
-        }
-        {
-          name: 'DBSslCa'
-          value: DBSslCa
-        }
-        {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsights_instrumentationKey
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: appInsights_connectionString
-        }
-        {
-          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
-          value: '1'
-        }
-        // EDOC configuration, used during deployment only
-        {
-          name: 'StorageKey'
-          value: storageAccountKeySecretRef
-        }
-        {
-          name: 'StorageAccount'
-          value: storageAccountName
-        }
-        {
-          name: 'StorageContainerName'
-          value: storageAccountContainerName
-        }
-        // END EDOC
-        {
-          name: 'ENABLE_DYNAMIC_INSTALL'
-          value: 'true'
-        }
-        {
-          // Ensure /home/site/ini/redcap.ini and /home/site/ini/extensions.ini gets processed
-          name: 'PHP_INI_SCAN_DIR'
-          value: '/usr/local/etc/php/conf.d:/home/site/ini'
-        }
-        {
-          name: 'WEBSITE_TIME_ZONE'
-          value: timeZone
-        }
-      ]
+      appSettings: appSettings
     }
   }
   identity: {

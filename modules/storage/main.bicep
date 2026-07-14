@@ -55,3 +55,6 @@ module privateDns '../pdns/main.bicep' = if (empty(existingPrivateDnsZonesResour
 output id string = storageAccount.outputs.id
 output name string = storageAccount.outputs.name
 output containerName string = storageAccount.outputs.containerName
+output privateDnsZoneResourceGroupId string = empty(existingPrivateDnsZonesResourceGroupId)
+  ? resourceGroup().id
+  : existingPrivateDnsZonesResourceGroupId

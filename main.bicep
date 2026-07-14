@@ -108,6 +108,8 @@ param subnets object = {
   }
 }
 
+param separateEConsentStorage bool = false
+
 ////////////////////////////////////////////////////////////////////////////////
 // VARIABLES
 ////////////////////////////////////////////////////////////////////////////////
@@ -204,9 +206,10 @@ module rolesModule './modules/common/roles.bicep' = {
 }
 
 var storageAccountKeySecretName = 'storageKey'
+var eConsentStorageAccountKeySecretName = 'eConsentStorageKey'
 // The secrets object is converted to an array using the items() function, which alphabetically sorts it
 var defaultSecretNames = map(items(secrets), s => s.key)
-var additionalSecretNames = [storageAccountKeySecretName]
+var additionalSecretNames = [storageAccountKeySecretName, eConsentStorageAccountKeySecretName]
 var secretNames = concat(defaultSecretNames, additionalSecretNames)
 
 // The output will be in alphabetical order
@@ -385,6 +388,49 @@ module storageAccountModule './modules/storage/main.bicep' = {
   dependsOn: [singleResourceGroupModule, storageResourceGroupModule]
 }
 
+module eConsentStorageAccountNameModule 'modules/common/createValidAzResourceName.bicep' = if (separateEConsentStorage) {
+  #disable-next-line BCP334
+  name: take(replace(deploymentNameStructure, '{rtype}', 'nameGen-st-ec'), 64)
+  params: {
+    location: location
+    environment: environment
+    namingConvention: namingConvention
+    resourceType: 'st'
+    sequence: sequence
+    workloadName: '${workloadName}ec'
+    addRandomChars: 2
+  }
+}
+module eConsentStorageAccountModule './modules/storage/main.bicep' = if (separateEConsentStorage) {
+  #disable-next-line BCP334
+  name: take(replace(deploymentNameStructure, '{rtype}', 'storage'), 64)
+  scope: resourceGroup(singleResourceGroupDeployment ? resourceGroupNames.single : resourceGroupNames.storage)
+  params: {
+    location: location
+    storageAccountName: eConsentStorageAccountNameModule.?outputs.shortName!
+    peSubnetId: privateEndpointSubnetId
+    storageContainerName: 'redcap'
+    kind: 'StorageV2'
+    storageAccountSku: 'Standard_LRS'
+
+    virtualNetworkId: virtualNetworkId!
+    privateDnsZoneName: 'privatelink.blob.${az.environment().suffixes.storage}'
+    // TODO: By deploying the private DNS zone in the storage account module, this creates an unnecessary dependency between both storage accounts. Refactor to deploy the private DNS zone in a separate module to avoid this.
+    existingPrivateDnsZonesResourceGroupId: storageAccountModule.outputs.privateDnsZoneResourceGroupId
+
+    tags: tags
+    customTags: {
+      workloadType: 'storageAccount'
+    }
+
+    deploymentNameStructure: deploymentNameStructure
+
+    keyVaultSecretName: eConsentStorageAccountKeySecretName
+    keyVaultId: keyVaultModule.outputs.id
+  }
+  dependsOn: [singleResourceGroupModule, storageResourceGroupModule]
+}
+
 module keyVaultModule './modules/kv/main.bicep' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'keyVault'), 64)
@@ -493,9 +539,19 @@ module webAppModule './modules/webapp/main.bicep' = {
     redcapCommunityPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[0]
     redcapVersion: redcapVersion
 
-    storageAccountKeySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[4]
-    storageAccountContainerName: storageAccountModule.outputs.containerName
-    storageAccountName: storageAccountModule.outputs.name
+    eDocStorageInfo: {
+      keySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[4]
+      containerName: storageAccountModule.outputs.containerName
+      storageAccountName: storageAccountModule.outputs.name
+    }
+
+    eConsentStorageInfo: separateEConsentStorage
+      ? {
+          storageAccountName: eConsentStorageAccountModule.?outputs.name!
+          keySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[5]
+          containerName: 'redcap'
+        }
+      : null
 
     // Enable VNet integration
     integrationSubnetId: empty(existingVirtualNetworkId)
