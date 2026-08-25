@@ -27,14 +27,14 @@ jobs:
           - uses: actions/checkout@main
             name: Checkout
 
-          - uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1.6.1
+          - uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
             name: Azure Login
             with:
               creds: ${{ secrets.AZURE_CREDENTIALS }}
 
           # Deploy Bicep file
           - name: validateTemplates
-            uses: azure/arm-deploy@65ae74fb7aec7c680c88ef456811f353adae4d06 # v1.0.9
+            uses: azure/arm-deploy@a1361c2c2cd398621955b16ca32e01c65ea340f5 # v2.0.0
             with:
               scope: 'subscription'
               template: ./main.bicep
@@ -42,7 +42,7 @@ jobs:
               region: ${{ env.region }}
 
           - name: planDeployment
-            uses: azure/arm-deploy@65ae74fb7aec7c680c88ef456811f353adae4d06 # v1.0.9
+            uses: azure/arm-deploy@a1361c2c2cd398621955b16ca32e01c65ea340f5 # v2.0.0
             with:
               scope: 'subscription'
               template: ./main.bicep
@@ -62,14 +62,14 @@ jobs:
           - uses: actions/checkout@main
             name: Checkout
 
-          - uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1.6.1
+          - uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
             name: Azure Login
             with:
               creds: ${{ secrets.AZURE_CREDENTIALS }}
 
           # Deploy Bicep file
           - name: deploy
-            uses: azure/arm-deploy@65ae74fb7aec7c680c88ef456811f353adae4d06 # v1.0.9
+            uses: azure/arm-deploy@a1361c2c2cd398621955b16ca32e01c65ea340f5 # v2.0.0
             with:
               scope: 'subscription'
               template: ./main.bicep
