@@ -75,6 +75,8 @@ param appServiceSkuName string = 'P0v3'
 param availabilityZonesEnabled bool = false
 param existingPrivateDnsZonesResourceGroupId string = ''
 param existingVirtualNetworkId string = ''
+@description('If true, a network security group will be created and associated with the virtual network subnets. This does not apply when you specify an existing virtual network.')
+param createNetworkSecurityGroup bool = false
 
 param appServiceTimeZone string = 'UTC'
 
@@ -328,6 +330,8 @@ module virtualNetworkModule './modules/networking/main.bicep' = if (empty(existi
       workloadType: 'networking'
     }
     deploymentNameStructure: deploymentNameStructure
+    enableAvmTelemetry: enableAzureVerifiedModulesTelemetry
+    createNetworkSecurityGroup: createNetworkSecurityGroup
   }
   dependsOn: [singleResourceGroupModule, networkResourceGroupModule]
 }
@@ -403,7 +407,7 @@ module eConsentStorageAccountNameModule 'modules/common/createValidAzResourceNam
 }
 module eConsentStorageAccountModule './modules/storage/main.bicep' = if (separateEConsentStorage) {
   #disable-next-line BCP334
-  name: take(replace(deploymentNameStructure, '{rtype}', 'storage'), 64)
+  name: take(replace(deploymentNameStructure, '{rtype}', 'storage-ec'), 64)
   scope: resourceGroup(singleResourceGroupDeployment ? resourceGroupNames.single : resourceGroupNames.storage)
   params: {
     location: location

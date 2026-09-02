@@ -13,7 +13,7 @@ param subnets object
 param tags object
 
 param customDnsIPs array
-param networkSecurityGroupId string = ''
+param networkSecurityGroupId string?
 
 var subnetDefsArray = items(subnets)
 
