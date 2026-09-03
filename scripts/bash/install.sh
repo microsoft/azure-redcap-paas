@@ -24,3 +24,13 @@ UPDATE $APPSETTING_DBName.redcap_config SET value = '$APPSETTING_StorageContaine
 UPDATE $APPSETTING_DBName.redcap_config SET value = '4' WHERE field_name = 'edoc_storage_option';
 REPLACE INTO $APPSETTING_DBName.redcap_config (field_name, value) VALUES ('azure_quickstart', '1');
 EOF
+
+# If APPSETTING_EConsentStorageContainerName is not empty, update the e-consent storage settings
+if [ ! -z "$APPSETTING_EConsentStorageContainerName" ]; then
+    echo "Updating e-consent storage settings to use Azure Blob Storage container: $APPSETTING_EConsentStorageContainerName"
+
+    /usr/bin/mysql -u$APPSETTING_DBUserName -h$APPSETTING_DBHostName -p$APPSETTING_DBPassword --ssl=true --ssl-ca=/home/site/wwwroot/DigiCertGlobalRootG2.crt.pem <<EOF
+    UPDATE $APPSETTING_DBName.redcap_config SET value = 'AZURE_BLOB' WHERE field_name = 'pdf_econsent_filesystem_type';
+    UPDATE $APPSETTING_DBName.redcap_config SET value = '$APPSETTING_EConsentStorageContainerName' WHERE field_name = 'pdf_econsent_filesystem_container';
+EOF
+fi

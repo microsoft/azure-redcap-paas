@@ -42,17 +42,19 @@ param deploymentTime string = utcNow()
 
 param enableAppServicePrivateEndpoint bool = true
 
+param storageAccountSkuName string = 'Standard_LRS'
+param blobContainerName string = 'redcap'
+param eConsentBlobContainerName string = 'redcap-econsent'
+
 @description('The password to use for the MySQL Flexible Server admin account \'sqladmin\'.')
 @secure()
 param sqlPassword string
-
 @description('Whether High Availability is enabled for the MySQL Flexible Server. Zone redundant or same zone HA is determined by the value of availabilityZonesEnabled.')
 @allowed([
   'Enabled'
   'Disabled'
 ])
 param mySqlHighAvailability string = 'Disabled'
-
 param mySqlSkuName string = 'Standard_B1ms'
 
 @allowed([
@@ -69,14 +71,15 @@ param mySqlStorageIops int = 396
 @description('The MySQL Flexible Server admin user account name. Defaults to \'sqladmin\'.')
 param sqlAdmin string = 'sqladmin'
 
-param appServiceSkuName string = 'P0v3'
+param appServiceTimeZone string = 'UTC'
+param appServiceSkuName string = 'P0v4'
 
 @description('Determines whether availability zone redundancy is enabled for the MySQL Flexible Server and the app service. The region must support availability zones.')
 param availabilityZonesEnabled bool = false
 param existingPrivateDnsZonesResourceGroupId string = ''
 param existingVirtualNetworkId string = ''
-
-param appServiceTimeZone string = 'UTC'
+@description('If true, a network security group will be created and associated with the virtual network subnets. This does not apply when you specify an existing virtual network.')
+param createNetworkSecurityGroup bool = false
 
 @description('If true, the deployment will create all resources in a single resource group. If false, resources will be distributed across multiple resource groups according to their type.')
 param singleResourceGroupDeployment bool = false
@@ -108,6 +111,8 @@ param subnets object = {
   }
 }
 
+param separateEConsentStorage bool = false
+
 ////////////////////////////////////////////////////////////////////////////////
 // VARIABLES
 ////////////////////////////////////////////////////////////////////////////////
@@ -131,13 +136,12 @@ var vnetName = empty(existingVirtualNetworkId)
   ? nameModule[0].outputs.shortName
   : split(existingVirtualNetworkId, '/')[8]
 
-var strgName = nameModule[1].outputs.shortName
+var storageAccountName = nameModule[1].outputs.shortName
 var webAppName = nameModule[2].outputs.shortName
 var kvName = nameModule[3].outputs.shortName
 var sqlName = nameModule[4].outputs.shortName
 var planName = nameModule[5].outputs.shortName
 var uamiName = nameModule[6].outputs.shortName
-//var dplscrName = nameModule[7].outputs.shortName
 var lawName = nameModule[8].outputs.shortName
 
 var deploymentNameStructure = '${workloadName}-${environment}-${sequenceFormatted}-{rtype}-${deploymentTime}'
@@ -231,6 +235,7 @@ module singleResourceGroupModule 'br/public:avm/res/resources/resource-group:0.4
     name: resourceGroupNames.single
     location: location
     tags: tags
+    enableTelemetry: enableAzureVerifiedModulesTelemetry
   }
 }
 
@@ -243,6 +248,7 @@ module networkResourceGroupModule 'br/public:avm/res/resources/resource-group:0.
     tags: union(tags, {
       workloadType: 'networking'
     })
+    enableTelemetry: enableAzureVerifiedModulesTelemetry
   }
 }
 
@@ -255,6 +261,7 @@ module monitoringResourceGroupModule 'br/public:avm/res/resources/resource-group
     tags: union(tags, {
       workloadType: 'monitoring'
     })
+    enableTelemetry: enableAzureVerifiedModulesTelemetry
   }
 }
 
@@ -267,6 +274,7 @@ module storageResourceGroupModule 'br/public:avm/res/resources/resource-group:0.
     tags: union(tags, {
       workloadType: 'storage'
     })
+    enableTelemetry: enableAzureVerifiedModulesTelemetry
   }
 }
 
@@ -279,6 +287,7 @@ module keyVaultResourceGroupModule 'br/public:avm/res/resources/resource-group:0
     tags: union(tags, {
       workloadType: 'keyVault'
     })
+    enableTelemetry: enableAzureVerifiedModulesTelemetry
   }
 }
 
@@ -291,6 +300,7 @@ module databaseResourceGroupModule 'br/public:avm/res/resources/resource-group:0
     tags: union(tags, {
       workloadType: 'database'
     })
+    enableTelemetry: enableAzureVerifiedModulesTelemetry
   }
 }
 
@@ -303,6 +313,7 @@ module webAppResourceGroupModule 'br/public:avm/res/resources/resource-group:0.4
     tags: union(tags, {
       workloadType: 'web'
     })
+    enableTelemetry: enableAzureVerifiedModulesTelemetry
   }
 }
 
@@ -325,6 +336,8 @@ module virtualNetworkModule './modules/networking/main.bicep' = if (empty(existi
       workloadType: 'networking'
     }
     deploymentNameStructure: deploymentNameStructure
+    enableAvmTelemetry: enableAzureVerifiedModulesTelemetry
+    createNetworkSecurityGroup: createNetworkSecurityGroup
   }
   dependsOn: [singleResourceGroupModule, networkResourceGroupModule]
 }
@@ -356,31 +369,89 @@ var virtualNetworkId = empty(existingVirtualNetworkId)
   ? virtualNetworkModule.?outputs.virtualNetworkId
   : existingVirtualNetworkId
 
-module storageAccountModule './modules/storage/main.bicep' = {
+var blobContainers = union(
+  [
+    {
+      name: blobContainerName
+    }
+  ],
+  separateEConsentStorage
+    ? [
+        {
+          name: eConsentBlobContainerName
+        }
+      ]
+    : []
+)
+
+var blobPrivateDnsZoneName = 'privatelink.blob.${az.environment().suffixes.storage}'
+
+// If necessary, create a privatelink DNS zone for blob storage and link it to the virtual network
+module blobPrivateLinkDnsZoneModule 'br/public:avm/res/network/private-dns-zone:0.8.1' = if (empty(existingPrivateDnsZonesResourceGroupId)) {
+  scope: resourceGroup(singleResourceGroupDeployment ? resourceGroupNames.single : resourceGroupNames.storage)
+  params: {
+    name: blobPrivateDnsZoneName
+    virtualNetworkLinks: [
+      {
+        virtualNetworkResourceId: virtualNetworkId!
+        registrationEnabled: false
+      }
+    ]
+    tags: tags
+    enableTelemetry: enableAzureVerifiedModulesTelemetry
+  }
+  dependsOn: [singleResourceGroupModule, storageResourceGroupModule]
+}
+
+var blobPrivateLinkDnsZoneResourceId = !empty(existingPrivateDnsZonesResourceGroupId)
+  ? '${existingPrivateDnsZonesResourceGroupId}/providers/Microsoft.Network/privateDnsZones/${blobPrivateDnsZoneName}'
+  : blobPrivateLinkDnsZoneModule.?outputs.resourceId!
+
+// Create a storage account with one or two blob containers and private endpoint
+module storageAccountModule 'br/public:avm/res/storage/storage-account:0.33.0' = {
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'storage'), 64)
   scope: resourceGroup(singleResourceGroupDeployment ? resourceGroupNames.single : resourceGroupNames.storage)
   params: {
+    name: storageAccountName
     location: location
-    storageAccountName: strgName
-    peSubnetId: privateEndpointSubnetId
-    storageContainerName: 'redcap'
     kind: 'StorageV2'
-    storageAccountSku: 'Standard_LRS'
+    tags: union(tags, { workloadType: 'storageAccount' })
 
-    virtualNetworkId: virtualNetworkId!
-    privateDnsZoneName: 'privatelink.blob.${az.environment().suffixes.storage}'
-    existingPrivateDnsZonesResourceGroupId: existingPrivateDnsZonesResourceGroupId
+    minimumTlsVersion: 'TLS1_2'
+    skuName: storageAccountSkuName
+    requireInfrastructureEncryption: true
+    supportsHttpsTrafficOnly: true
+    publicNetworkAccess: 'Disabled'
+    allowSharedKeyAccess: true
 
-    tags: tags
-    customTags: {
-      workloadType: 'storageAccount'
+    blobServices: {
+      containers: blobContainers
     }
 
-    deploymentNameStructure: deploymentNameStructure
+    privateEndpoints: [
+      {
+        name: 'pe-${storageAccountName}'
+        service: 'blob'
+        subnetResourceId: privateEndpointSubnetId
+        privateDnsZoneGroup: {
+          privateDnsZoneGroupConfigs: [
+            {
+              privateDnsZoneResourceId: blobPrivateLinkDnsZoneResourceId
+            }
+          ]
+        }
+      }
+    ]
 
-    keyVaultSecretName: storageAccountKeySecretName
-    keyVaultId: keyVaultModule.outputs.id
+    // Export the primary access key to a Key Vault secret
+    // This secret will be referenced by the App Service
+    secretsExportConfiguration: {
+      keyVaultResourceId: keyVaultModule.outputs.id
+      accessKey1Name: storageAccountKeySecretName
+    }
+
+    enableTelemetry: enableAzureVerifiedModulesTelemetry
   }
   dependsOn: [singleResourceGroupModule, storageResourceGroupModule]
 }
@@ -470,7 +541,7 @@ module webAppModule './modules/webapp/main.bicep' = {
     location: location
     skuName: appServiceSkuName
     peSubnetId: privateEndpointSubnetId
-    appInsights_connectionString: monitoring.outputs.appInsightsResourceId
+    appInsights_connectionString: monitoring.outputs.appInsightsConnectionString
     appInsights_instrumentationKey: monitoring.outputs.appInsightsInstrumentationKey
     linuxFxVersion: 'php|8.4'
     tags: tags
@@ -493,9 +564,13 @@ module webAppModule './modules/webapp/main.bicep' = {
     redcapCommunityPasswordSecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[0]
     redcapVersion: redcapVersion
 
-    storageAccountKeySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[4]
-    storageAccountContainerName: storageAccountModule.outputs.containerName
-    storageAccountName: storageAccountModule.outputs.name
+    eDocStorageInfo: {
+      keySecretRef: kvSecretReferencesModule.outputs.keyVaultRefs[4]
+      containerName: blobContainerName
+      storageAccountName: storageAccountModule.outputs.name
+    }
+
+    eConsentContainerName: separateEConsentStorage ? eConsentBlobContainerName : null
 
     // Enable VNet integration
     integrationSubnetId: empty(existingVirtualNetworkId)

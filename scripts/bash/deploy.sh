@@ -115,12 +115,6 @@ sed -i "s/$salt = '';/$salt = '$(echo $RANDOM | md5sum | head -c 20; echo;)';/" 
 
 echo "Configuring REDCap recommended settings" >> /home/site/log-$stamp.txt
 
-# HACK: 2025-11-11: SMTP settings are not supported anymore; commenting out for now
-# sed -i "s|SMTP[[:space:]]*= ''|SMTP = '$APPSETTING_smtpFQDN'|" /home/site/repository/Files/settings.ini
-# sed -i "s|smtp_port[[:space:]]*= |smtp_port = $APPSETTING_smtpPort|" /home/site/repository/Files/settings.ini
-# sed -i "s|sendmail_from[[:space:]]*= ''|sendmail_from = '$APPSETTING_fromEmailAddress'|" /home/site/repository/Files/settings.ini
-# sed -i "s|sendmail_path[[:space:]]*= ''|sendmail_path = '/usr/sbin/sendmail -t -i'|" /home/site/repository/Files/settings.ini
-
 cp /home/site/repository/Files/settings.ini /home/site/ini/redcap.ini
 
 ####################################################################################

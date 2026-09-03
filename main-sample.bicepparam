@@ -56,3 +56,10 @@ param sqlPassword = ''
 // param mySqlStorageIops = 1200
 
 // param appServiceTimeZone = 'UTC'
+
+param createNetworkSecurityGroup = true
+
+// param storageAccountSkuName = 'Standard_GRS'
+//param separateEConsentStorage = true
+
+// param enableAppServicePrivateEndpoint = true

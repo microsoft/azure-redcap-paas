@@ -114,6 +114,14 @@ module flexibleServerModule 'br/public:avm/res/db-for-my-sql/flexible-server:0.1
         name: 'max_allowed_packet'
         value: '1073741824' // 1 GB (1024^3 bytes)
       }
+      {
+        name: 'audit_log_events'
+        value: 'CONNECTION,ADMIN,DCL,DDL,CONNECTION_V2'
+      }
+      {
+        name: 'audit_log_enabled'
+        value: 'ON'
+      }
     ]
 
     backupRetentionDays: backupRetentionDays
