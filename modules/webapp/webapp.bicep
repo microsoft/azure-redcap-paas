@@ -35,7 +35,7 @@ param enablePrivateEndpoint bool
 param timeZone string = 'UTC'
 
 param eDocStorageInfo storageInfo
-param eConsentStorageInfo storageInfo?
+param eConsentContainerName string?
 
 param minTlsVersion string = '1.2'
 
@@ -144,19 +144,11 @@ var defaultAppSettings = [
   }
 ]
 
-var eConsentAppSettings = !empty(eConsentStorageInfo)
+var eConsentAppSettings = !empty(eConsentContainerName)
   ? [
       {
-        name: 'EConsentStorageAccount'
-        value: eConsentStorageInfo.?storageAccountName
-      }
-      {
-        name: 'EConsentStorageKey'
-        value: eConsentStorageInfo.?keySecretRef
-      }
-      {
         name: 'EConsentStorageContainerName'
-        value: eConsentStorageInfo.?containerName
+        value: eConsentContainerName
       }
     ]
   : []

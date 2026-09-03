@@ -17,7 +17,7 @@ module networkSecurityGroupModule 'br/public:avm/res/network/network-security-gr
   #disable-next-line BCP334
   name: take(replace(deploymentNameStructure, '{rtype}', 'nsg'), 64)
   params: {
-    name: 'nsg1'
+    name: replace(virtualNetworkName, 'vnet', 'nsg')
     location: location
     tags: mergeTags
     enableTelemetry: enableAvmTelemetry

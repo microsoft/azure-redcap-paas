@@ -15,10 +15,10 @@ param privateDnsZoneName string
 param virtualNetworkId string
 param integrationSubnetId string
 
-param availabilityZonesEnabled bool = false
+param availabilityZonesEnabled bool
 
 param eDocStorageInfo storageInfo
-param eConsentStorageInfo storageInfo?
+param eConsentContainerName string?
 
 param appInsights_connectionString string
 param appInsights_instrumentationKey string
@@ -85,7 +85,7 @@ module appService 'webapp.bicep' = {
     prerequisiteCommand: prerequisiteCommand
 
     eDocStorageInfo: eDocStorageInfo
-    eConsentStorageInfo: eConsentStorageInfo
+    eConsentContainerName: eConsentContainerName
 
     uamiId: uamiId
 
