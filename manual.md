@@ -27,7 +27,7 @@ Perform the following steps to deploy the solution using PowerShell:
 
 - Review and modify the parameter values in the `main-*yourorg*.bicepparam` file as needed. Here is the summary of parameters:
   - ***location***: The region where the resources will be deployed. The example of this parameter is `eastus`
-  - ***environment***: The name of the enviorment for this deployed value. Allowed values are `test`, `demo`, `prod`. The example of this parameter is `test`
+  - ***environment***: The name of the environment for this deployed value. Allowed values are `test`, `demo`, `prod`. The example of this parameter is `test`
   - ***workloadName***: The name of the workload. The example of this parameter is `redcap`
   - ***sequenceNumber***: The sequence number of the deployment. The example of this parameter is `1`. If you are deploying the same workload multiple times, you need to increment this number for each deployment.
   - ***identityObjectId***: Valid Entra ID object ID for permissions assignment. This identity object will be assigned admin access. The example of this parameter is `00000000-0000-0000-0000-000000000000`
@@ -41,11 +41,11 @@ Perform the following steps to deploy the solution using PowerShell:
 - Execute `deploy.ps1` as shown below.
 
     ```PowerShell
-        ./deploy.ps1 -Location 'eastus' -TemplateParameterFile 'main-yourorg.bicepparam' -SubscriptionId 'subscription-id'
+        ./deploy.ps1 -Location 'eastus' -TemplateParameterFile './main-yourorg.bicepparam' -SubscriptionId 'subscription-id'
     ```
 
 - You may omit the parameter names and use them in the order `Location`, `TemplateParameterFile`, and `SubscriptionId`
 
     ```PowerShell
-        ./deploy.ps1 'eastus' 'main-yourorg.bicepparam' 'subscription-id'
+        ./deploy.ps1 'eastus' './main-yourorg.bicepparam' 'subscription-id'
     ```

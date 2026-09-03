@@ -8,17 +8,13 @@ This template automates the deployment of the REDCap solution into Azure using m
 
 ## Deployment Options
 
-- ### Manual deployment
+### Manual deployment
 
-  - For manual deployment process, please see [***manual installation***](manual.md).
+- For manual deployment process, please see [***manual installation***](manual.md).
 
-- ### CI/CD Deployment with GitHub
+### CI/CD Deployment with GitHub or Azure DevOps
 
-  - Information pending
-
-- ### CI/CD Deployment with Azure DevOps
-
-  - Information pending
+- Information pending
 
 ## Details
 
@@ -29,6 +25,8 @@ This template automates the deployment of the REDCap solution into Azure using m
 - <https://learn.microsoft.com/samples/azure/azure-quickstart-templates/nfs-ha-cluster-ubuntu/>
 
 To deploy the REDCap source to Azure App Service, you must supply your REDCap Community site credentials. The deployment automation will use them to pull the REDCap source directly from the community site.
+
+Alternatively, you may provide a publicly accessible URL (no network restrictions, no login requirement) that points to a valid REDCap zip file.
 
 > NOTE: These values will be stored within the Azure App Service as configuration settings. Once your deployment has succeeded, you should navigate to your Azure App Service resource and delete or clear the values so that they aren't stored here.
 
@@ -44,17 +42,10 @@ To deploy the REDCap source to Azure App Service, you must supply your REDCap Co
   - Private DNS zones
   - Virtual Network
   - Application Insights
-  <!-- - (optional) SendGrid 3rd Party Email service (2) -->
 
 (1) Review <https://learn.microsoft.com/azure/mysql/flexible-server/concepts-service-tiers-storage> for details on available features, regions, and pricing models for Azure DB for MySQL.
 
 Advanced deployments can enable high availability for the MySQL Flexible Server and availability zone redundancy for the MySQL Flexible Server and web app. These capabilities can be controlled using parameters for the Bicep deployment.
-
-<!--(2) SendGrid is a paid service with a free tier offering 25k messages per month, with additional paid tiers offering more volume, whitelisting, custom domains, etc. There is a limit of two instances per subscription using the free tier. For more information see <https://docs.microsoft.com/en-us/azure/store-sendgrid-php-how-to-send-email#create-a-sendgrid-account>. The service will be accessed initially using the password you enter in the deployment template. You can click "Manage" on the SendGrid service after deployment to administrate the service in their portal, including options to create an API key that can be used for access instead of the password.
-
-If after deployment, you would instead like to use a different SMTP relay, edit the values "smtp_fqdn_name", "smtp_port", "smtp_user_name", and "smtp_password" to point to your preferred endpoint. You can then delete the SendGrid service from this resource group.
-
-If you use Exchange Online (part of the Microsoft 365 Suite), you can follow these steps to set it up and use it as an SMTP relay for this service: <https://learn.microsoft.com/Exchange/mail-flow-best-practices/how-to-set-up-a-multifunction-device-or-application-to-send-email-using-microsoft-365-or-office-365> -->
 
 ## Setup
 
@@ -63,8 +54,6 @@ This template will automatically deploy the resources necessary to run REDCap in
 **IMPORTANT**: *The "Workload Name" you choose will be re-used as part of the storage, website, and MySQL database name. Make sure you don't use characters that will be rejected.*
 
 After the template is deployed, deployment automation will download the REDCap ZIP file you specify, and install it in your web app. It will then automatically update the database connection information in the app.
-
-> NOTE: The database will not be initialized; therefore, REDCap will not be usable until then. See the [Post-Setup](#post-setup) section below on how to initialize the database.
 
 With the download and unzipping of REDCap application, the entire operation will take between 12-16 minutes.
 
@@ -88,11 +77,19 @@ bash ./site/repository/scripts/bash/install.sh
 
 ![ssh](images/install.png)
 
-Once you regain access to the console, you can navigate to the root of your app service and confirm everything shows green on the REDCap Configuration Check page - with the exception of CronJob status which you may have to manually invoke. If anything displays on that page in red or yellow, it is recommended that you perform a "Restart" of the Azure "App Service". This needs to be done due to the fact that some necessary server environment settings get changed after the initial deployment, but restarting the App Service will load the service with the intended settings.
+Once you regain access to the console, you can navigate to the root of your app service and confirm everything shows green on the REDCap Configuration Check page. If anything displays on that page in red or yellow, it is recommended that you perform a "Restart" of the Azure "App Service". This needs to be done due to the fact that some necessary server environment settings get changed after the initial deployment, but restarting the App Service will load the service with the intended settings.
+
+### Known Issues
+
+| Date discovered | Issue description | GitHub issue |
+| --- | --- | --- |
+| 2026-09-02 | Imagick extension missing from PHP | [#128](https://github.com/microsoft/azure-redcap-paas/issues/128) |
 
 ## Note about REDCap "Easy Upgrade"
 
-The "Easy Upgrade" feature in REDCap 8.11.0 and later is currently *not* supported when deploying a REDCap instance on Azure. Support for "Easy Upgrade" on Azure is expected to come at a later time in a future REDCap release.
+The "Easy Upgrade" feature in REDCap is currently *not* supported when deploying a REDCap instance on Azure. Support for "Easy Upgrade" on Azure is expected to come at a later time in a future REDCap release.
+
+> UPDATE: 2026-09-02: Users have reported that Easy Upgrade completes successfully, though the web interface might time out while waiting for the upgrade to complete. The background process completes though and the new version of REDCap is available after some time.
 
 ## Resources
 
