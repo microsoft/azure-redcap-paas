@@ -32,5 +32,5 @@ if [ ! -z "$APPSETTING_EConsentStorageContainerName" ]; then
     /usr/bin/mysql -u$APPSETTING_DBUserName -h$APPSETTING_DBHostName -p$APPSETTING_DBPassword --ssl=true --ssl-ca=/home/site/wwwroot/DigiCertGlobalRootG2.crt.pem <<EOF
     UPDATE $APPSETTING_DBName.redcap_config SET value = 'AZURE_BLOB' WHERE field_name = 'pdf_econsent_filesystem_type';
     UPDATE $APPSETTING_DBName.redcap_config SET value = '$APPSETTING_EConsentStorageContainerName' WHERE field_name = 'pdf_econsent_filesystem_container';
-    EOF
+EOF
 fi
