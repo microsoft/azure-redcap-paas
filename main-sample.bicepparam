@@ -59,6 +59,7 @@ param sqlPassword = ''
 
 param createNetworkSecurityGroup = true
 
+// param storageAccountSkuName = 'Standard_GRS'
 //param separateEConsentStorage = true
 
 // param enableAppServicePrivateEndpoint = true
